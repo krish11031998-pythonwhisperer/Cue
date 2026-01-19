@@ -1,0 +1,42 @@
+{
+  "originHash" : "31286940baf16c6d951f406b04a71b0b72f35831965ac2bba37f6ee09b8e7ffd",
+  "pins" : [
+    {
+      "identity" : "colortokenskit-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/metasidd/ColorTokensKit-Swift.git",
+      "state" : {
+        "revision" : "c784ab8348cfad827d6ff43e56ff09462ccccb60",
+        "version" : "0.2.0"
+      }
+    },
+    {
+      "identity" : "kkit-swift-package",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/krish11031998-pythonwhisperer/KKit-Swift-Package",
+      "state" : {
+        "revision" : "0803cdb368d31246ffb2af682bd653f8c505eb5f",
+        "version" : "2.4.3"
+      }
+    },
+    {
+      "identity" : "sfsafesymbols",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SFSafeSymbols/SFSafeSymbols.git",
+      "state" : {
+        "revision" : "e01b3d4f861412f8dcee8d93c417d2c2b0cdfd77",
+        "version" : "7.0.0"
+      }
+    },
+    {
+      "identity" : "vanor-ui-library",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/krish11031998-pythonwhisperer/vanor-ui-library",
+      "state" : {
+        "revision" : "c4b0dea14a9bec131f585c7d4f504df607ebcdce",
+        "version" : "0.1.4"
+      }
+    }
+  ],
+  "version" : 3
+}
