@@ -7,12 +7,14 @@
 
 import SwiftUI
 import CoreData
+import Model
 
 @main
 struct CueApp: App {
+    @State private var store: Store = .init()
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainTab(store: store)
         }
     }
 }

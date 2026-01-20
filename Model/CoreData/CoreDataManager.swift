@@ -26,7 +26,7 @@ class CoreDataManager {
     private init() {
         setupContainer()
         #warning("Add Transformers here")
-//        HealthKitRawValuesTransformer.register()
+        CueTaskTransformer.register()
     }
     
     static var storeURL: URL {

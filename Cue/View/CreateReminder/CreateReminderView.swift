@@ -7,13 +7,19 @@
 
 import SwiftUI
 import VanorUI
-internal import SFSafeSymbols
+import Model
+import SFSafeSymbols
 import ColorTokensKit
 
 struct CreateReminderView: View {
     
-    @State private var viewModel: CreateReminderViewModel = .init()
+    @State private var viewModel: CreateReminderViewModel
     @Namespace private var animation
+    @Environment(\.dismiss) var dismiss
+    
+    init(store: Store) {
+        self._viewModel = .init(initialValue: .init(store: store))
+    }
     
     var body: some View {
         ScrollView(.vertical) {
@@ -69,16 +75,20 @@ struct CreateReminderView: View {
                         }
                         .font(.footnote)
                         .fontWeight(.semibold)
-//                        .padding(.init(top: 6, leading: 10, bottom: 6, trailing: 10))
                     }
                     .buttonStyle(.glass)
-
-//                    .glassEffect(.regular, in: .capsule)
                     .padding(.top, 12)
                 }
-
             }
             .padding(.horizontal, 20)
+        }
+        .safeAreaInset(edge: .bottom, alignment: .center, spacing: 8) {
+            Button(action: viewModel.createReminder) {
+                Text("Create Reminder")
+                    .font(.headline)
+            }
+            .tint(.proSky.baseColor)
+            .buttonStyle(.glassProminent)
         }
         .sheet(item: $viewModel.presentation) { sheet in
             Group {
@@ -149,5 +159,5 @@ struct CreateReminderView: View {
 }
 
 #Preview {
-    CreateReminderView()
+    CreateReminderView(store: .init())
 }

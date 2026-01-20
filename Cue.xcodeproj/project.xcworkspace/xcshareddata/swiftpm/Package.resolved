@@ -1,5 +1,5 @@
 {
-  "originHash" : "31286940baf16c6d951f406b04a71b0b72f35831965ac2bba37f6ee09b8e7ffd",
+  "originHash" : "d9141ea173904c8df76480275ac080c03ef82cbc75d42741f13335be1bf382d3",
   "pins" : [
     {
       "identity" : "colortokenskit-swift",
@@ -29,12 +29,21 @@
       }
     },
     {
-      "identity" : "vanor-ui-library",
+      "identity" : "swift-async-algorithms",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/krish11031998-pythonwhisperer/vanor-ui-library",
+      "location" : "https://github.com/apple/swift-async-algorithms.git",
       "state" : {
-        "revision" : "c4b0dea14a9bec131f585c7d4f504df607ebcdce",
-        "version" : "0.1.4"
+        "revision" : "6c050d5ef8e1aa6342528460db614e9770d7f804",
+        "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "swift-collections",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-collections.git",
+      "state" : {
+        "revision" : "7b847a3b7008b2dc2f47ca3110d8c782fb2e5c7e",
+        "version" : "1.3.0"
       }
     }
   ],

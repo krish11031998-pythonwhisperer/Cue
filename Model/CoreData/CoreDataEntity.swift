@@ -7,7 +7,7 @@
 
 import CoreData
 
-internal protocol CoreDataEntity: NSObject {
+internal protocol CoreDataEntity: NSManagedObject {
     static func fetchAll(context: NSManagedObjectContext) -> [Self]
     static func create(context: NSManagedObjectContext) -> Self
 }

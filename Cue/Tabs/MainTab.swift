@@ -7,6 +7,7 @@
 
 import SwiftUI
 import ColorTokensKit
+import Model
 
 struct MainTab: View {
     
@@ -14,14 +15,23 @@ struct MainTab: View {
         case home
     }
     
+    private let store: Store
     @State private var selectedTab: Tabs = .home
+    
+    init(store: Store) {
+        self.store = store
+    }
     
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab(value: Tabs.home) {
-                ContentView()
+                TodayTabView(store: store)
                     .tabItem {
-                        Label("Reminder", systemImage: "calendar")
+                        Label {
+                            Text("Reminders")
+                        } icon: {
+                            Image(systemName: "calendar")
+                        }
                     }
             }
         }

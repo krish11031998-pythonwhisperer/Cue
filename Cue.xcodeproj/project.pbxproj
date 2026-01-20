@@ -10,6 +10,7 @@
 		EF079D902F1BFFC600986EF8 /* Model.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF079D8A2F1BFFC600986EF8 /* Model.framework */; };
 		EF079D912F1BFFC600986EF8 /* Model.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = EF079D8A2F1BFFC600986EF8 /* Model.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		EF079DFA2F1C304200986EF8 /* KKit in Frameworks */ = {isa = PBXBuildFile; productRef = EF079DF92F1C304200986EF8 /* KKit */; };
+		EF3225232F1EF04B0054901C /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = EF3225222F1EF04B0054901C /* AsyncAlgorithms */; };
 		EFA0BE6F2F1C3BDF00866D42 /* VanorUI in Frameworks */ = {isa = PBXBuildFile; productRef = EFA0BE6E2F1C3BDF00866D42 /* VanorUI */; };
 /* End PBXBuildFile section */
 
@@ -40,6 +41,7 @@
 /* Begin PBXFileReference section */
 		EF079D722F1BE5EC00986EF8 /* Cue.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cue.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EF079D8A2F1BFFC600986EF8 /* Model.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Model.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		EF3225912F1F1F050054901C /* vanor-ui-library */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vanor-ui-library"; path = "../Shipyard/vanor-ui-library"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -70,6 +72,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EF3225232F1EF04B0054901C /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -81,7 +84,9 @@
 			children = (
 				EF079D742F1BE5EC00986EF8 /* Cue */,
 				EF079D8B2F1BFFC600986EF8 /* Model */,
+				EF32251F2F1EF02B0054901C /* Frameworks */,
 				EF079D732F1BE5EC00986EF8 /* Products */,
+				EF3225912F1F1F050054901C /* vanor-ui-library */,
 			);
 			sourceTree = "<group>";
 		};
@@ -92,6 +97,13 @@
 				EF079D8A2F1BFFC600986EF8 /* Model.framework */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		EF32251F2F1EF02B0054901C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -151,6 +163,7 @@
 			);
 			name = Model;
 			packageProductDependencies = (
+				EF3225222F1EF04B0054901C /* AsyncAlgorithms */,
 			);
 			productName = Model;
 			productReference = EF079D8A2F1BFFC600986EF8 /* Model.framework */;
@@ -186,6 +199,7 @@
 			packageReferences = (
 				EF079DF82F1C304200986EF8 /* XCRemoteSwiftPackageReference "KKit-Swift-Package" */,
 				EFA0BE6D2F1C3BDF00866D42 /* XCRemoteSwiftPackageReference "vanor-ui-library" */,
+				EF32251C2F1EF0090054901C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EF079D732F1BE5EC00986EF8 /* Products */;
@@ -545,6 +559,14 @@
 				minimumVersion = 2.4.3;
 			};
 		};
+		EF32251C2F1EF0090054901C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.1;
+			};
+		};
 		EFA0BE6D2F1C3BDF00866D42 /* XCRemoteSwiftPackageReference "vanor-ui-library" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/krish11031998-pythonwhisperer/vanor-ui-library";
@@ -560,6 +582,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EF079DF82F1C304200986EF8 /* XCRemoteSwiftPackageReference "KKit-Swift-Package" */;
 			productName = KKit;
+		};
+		EF3225222F1EF04B0054901C /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EF32251C2F1EF0090054901C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
 		};
 		EFA0BE6E2F1C3BDF00866D42 /* VanorUI */ = {
 			isa = XCSwiftPackageProductDependency;

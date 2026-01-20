@@ -7,6 +7,7 @@
 
 import SwiftUI
 import VanorUI
+import Model
 
 @Observable
 class CreateReminderViewModel {
@@ -38,17 +39,18 @@ class CreateReminderViewModel {
         }
     }
     
-    struct Task {
-        let title: String
-    }
-    
+    let store: Store
     var reminderTitle: String = ""
     var snoozeDuration: Double = 15
     var date: Date = .now
     var timeDate: Date = .now
     var time: Time = .init(.now)
-    var tasks: [Task] = []
+    var tasks: [CueTask] = []
     var presentation: Presentation? = nil
+    
+    init(store: Store) {
+        self.store = store
+    }
     
     // MARK: - Helpers
     
@@ -85,7 +87,7 @@ class CreateReminderViewModel {
         var models: [ReminderTaskView.Model] = []
         for(index, task) in tasks.enumerated() {
             let viewType = ReminderTaskView.ViewType.displayOnly { [weak self] newTaskName in
-                self?.tasks[index] = .init(title: newTaskName)
+                self?.tasks[index] = .init(title: newTaskName, icon: "number.circle.fill")
             }
             
             let shape: ReminderTaskView.Shape = index == 0 ? .uneven(.init(topLeading: 16, bottomLeading: 8, bottomTrailing: 8, topTrailing: 16)) : index == tasks.count - 1 ? .uneven(.init(topLeading: 8, bottomLeading: 16, bottomTrailing: 16, topTrailing: 8)) : .roundedRect(8)
@@ -104,6 +106,13 @@ class CreateReminderViewModel {
     
     func addTask() {
         let count = tasks.count + 1
-        self.tasks.append(.init(title: "Task #\(count)"))
+        self.tasks.append(.init(title: "Task #\(count)", icon: "number.circle.fill"))
+    }
+    
+    func createReminder() {
+        store.createReminder(title: reminderTitle,
+                             iconName: "tag.circle",
+                             date: date,
+                             tasks: tasks)
     }
 }
