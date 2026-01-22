@@ -39,6 +39,7 @@ class CreateReminderViewModel {
         }
     }
     
+    @ObservationIgnored
     let store: Store
     var reminderTitle: String = ""
     var snoozeDuration: Double = 15
@@ -46,6 +47,8 @@ class CreateReminderViewModel {
     var timeDate: Date = .now
     var time: Time = .init(.now)
     var tasks: [CueTask] = []
+    var icon: SFSymbol = .bolt
+    var color: LCHColor = Color.proSky
     var presentation: Presentation? = nil
     
     init(store: Store) {

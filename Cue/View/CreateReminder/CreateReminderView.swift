@@ -8,8 +8,6 @@
 import SwiftUI
 import VanorUI
 import Model
-import SFSafeSymbols
-import ColorTokensKit
 
 struct CreateReminderView: View {
     
@@ -22,73 +20,55 @@ struct CreateReminderView: View {
     }
     
     var body: some View {
-        ScrollView(.vertical) {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                TextField("Create Reminder", text: $viewModel.reminderTitle, axis: .vertical)
-                    .font(.title)
-                    .fontWeight(.medium)
-                    .padding(.top, 16)
-                
-                OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 10) {
-                    ForEach(CreateReminderViewModel.Presentation.allCases) { presentation in
-                        ReminderButton(presentation: presentation,
-                                       buttonTitle: viewModel.buttonTitleForElement(presentation),
-                                       animation: animation) { presentation in
-                            self.viewModel.presentation = presentation
+        NavigationView {
+            ScrollView(.vertical) {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    CreateReminderTextView(selectedSymbol: $viewModel.icon,
+                                           reminderTitle: $viewModel.reminderTitle)
+                        .padding(.top, 16)
+                    
+                    OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 10) {
+                        ForEach(CreateReminderViewModel.Presentation.allCases) { presentation in
+                            ReminderButton(presentation: presentation,
+                                           buttonTitle: viewModel.buttonTitleForElement(presentation),
+                                           animation: animation) { presentation in
+                                self.viewModel.presentation = presentation
+                            }
                         }
                     }
-                }
-                .padding(.top, 12)
-                
-                Section {
-                    VStack(alignment: .leading, spacing: 2) {
-                        ForEach(viewModel.taskViewModels) { taskViewModel in
-                            ReminderTaskView(model: taskViewModel)
-                                .transition(.scale(scale: 1, anchor: .center))
-                        }
-                    }
-                    .padding(.top, 16)
-                } header: {
-                    HStack(alignment: .center, spacing: 8) {
-                        Text("Add Tasks")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Button {
-                            print("(DEBUG) AI tapped")
-                        } label: {
-                            Image(systemSymbol: .sparkles)
-                                .font(.subheadline)
-                        }
-                        .tint(Color.proSky.baseColor)
-                        .buttonStyle(.glassProminent)
-                    }
-                    .padding(.top, 32)
-                } footer: {
-                    Button {
-                        viewModel.addTask()
-                    } label: {
-                        Label {
-                            Text("Add")
-                        } icon: {
-                            Image(systemSymbol: .plus)
-                        }
-                        .font(.footnote)
-                        .fontWeight(.semibold)
-                    }
-                    .buttonStyle(.glass)
                     .padding(.top, 12)
+                    
+                    Section {
+                        VStack(alignment: .leading, spacing: 2) {
+                            ForEach(viewModel.taskViewModels) { taskViewModel in
+                                ReminderTaskView(model: taskViewModel)
+                                    .transition(.scale(scale: 1, anchor: .center))
+                            }
+                        }
+                        .padding(.top, 16)
+                    } header: {
+                        CreateReminderSectionHeaderView {
+                            print("(DEBUG) tapped on section HeaderView")
+                        }
+                        .padding(.top, 32)
+                    } footer: {
+                        CreateReminderSectionFooterView {
+                            viewModel.addTask()
+                        }
+                        .padding(.top, 12)
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(role: .confirm) {
+                        viewModel.createReminder()
+                        self.dismiss()
+                    }
+                    .tint(Color.proSky.baseColor)
                 }
             }
-            .padding(.horizontal, 20)
-        }
-        .safeAreaInset(edge: .bottom, alignment: .center, spacing: 8) {
-            Button(action: viewModel.createReminder) {
-                Text("Create Reminder")
-                    .font(.headline)
-            }
-            .tint(.proSky.baseColor)
-            .buttonStyle(.glassProminent)
         }
         .sheet(item: $viewModel.presentation) { sheet in
             Group {

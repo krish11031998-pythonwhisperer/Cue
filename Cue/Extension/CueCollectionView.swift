@@ -98,6 +98,7 @@ struct CollectionView: UIViewRepresentable {
     
     func makeUIView(context: Context) -> DiffableCollectionView {
         let collectionView = DiffableCollectionView(frame: .zero, collectionViewLayout: .init())
+        collectionView.backgroundColor = .clear
         return collectionView
     }
     
@@ -106,56 +107,3 @@ struct CollectionView: UIViewRepresentable {
     }
     
 }
-//
-//
-//
-//
-//fileprivate struct TestView: ConfigurableView {
-//    
-//    struct Model: Hashable {
-//        let index: Int
-//    }
-//    
-//    let model: Model
-//    
-//    init(model: Model) {
-//        self.model = model
-//    }
-//    
-//    var body: some View {
-//        Text("testCell \(model.index)")
-//            .padding(.init(top: 12, leading: 16, bottom: 12, trailing: 16))
-//            .frame(maxWidth: .infinity, alignment: .leading)
-//            .glassEffect(.regular, in: .roundedRect(cornerRadius: 12))
-//        
-//        ForEach(0..<10) { index in
-//            
-//        }
-//    }
-//    
-//    static var viewName: String { "TestView" }
-//}
-//
-//struct TestCollectionView: View {
-//    
-//    var body: some View {
-//        CollectionView {
-//            CueCollectionSection(id: 0, sectionLayout: .singleColumnLayout(width: .fractionalWidth(1), height: .estimated(54), insets: .section(.init(top: 8, leading: 10, bottom: 0, trailing: 10)))) {
-////                CollectionSectionBuilder { index in
-//                    DiffableCollectionItem<TestView>(.init(index: 0))
-//                    DiffableCollectionItem<TestView>(.init(index: 1))
-//                    DiffableCollectionItem<TestView>(.init(index: 2))
-//                    DiffableCollectionItem<TestView>(.init(index: 3))
-//                    DiffableCollectionItem<TestView>(.init(index: 4))
-//                    DiffableCollectionItem<TestView>(.init(index: 5))
-////                }
-//            }
-//        }
-//    }
-//    
-//}
-//
-//
-//#Preview {
-//    TestCollectionView()
-//}

@@ -14,24 +14,17 @@ import SFSafeSymbols
 
 @Observable
 class TodayViewModel {
+    var expandedReminder: Set<Reminder> = []
     
-    func sections(for reminders: [Reminder]) -> [DiffableCollectionSection] {
-        let cells = reminders.map { reminder in
-            DiffableCollectionItem<LogCellView>(.init(title: reminder.title,
-                                                      icon: .init(rawValue: reminder.iconName),
-                                                      theme: Color.proSky,
-                                                      time: reminder.date,
-                                                      state: .hasLogged(.init(hasLogged: false)),
-                                                      addEmotion: nil,
-                                                      deleteLog: nil))
+    func expandReminder(_ reminder: Reminder) {
+        if expandedReminder.contains(reminder) {
+            self.expandedReminder.remove(reminder)
+        } else {
+            self.expandedReminder.insert(reminder)
         }
-        
-        let layout = NSCollectionLayoutSection.singleColumnLayout(width: .fractionalWidth(1.0),
-                                                                  height: .estimated(54),
-                                                                  insets: .section(.init(top: 16, leading: 20, bottom: 16, trailing: 20)),
-                                                                  spacing: 8)
-        
-        return [.init(0, cells: cells, header: nil, footer: nil, decorationItem: nil, sectionLayout: layout)]
     }
     
+    func logReminder(_ reminder: Reminder) {
+        print("(DEBUG) tapped on logging Reminder!")
+    }
 }

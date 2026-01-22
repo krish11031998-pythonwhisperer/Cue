@@ -17,6 +17,7 @@ public class Store {
     }
     
     public init() {
+        self.reminders = Reminder.fetchAll(context: self.viewContext)
         observingTask()
     }
     
