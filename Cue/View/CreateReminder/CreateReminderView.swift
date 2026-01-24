@@ -14,6 +14,7 @@ struct CreateReminderView: View {
     @State private var viewModel: CreateReminderViewModel
     @Namespace private var animation
     @Environment(\.dismiss) var dismiss
+    @State private var imageFrame: CGRect = .zero
     
     init(store: Store) {
         self._viewModel = .init(initialValue: .init(store: store))
@@ -23,9 +24,30 @@ struct CreateReminderView: View {
         NavigationView {
             ScrollView(.vertical) {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    CreateReminderTextView(selectedSymbol: $viewModel.icon,
-                                           reminderTitle: $viewModel.reminderTitle)
-                        .padding(.top, 16)
+                    
+                    Button {
+                        viewModel.presentation = .symbolAndColor
+                    } label: {
+                        Image(systemSymbol: viewModel.icon)
+                            .resizable()
+                            .scaledToFit()
+                            .padding(.all, 12)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                            .glassEffect(.regular.tint(viewModel.color.baseColor), in: .circle)
+                    }
+                    .buttonStyle(.plain)
+                    .frame(width: 84, height: 84, alignment: .center)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.bottom, 32)
+                    .onGeometryChange(for: CGRect.self,
+                                      of: { $0.frame(in: .global) },
+                                      action: { imageFrame = $0 })
+                    
+                    TextField("Create Reminder",
+                              text: $viewModel.reminderTitle,
+                              axis: .vertical)
+                    .font(.title)
+                    .fontWeight(.medium)
                     
                     OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 10) {
                         ForEach(CreateReminderViewModel.Presentation.allCases) { presentation in
@@ -80,17 +102,35 @@ struct CreateReminderView: View {
                     }
                     .datePickerStyle(.wheel)
                     .padding(.horizontal, 20)
+                    .fittedPresentationDetent()
                 case .duration:
                     SnoozeTimerSheet(timeDuration: $viewModel.snoozeDuration)
+                        .fittedPresentationDetent()
                 case .date:
                     DatePicker("Select Date",
                                selection: $viewModel.date,
                                displayedComponents: [.date])
                     .datePickerStyle(.graphical)
+                    .fittedPresentationDetent()
+                case .symbolAndColor:
+                    SymbolSheet(selectedIcon: $viewModel.icon,
+                                color: $viewModel.color)
+                    .presentationDetents([.fraction(0.5), .height(.totalHeight - imageFrame.maxY)])
+                    .presentationDragIndicator(.automatic)
+                    .presentationBackground(.clear)
                 }
             }
-            .fittedPresentationDetent()
             .navigationTransition(.zoom(sourceID: sheet, in: animation))
+        }
+        .fullScreenCover(item: $viewModel.fullScreenPresentation) { fullScreenPresentation in
+            switch fullScreenPresentation {
+            case .symbolSheet:
+                EmojiSelectorView(color: viewModel.color, topPadding: 0) { [weak viewModel] symbol in
+                    viewModel?.fullScreenPresentation = nil
+                    viewModel?.icon = symbol
+                }
+                .ignoresSafeArea(edges: .vertical)
+            }
         }
     }
     
@@ -132,6 +172,8 @@ struct CreateReminderView: View {
                 return .zzz
             case .date:
                 return .calendar
+            case .symbolAndColor:
+                fatalError("\(presentation.rawValue) has no symbol")
             }
         }
         

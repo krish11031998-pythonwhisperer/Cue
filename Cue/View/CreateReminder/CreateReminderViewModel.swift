@@ -12,10 +12,19 @@ import Model
 @Observable
 class CreateReminderViewModel {
     
-    enum Presentation: String, Identifiable, CaseIterable {
+    enum Presentation: String, Identifiable {
         case alarmAt = "Alarm At"
         case duration = "Duration"
         case date = "Date"
+        case symbolAndColor = "Symbol And Color"
+        
+        var id: String { self.rawValue }
+        
+        static var allCases: [Presentation] { [.alarmAt, .duration, .date] }
+    }
+    
+    enum FullScreenPresentation: String, Identifiable, CaseIterable {
+        case symbolSheet = "symbolSheet"
         
         var id: String { self.rawValue }
     }
@@ -48,11 +57,16 @@ class CreateReminderViewModel {
     var time: Time = .init(.now)
     var tasks: [CueTask] = []
     var icon: SFSymbol = .bolt
-    var color: LCHColor = Color.proSky
+    var color: Color = (Color.proSky.baseColor)
     var presentation: Presentation? = nil
+    var fullScreenPresentation: FullScreenPresentation? = nil
     
     init(store: Store) {
         self.store = store
+    }
+    
+    var theme: LCHColor {
+        .init(color: color)
     }
     
     // MARK: - Helpers
@@ -83,6 +97,8 @@ class CreateReminderViewModel {
             durationString
         case .date:
             dateString
+        case .symbolAndColor:
+            fatalError("No Button with title for \(presentation.rawValue)")
         }
     }
     

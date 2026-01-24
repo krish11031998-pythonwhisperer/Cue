@@ -15,19 +15,19 @@ struct CreateReminderTextView: View {
     
     @Binding var selectedSymbol: SFSymbol
     @Binding var reminderTitle: String
+    var presentSheet: () -> Void
     
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            Button {
-            } label: {
+            Button(action: presentSheet) {
                 Image(systemSymbol: selectedSymbol)
-                    .font(.headline)
-//                    .frame(maxWidth: .infinity, alignment: .center)
-//                    .aspectRatio(1, contentMode: .fit)
-                    .frame(width: 54, height: 54, alignment: .center)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
             }
             .tint(Color.proSky.baseColor)
             .buttonStyle(.glassProminent)
+            .aspectRatio(1, contentMode: .fit)
+            .frame(width: 54)
             
             TextField("Create Reminder",
                       text: $reminderTitle,
