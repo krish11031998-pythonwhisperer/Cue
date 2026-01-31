@@ -2,7 +2,8 @@
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24512" systemVersion="25B78" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
     <entity name="Reminder" representedClassName=".Reminder" syncable="YES">
         <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="iconName" optional="YES" attributeType="String"/>
+        <attribute name="icon" optional="YES" attributeType="Transformable" valueTransformerName="CueIconTransformer" customClassName="CueIcon"/>
+        <attribute name="schedule" optional="YES" attributeType="Transformable" valueTransformerName="CueReminderScheduleTransformer" customClassName="CueReminderSchedule"/>
         <attribute name="tasksContainer" optional="YES" attributeType="Transformable" valueTransformerName="CueTaskTransformer" customClassName="CueTaskContainer"/>
         <attribute name="title" optional="YES" attributeType="String"/>
     </entity>

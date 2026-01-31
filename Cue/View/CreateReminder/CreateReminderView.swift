@@ -8,6 +8,7 @@
 import SwiftUI
 import VanorUI
 import Model
+internal import EmojiKit
 
 struct CreateReminderView: View {
     
@@ -24,19 +25,12 @@ struct CreateReminderView: View {
         NavigationView {
             ScrollView(.vertical) {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    
-                    Button {
+                    CreateReminderImageButton(color: viewModel.color,
+                                              icon: viewModel.icon) {
                         viewModel.presentation = .symbolAndColor
-                    } label: {
-                        Image(systemSymbol: viewModel.icon)
-                            .resizable()
-                            .scaledToFit()
-                            .padding(.all, 12)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                            .glassEffect(.regular.tint(viewModel.color.baseColor), in: .circle)
                     }
-                    .buttonStyle(.plain)
-                    .frame(width: 84, height: 84, alignment: .center)
+                    .aspectRatio(1, contentMode: .fit)
+                    .frame(width: 108, alignment: .center)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.bottom, 32)
                     .onGeometryChange(for: CGRect.self,
@@ -46,11 +40,11 @@ struct CreateReminderView: View {
                     TextField("Create Reminder",
                               text: $viewModel.reminderTitle,
                               axis: .vertical)
-                    .font(.title)
+                    .font(.title3)
                     .fontWeight(.medium)
                     
                     OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 10) {
-                        ForEach(CreateReminderViewModel.Presentation.allCases) { presentation in
+                        ForEach(CreateReminderViewModel.ReminderCalendarPresentation.allCases) { presentation in
                             ReminderButton(presentation: presentation,
                                            buttonTitle: viewModel.buttonTitleForElement(presentation),
                                            animation: animation) { presentation in
@@ -60,25 +54,19 @@ struct CreateReminderView: View {
                     }
                     .padding(.top, 12)
                     
-                    Section {
-                        VStack(alignment: .leading, spacing: 2) {
-                            ForEach(viewModel.taskViewModels) { taskViewModel in
-                                ReminderTaskView(model: taskViewModel)
-                                    .transition(.scale(scale: 1, anchor: .center))
-                            }
+                    CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions, isLoadingSuggestions: viewModel.isLoadingSuggestions,
+                                            taskViewModels: viewModel.taskViewModels) { taskName in
+                        withAnimation(.easeInOut) {
+                            viewModel.addTask(title: taskName)
                         }
-                        .padding(.top, 16)
-                    } header: {
-                        CreateReminderSectionHeaderView {
-                            print("(DEBUG) tapped on section HeaderView")
-                        }
-                        .padding(.top, 32)
-                    } footer: {
-                        CreateReminderSectionFooterView {
-                            viewModel.addTask()
-                        }
-                        .padding(.top, 12)
+                    } deleteTask: { _ in
+                        print("(DEBUG) tapped on delete")
+                    } generateTasks: {
+                        viewModel.suggestionSubtasks()
                     }
+                    .padding(.top, 32)
+                    .animation(.default, value: viewModel.taskViewModels)
+
                 }
                 .padding(.horizontal, 20)
             }
@@ -89,6 +77,7 @@ struct CreateReminderView: View {
                         self.dismiss()
                     }
                     .tint(Color.proSky.baseColor)
+                    .disabled(!viewModel.canCreateReminder)
                 }
             }
         }
@@ -96,28 +85,26 @@ struct CreateReminderView: View {
             Group {
                 switch sheet {
                 case .alarmAt:
-                    DatePicker(selection: $viewModel.timeDate, displayedComponents: [.hourAndMinute]) {
-                        Color.clear
-                            .frame(width: 0, height: 0)
-                    }
-                    .datePickerStyle(.wheel)
-                    .padding(.horizontal, 20)
+                    DatePickerView(date: $viewModel.timeDate, viewType: .time("Reminder me at", .alarmFill))
                     .fittedPresentationDetent()
                 case .duration:
-                    SnoozeTimerSheet(timeDuration: $viewModel.snoozeDuration)
+                    TimerSheetView(timeDuration: $viewModel.snoozeDuration, title: "Snooze Duration", bound: .hour)
                         .fittedPresentationDetent()
                 case .date:
-                    DatePicker("Select Date",
-                               selection: $viewModel.date,
-                               displayedComponents: [.date])
-                    .datePickerStyle(.graphical)
+                    DatePickerView(date: $viewModel.date, viewType: .date("Reminder Start Date", .calendar))
                     .fittedPresentationDetent()
+                case .repeat:
+                    ReminderWeekPlannerView {
+                        viewModel.scheduleBuilder = $0
+                    }
+                        .fittedPresentationDetent()
                 case .symbolAndColor:
                     SymbolSheet(selectedIcon: $viewModel.icon,
                                 color: $viewModel.color)
                     .presentationDetents([.fraction(0.5), .height(.totalHeight - imageFrame.maxY)])
                     .presentationDragIndicator(.automatic)
                     .presentationBackground(.clear)
+                    .presentationContentInteraction(.resizes)
                 }
             }
             .navigationTransition(.zoom(sourceID: sheet, in: animation))
@@ -125,7 +112,7 @@ struct CreateReminderView: View {
         .fullScreenCover(item: $viewModel.fullScreenPresentation) { fullScreenPresentation in
             switch fullScreenPresentation {
             case .symbolSheet:
-                EmojiSelectorView(color: viewModel.color, topPadding: 0) { [weak viewModel] symbol in
+                SymbolSelectorView(color: viewModel.color, topPadding: 0, searchText: "") { [weak viewModel] symbol in
                     viewModel?.fullScreenPresentation = nil
                     viewModel?.icon = symbol
                 }
@@ -139,10 +126,10 @@ struct CreateReminderView: View {
     
     struct ReminderButton: View {
         
-        let presentation: CreateReminderViewModel.Presentation
+        let presentation: CreateReminderViewModel.ReminderCalendarPresentation
         let buttonTitle: String
         var animation: Namespace.ID
-        let action: (CreateReminderViewModel.Presentation) -> Void
+        let action: (CreateReminderViewModel.ReminderCalendarPresentation) -> Void
         
         var body: some View {
             Button {
@@ -155,8 +142,10 @@ struct CreateReminderView: View {
                 }
                 .font(.subheadline)
                 .fontWeight(.semibold)
+                .padding(.init(top: 6, leading: 8, bottom: 6, trailing: 8))
+                .background(Color.backgroundSecondary, in: .capsule)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(.plain)
             .matchedTransitionSource(id: presentation,
                                      in: animation)
         }
@@ -172,8 +161,67 @@ struct CreateReminderView: View {
                 return .zzz
             case .date:
                 return .calendar
+            case .repeat:
+                return .arrow2Squarepath
             case .symbolAndColor:
                 fatalError("\(presentation.rawValue) has no symbol")
+            }
+        }
+    }
+    
+    
+    // MARK: - DatePickerView
+    
+    struct DatePickerView: View {
+        enum ViewType {
+            case time(String, SFSymbol)
+            case date(String, SFSymbol)
+            
+            var title: String {
+                switch self {
+                case .time(let string, _):
+                    return string
+                case .date(let string, _):
+                    return string
+                }
+            }
+            
+            var symbol: SFSymbol {
+                switch self {
+                case .time(_, let sFSymbol):
+                    return sFSymbol
+                case .date(_, let sFSymbol):
+                    return sFSymbol
+                }
+            }
+        }
+        
+        @Binding var date: Date
+        let viewType: ViewType
+        
+        var body: some View {
+            VStack(alignment: .center, spacing: 16) {
+                Label(viewType.title, systemSymbol: viewType.symbol)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 32)
+                
+                Group {
+                    switch viewType {
+                    case .time:
+                        DatePicker(selection: $date, displayedComponents: [.hourAndMinute]) {
+                            Text("DatePicker")
+                        }
+                        .datePickerStyle(.wheel)
+                    case .date:
+                        DatePicker(selection: $date, displayedComponents: [.date]) {
+                            Text("DatePicker")
+                        }
+                        .datePickerStyle(.graphical)
+                    }
+                }
+                .labelsHidden()
             }
         }
         

@@ -12,15 +12,16 @@ import Model
 @Observable
 class CreateReminderViewModel {
     
-    enum Presentation: String, Identifiable {
+    enum ReminderCalendarPresentation: String, Identifiable {
         case alarmAt = "Alarm At"
         case duration = "Duration"
         case date = "Date"
+        case `repeat` = "Repeat"
         case symbolAndColor = "Symbol And Color"
         
         var id: String { self.rawValue }
         
-        static var allCases: [Presentation] { [.alarmAt, .duration, .date] }
+        static var allCases: [ReminderCalendarPresentation] { [.alarmAt, .duration, .date, .repeat] }
     }
     
     enum FullScreenPresentation: String, Identifiable, CaseIterable {
@@ -50,15 +51,21 @@ class CreateReminderViewModel {
     
     @ObservationIgnored
     let store: Store
+    @ObservationIgnored
+    let reminderSubtasksSession: ReminderSubtaskSession = .init()
+    @ObservationIgnored
+    var suggestionTask: Task<Void, Never>?
+    
     var reminderTitle: String = ""
     var snoozeDuration: Double = 15
     var date: Date = .now
     var timeDate: Date = .now
-    var time: Time = .init(.now)
     var tasks: [CueTask] = []
-    var icon: SFSymbol = .bolt
+    var scheduleBuilder: Reminder.ScheduleBuilder = .init(.now)
+    var icon: Icon = .symbol(SFSymbol.allSymbols.randomElement()!)
     var color: Color = (Color.proSky.baseColor)
-    var presentation: Presentation? = nil
+    var isLoadingSuggestions: Bool = false
+    var presentation: ReminderCalendarPresentation? = nil
     var fullScreenPresentation: FullScreenPresentation? = nil
     
     init(store: Store) {
@@ -71,14 +78,38 @@ class CreateReminderViewModel {
     
     // MARK: - Helpers
     
+    var canCreateReminder: Bool {
+        !self.reminderTitle.isEmpty
+    }
+    
+    var canLoadSuggestions: Bool {
+        !self.reminderTitle.isEmpty
+    }
+    
     var durationString: String {
         String.formattedTimelineInterval(snoozeDuration)
+    }
+    
+    var scheduleString: String {
+        guard (scheduleBuilder.intervalWeek == nil && scheduleBuilder.weekdays == nil) || scheduleBuilder.dates == nil else { return "No Repeat"}
+        if let datesInMonths = scheduleBuilder.dates {
+            let dates = datesInMonths.sorted().reduce("", { $0.isEmpty ? "\($1)." : "\($0), \($1)."})
+            return "\(dates) every month"
+        } else if let weekdays = scheduleBuilder.weekdays {
+            let weekdaysString = weekdays.sorted().reduce("", {
+                let weekdaySymbol = Calendar.current.veryShortStandaloneWeekdaySymbols[$1]
+                return $0.isEmpty ? "\(weekdaySymbol)" : "\($0), \(weekdaySymbol)"
+            })
+            return "\(weekdaysString) every \(scheduleBuilder.intervalWeek == nil ? "week" : "\(scheduleBuilder.intervalWeek!) weeks")"
+        } else {
+            return "No Repeat"
+        }
     }
     
     var dateString: String {
         if date.startOfDay == Date.now.startOfDay {
             return "Today"
-        } else if date == Date.now.tomorrow {
+        } else if date.startOfDay == Date.now.tomorrow.startOfDay {
             return "Tomorrow"
         } else {
             return date.dateStringFormatter()
@@ -89,7 +120,7 @@ class CreateReminderViewModel {
         timeDate.timeBuilder()
     }
     
-    func buttonTitleForElement(_ presentation: Presentation) -> String {
+    func buttonTitleForElement(_ presentation: ReminderCalendarPresentation) -> String {
         switch presentation {
         case .alarmAt:
             timeString
@@ -97,6 +128,8 @@ class CreateReminderViewModel {
             durationString
         case .date:
             dateString
+        case .repeat:
+            scheduleString
         case .symbolAndColor:
             fatalError("No Button with title for \(presentation.rawValue)")
         }
@@ -104,16 +137,35 @@ class CreateReminderViewModel {
     
     var taskViewModels: [ReminderTaskView.Model] {
         var models: [ReminderTaskView.Model] = []
+        
+        let edit: (Int) -> ((String) -> Void) = { [weak self] index in
+            { [weak self] newTaskName in
+                self?.tasks[index] = .init(title: newTaskName, icon: .symbol("number.circle.fill"))
+            }
+        }
+
+        let delete: (Int) -> (() -> Void) = { [weak self] index in
+            { [weak self] in
+                self?.tasks.remove(at: index)
+            }
+        }
+
         for(index, task) in tasks.enumerated() {
-            let viewType = ReminderTaskView.ViewType.displayOnly { [weak self] newTaskName in
-                self?.tasks[index] = .init(title: newTaskName, icon: "number.circle.fill")
+            let viewType = ReminderTaskView.ViewType.displayOnly(edit(index), delete(index))
+            
+            let icon: Icon
+            switch task.icon {
+            case .emoji(let emoji):
+                icon = .emoji(.init(emoji))
+            case .symbol(let symbol):
+                icon = .symbol(.init(rawValue: symbol))
+            default:
+                icon = .symbol(.exclamationmark)
             }
             
-            let shape: ReminderTaskView.Shape = index == 0 ? .uneven(.init(topLeading: 16, bottomLeading: 8, bottomTrailing: 8, topTrailing: 16)) : index == tasks.count - 1 ? .uneven(.init(topLeading: 8, bottomLeading: 16, bottomTrailing: 16, topTrailing: 8)) : .roundedRect(8)
-            
             let model = ReminderTaskView.Model(taskTitle: task.title,
+                                               icon: icon,
                                                viewType: viewType,
-                                               shape: shape,
                                                action: nil)
             models.append(model)
         }
@@ -123,15 +175,44 @@ class CreateReminderViewModel {
     
     // MARK: - Methods
     
-    func addTask() {
-        let count = tasks.count + 1
-        self.tasks.append(.init(title: "Task #\(count)", icon: "number.circle.fill"))
+    func updateScheduleBuilder(_ scheduleBuilder: Reminder.ScheduleBuilder) {
+        self.scheduleBuilder.intervalWeek = scheduleBuilder.intervalWeek
+        self.scheduleBuilder.weekdays = scheduleBuilder.weekdays
+        self.scheduleBuilder.dates = scheduleBuilder.dates
+    }
+    
+    func addTask(title: String) {
+        self.tasks.append(.init(title: title, icon: .symbol("number.circle.fill")))
     }
     
     func createReminder() {
-        store.createReminder(title: reminderTitle,
-                             iconName: "tag.circle",
-                             date: date,
-                             tasks: tasks)
+        scheduleBuilder.hour = timeDate.hours
+        scheduleBuilder.minute = timeDate.minutes
+        switch icon {
+        case .emoji(let emoji):
+            store.createReminder(title: reminderTitle, emoji: emoji.char, date: date, scheduleBuilder: scheduleBuilder, tasks: tasks)
+        case .symbol(let symbol):
+            store.createReminder(title: reminderTitle, symbol: symbol.rawValue, date: date, scheduleBuilder: scheduleBuilder, tasks: tasks)
+        }
     }
+    
+    func suggestionSubtasks() {
+        suggestionTask?.cancel()
+        isLoadingSuggestions = true
+        suggestionTask = Task { [weak self] in
+            guard let reminderTitle = self?.reminderTitle else { return }
+            let suggestions = await self?.reminderSubtasksSession.suggestionTasks(for: reminderTitle)
+            let tasks: [CueTask]? = suggestions?.subTasks.map { suggestion in
+                    .init(title: suggestion.title, icon: .emoji(suggestion.icon ))
+            }
+            
+            await MainActor.run { [weak self] in
+                if let tasks, !Task.isCancelled {
+                    self?.tasks = tasks
+                }
+                self?.isLoadingSuggestions = false
+            }
+        }
+    }
+    
 }

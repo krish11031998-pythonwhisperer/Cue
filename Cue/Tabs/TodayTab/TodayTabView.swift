@@ -9,9 +9,13 @@ import Foundation
 import SwiftUI
 import Model
 import VanorUI
-import SFSafeSymbols
-import ColorTokensKit
-import KKit
+internal import EmojiKit
+
+extension CalendarDay: @retroactive CalendarDateCarouselDataElement, @retroactive Identifiable {
+    public var id: Int {
+        date.hashValue
+    }
+}
 
 struct TodayTabView: View {
     
@@ -24,6 +28,11 @@ struct TodayTabView: View {
     let store: Store
     @State private var presentation: Presentation? = nil
     @State private var viewModel: TodayViewModel = .init()
+    @State private var topPadding: CGFloat = .zero
+    
+    init(store: Store) {
+        self.store = store
+    }
     
     var body: some View {
         NavigationView {
@@ -32,18 +41,30 @@ struct TodayTabView: View {
                 if store.reminders.isEmpty {
                     ContentUnavailableView("No Reminders", systemImage: "bell.fill", description: descriptionText)
                         .font(.headline)
-                } else {
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 0) {
-                            TimeCompactSwiftUIView(model: .init(elements: []))
-                                .padding(.bottom, 32)
-                            ForEach(store.reminders.indices, id: \.self) { index in
-                                let reminder = store.reminders[index]
-                                reminderBuilder(reminder)
-                                    .padding(.bottom, 8)
-                            }
+                } else if let today = viewModel.today {
+                    TabView(selection: $viewModel.today) {
+                        ForEach(viewModel.calendarDay, id: \.date) { calendarDay in
+                            CalendarDayView(store: store, calendarDay: calendarDay)
+                                .tag(calendarDay)
+                                .environment(\.timeCompactViewTopPadding, topPadding)
                         }
-                        .padding(.horizontal, 20)
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .indexViewStyle(.page(backgroundDisplayMode: .never))
+                    .safeAreaBar(edge: .top, alignment: .center, spacing: 0, content: {
+                        CalendarDateCarousel(dateElements: viewModel.calendarDay, selectedDate: today)
+                            .background { Color.clear }
+                            .scrollIndicators(.hidden)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
+                                self.topPadding = newValue.height
+                            }
+                    })
+                    .overlay(alignment: .top) {
+//                        DateView(todayModel: DateView.Model(date: today.date, reminderCompleted: 2, reminderTotal: 5),
+//                                 calendarModels: viewModel.calendarDay.map({ .init(date: $0.date, reminderCompleted: 3, reminderTotal: 5) }))
+//                            .animation(.easeInOut, value: viewModel.today?.date)
+                        
                     }
                 }
             }
@@ -55,9 +76,11 @@ struct TodayTabView: View {
                         Image(systemSymbol: .plus)
                             .font(.body)
                     }
-
                 }
             }
+        }
+        .task(id: store.reminders) {
+            viewModel.setupCalendarForOneMonth(reminders: store.reminders)
         }
         .sheet(item: $presentation) { presentation in
             switch presentation {
@@ -75,26 +98,5 @@ struct TodayTabView: View {
         Text("Add Reminders to start organizing your day.")
             .font(.caption)
             .foregroundColor(.foregroundSecondary)
-    }
-    
-    @ViewBuilder
-    private func reminderBuilder(_ reminder: Reminder) -> some View {
-        let tasks: [ReminderView.TaskModel] = reminder.tasksContainer.tasks.map { .init(title: $0.title, iconName: $0.icon) }
-        let isExpanded = !tasks.isEmpty && viewModel.expandedReminder.contains(reminder)
-        let model: ReminderView.Model = .init(title: reminder.title,
-                                              icon: .init(rawValue: reminder.iconName),
-                                              theme: Color.proSky,
-                                              time: reminder.date,
-                                              state: .hasLogged(.init(hasLogged: false)),
-                                              showTask: isExpanded,
-                                              tasks: tasks) { [weak viewModel] in
-            viewModel?.logReminder(reminder)
-        } expandReminder: { [weak viewModel] in
-            withAnimation(.snappy) {
-                viewModel?.expandReminder(reminder)
-            }
-        }
-        
-        ReminderView(model: model)
     }
 }

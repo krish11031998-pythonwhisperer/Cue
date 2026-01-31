@@ -6,25 +6,31 @@
 //
 
 import Model
-import KKit
 import VanorUI
-import ColorTokensKit
 import SwiftUI
-import SFSafeSymbols
 
 @Observable
 class TodayViewModel {
-    var expandedReminder: Set<Reminder> = []
     
-    func expandReminder(_ reminder: Reminder) {
-        if expandedReminder.contains(reminder) {
-            self.expandedReminder.remove(reminder)
-        } else {
-            self.expandedReminder.insert(reminder)
+    var calendarDay: [CalendarDay] = []
+    var today: CalendarDay? = nil
+    
+    func setupCalendarForOneMonth(reminders: [Reminder]) {
+        guard !reminders.isEmpty else { return }
+        if !calendarDay.isEmpty {
+            calendarDay.removeAll()
+        }
+        for i in -14...13 {
+            let date = Calendar.current.date(byAdding: .day, value: i, to: .now)?.startOfDay
+            if let date {
+                let calendarDay = CalendarDay(date: date, reminders: reminders)
+                print("(DEBUG) calendarDay: \(calendarDay.date) - reminders: \(calendarDay.reminders.map(\.title))")
+                self.calendarDay.append(calendarDay)
+                if date == Date.now.startOfDay {
+                    self.today = calendarDay
+                }
+            }
         }
     }
     
-    func logReminder(_ reminder: Reminder) {
-        print("(DEBUG) tapped on logging Reminder!")
-    }
 }

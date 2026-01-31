@@ -1,5 +1,5 @@
 //
-//  SnoozeTimerSheet.swift
+//  TimerSheetView.swift
 //  Cue
 //
 //  Created by Krishna Venkatramani on 18/01/2026.
@@ -8,29 +8,54 @@
 import SwiftUI
 import VanorUI
 
-struct SnoozeTimerSheet: View {
+struct TimerSheetView: View {
+    
+    enum Bound {
+        case day
+        case hour
+        
+        var step: TimeInterval {
+            switch self {
+            case .day:
+                return 24 * 60 * 60
+            case .hour:
+                return 60
+            }
+        }
+    }
     
     @Binding var timeDuration: TimeInterval
+    private let title: String
+    private let bound: Bound
     private let startingProgress: CGFloat
     
-    init(timeDuration: Binding<TimeInterval>) {
+    init(timeDuration: Binding<TimeInterval>, title: String, bound: Bound) {
         self._timeDuration = timeDuration
-        self.startingProgress = timeDuration.wrappedValue / (24 * 60)
+        self.title = title
+        self.bound = bound
+        self.startingProgress = timeDuration.wrappedValue / bound.step
     }
     
     var body: some View {
         VStack(alignment: .center, spacing: 16) {
-            Text("Snooze Duration")
+            Label("Snooze Duration", systemSymbol: .zzz)
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
             
-            Text(String.formattedTimelineInterval(timeDuration))
-                .font(.title)
-                .fontWeight(.semibold)
-                .contentTransition(.numericText(value: timeDuration))
-                .animation(.easeInOut, value: timeDuration)
-                .padding(.bottom, 24)
+            Group {
+                switch bound {
+                case .day:
+                    Text(String.formatttedTimeIntervalToDate(timeDuration))
+                case .hour:
+                    Text(String.formattedTimelineInterval(timeDuration))
+                }
+            }
+            .font(.title)
+            .fontWeight(.semibold)
+            .contentTransition(.numericText(value: timeDuration))
+            .animation(.easeInOut, value: timeDuration)
+            .padding(.bottom, 24)
             
             InteractiveSwiftUIView(progress: startingProgress) { progress in
                 computeTime(progress: progress)
@@ -44,13 +69,12 @@ struct SnoozeTimerSheet: View {
     // MARK: - Compute Time
     
     private func computeTime(progress: CGFloat) {
-        let timeInDay: TimeInterval = 24 * 60
+        let timeInDay: TimeInterval = bound.step
         let time = progress * timeInDay
         self.timeDuration = time.rounded(.up)
     }
     
     private var durationString: String {
-        
         var result: String = ""
         let formatter = MeasurementFormatter()
         formatter.unitOptions = .providedUnit
@@ -72,5 +96,7 @@ struct SnoozeTimerSheet: View {
 
 #Preview {
     @Previewable @State var time: TimeInterval = 15
-    SnoozeTimerSheet(timeDuration: $time)
+    @Previewable @State var timeDay: TimeInterval = Date.now.timeIntervalSince(Date.now.startOfDay)
+    TimerSheetView(timeDuration: $timeDay, title: "Day", bound: .day)
+    TimerSheetView(timeDuration: $time, title: "Snoozing Duaration", bound: .hour)
 }
