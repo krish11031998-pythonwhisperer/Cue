@@ -60,12 +60,6 @@ struct TodayTabView: View {
                                 self.topPadding = newValue.height
                             }
                     })
-                    .overlay(alignment: .top) {
-//                        DateView(todayModel: DateView.Model(date: today.date, reminderCompleted: 2, reminderTotal: 5),
-//                                 calendarModels: viewModel.calendarDay.map({ .init(date: $0.date, reminderCompleted: 3, reminderTotal: 5) }))
-//                            .animation(.easeInOut, value: viewModel.today?.date)
-                        
-                    }
                 }
             }
             .toolbar {

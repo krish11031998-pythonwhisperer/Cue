@@ -97,7 +97,7 @@ class CreateReminderViewModel {
             return "\(dates) every month"
         } else if let weekdays = scheduleBuilder.weekdays {
             let weekdaysString = weekdays.sorted().reduce("", {
-                let weekdaySymbol = Calendar.current.veryShortStandaloneWeekdaySymbols[$1]
+                let weekdaySymbol = Calendar.current.veryShortStandaloneWeekdaySymbols[$1 - 1]
                 return $0.isEmpty ? "\(weekdaySymbol)" : "\($0), \(weekdaySymbol)"
             })
             return "\(weekdaysString) every \(scheduleBuilder.intervalWeek == nil ? "week" : "\(scheduleBuilder.intervalWeek!) weeks")"

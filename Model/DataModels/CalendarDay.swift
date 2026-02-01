@@ -22,7 +22,7 @@ public class CalendarDay: Hashable {
         self.reminders = reminders.filter { reminder in
             
             let startDate = reminder.date!
-            guard let schedule = reminder.schedule else {
+            guard let schedule = reminder.schedule, date.startOfDay >= startDate.startOfDay else {
                 return false
             }
             

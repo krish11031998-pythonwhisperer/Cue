@@ -33,34 +33,53 @@ public struct CalendarDayView: View {
     }
     
     private let store: Store
+    private let calendarDay: CalendarDay
     @State private var presentation: Presentation? = nil
     @State private var viewModel: CalendarDayViewModel
     @Environment(\.timeCompactViewTopPadding) var topPadding
+    
     init (store: Store, calendarDay: CalendarDay) {
+        self._viewModel = .init(initialValue: .init(store: store))
         self.store = store
-        self._viewModel = .init(initialValue: .init(calendarDay: calendarDay))
+        self.calendarDay = calendarDay
     }
     
+    var date: Date {
+        calendarDay.date
+    }
     
     public var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                DateView(todayModel: .init(date: viewModel.calendarDay.date, reminderCompleted: .random(in: 1...5), reminderTotal: 5))
+                DateView(todayModel: .init(date: date, reminderCompleted: .random(in: 1...5), reminderTotal: 5))
                     .padding(.bottom, 32)
-                if viewModel.calendarDay.reminders.isEmpty {
-                    ContentUnavailableView("You have no scheduled Reminders or Habits for today.",
-                                           systemSymbol: .squareSlash)
-                        .font(.headline)
-                } else {
-                    ForEach(viewModel.calendarDay.reminders.indices, id: \.self) { index in
-                        let reminder = viewModel.calendarDay.reminders[index]
-                        reminderBuilder(reminder)
-                            .padding(.bottom, 8)
+                if !calendarDay.reminders.isEmpty {
+                    ForEach(viewModel.sections(calendarDay: calendarDay)) { section in
+                        Section {
+                            ForEach(section.reminders) { model in
+                                ReminderView(model: model)
+                                    .padding(.bottom, 8)
+                            }
+                        } header: {
+                            SectionHeader(section: section.timeOfDay)
+                                .padding(.bottom, 8)
+                        }
+                        .padding(.bottom, 12)
                     }
                 }
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
+        }
+        .background(alignment: .center) {
+            if calendarDay.reminders.isEmpty {
+                ContentUnavailableView("You have no scheduled Reminders or Habits for today.",
+                                       systemSymbol: .squareSlash)
+                    .font(.headline)
+            }
+        }
+        .onChange(of: calendarDay) { oldValue, newValue in
+            self.viewModel.calendarDay = newValue
         }
     }
     
@@ -72,44 +91,18 @@ public struct CalendarDayView: View {
     }
     
     
-    private func reminderBuilder(_ reminder: Reminder) -> some View {
-        let tasks: [ReminderView.TaskModel] = reminder.tasksContainer.tasks.map {
-            let icon: Icon
-            switch $0.icon {
-            case .emoji(let emoji):
-                icon = .emoji(.init(emoji))
-            case .symbol(let symbol):
-                icon = .symbol(.init(rawValue: symbol))
-            default:
-                icon = .symbol(.circle)
-            }
-            return .init(title: $0.title, icon: icon)
-        }
-        let isExpanded = !tasks.isEmpty && viewModel.expandedReminder.contains(reminder)
+    // MARK: - SectionHeader
+    
+    #warning("Move this to VanorUI")
+    struct SectionHeader: View {
         
-        let icon: VanorUI.Icon
-        if let symbol = reminder.icon.symbol {
-            icon = .symbol(.init(rawValue: symbol))
-        } else if let emoji = reminder.icon.emoji {
-            icon = .emoji(.init(emoji))
-        } else {
-            icon = .symbol(.circle)
-        }
+        let section: CalendarDayViewModel.TimeOfDay
         
-        let model: ReminderView.Model = .init(title: reminder.title,
-                                              icon: icon,
-                                              theme: Color.proSky,
-                                              time: reminder.date,
-                                              state: .hasLogged(.init(hasLogged: false)),
-                                              showTask: isExpanded,
-                                              tasks: tasks) { [weak viewModel] in
-            viewModel?.logReminder(reminder)
-        } expandReminder: { [weak viewModel] in
-            withAnimation(.snappy) {
-                viewModel?.expandReminder(reminder)
-            }
+        var body: some View {
+            Label(section.title, systemSymbol: section.symbol)
+                .font(.caption)
+                .padding(.init(top: 4, leading: 8, bottom: 4, trailing: 8))
+                .background(section.color.surfacePrimary, in: .capsule)
         }
-        
-        return ReminderView(model: model)
     }
 }

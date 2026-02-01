@@ -10,9 +10,10 @@ import CoreData
 internal protocol CoreDataEntity: NSManagedObject {
     static func fetchAll(context: NSManagedObjectContext) -> [Self]
     static func create(context: NSManagedObjectContext) -> Self
+    func delete(context: NSManagedObjectContext)
 }
 
-extension CoreDataEntity {
+extension CoreDataEntity where Self: NSManagedObject {
     static func fetchAll(context: NSManagedObjectContext) -> [Self] {
         let fetchRequest: NSFetchRequest<NSFetchRequestResult> = .init(entityName: "\(Self.self)")
         let objects = try? context.fetch(fetchRequest)
