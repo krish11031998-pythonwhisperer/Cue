@@ -30,8 +30,8 @@ class CalendarDayViewModel {
                 startTime = DateComponents(calendar: .current, year: date.year, month: date.month, day: date.day, hour: 12, minute: 0)
                 endTime = DateComponents(calendar: .current, year: date.year, month: date.month, day: date.day, hour: 16, minute: 59)
             case .evening:
-                startTime = DateComponents(calendar: .current, year: Date.now.year, month: Date.now.month, day: Date.now.day, hour: 17, minute: 0)
-                endTime = DateComponents(calendar: .current, year: Date.now.year, month: Date.now.month, day: Date.now.day, hour: 23, minute: 59)
+                startTime = DateComponents(calendar: .current, year: date.year, month: date.month, day: date.day, hour: 17, minute: 0)
+                endTime = DateComponents(calendar: .current, year: date.year, month: date.month, day: date.day, hour: 23, minute: 59)
             }
             
             return startTime.date!..<endTime.date!
@@ -107,7 +107,6 @@ class CalendarDayViewModel {
     
     func sections(calendarDay: CalendarDay) -> [Section] {
         var remindersInDay: [TimeOfDay: [ReminderView.Model]] = [:]
-        print("(DEBUG) ", #function)
         for reminder in calendarDay.reminders {
             if let schedule = reminder.schedule,
                let startTime = DateComponents(calendar: .current,

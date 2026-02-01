@@ -99,10 +99,14 @@ public struct CalendarDayView: View {
         let section: CalendarDayViewModel.TimeOfDay
         
         var body: some View {
-            Label(section.title, systemSymbol: section.symbol)
-                .font(.caption)
-                .padding(.init(top: 4, leading: 8, bottom: 4, trailing: 8))
-                .background(section.color.surfacePrimary, in: .capsule)
+            HStack(alignment: .bottom, spacing: 4) {
+                Image(systemSymbol: section.symbol)
+                Text(section.title)
+            }
+            .font(.footnote)
+            .fontWeight(.medium)
+            .padding(.init(top: 6, leading: 12, bottom: 6, trailing: 12))
+            .background(section.color.surfacePrimary, in: .capsule)
         }
     }
 }
