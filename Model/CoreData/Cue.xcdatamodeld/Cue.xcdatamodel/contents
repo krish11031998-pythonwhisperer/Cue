@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24512" systemVersion="25B78" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
     <entity name="Reminder" representedClassName=".Reminder" syncable="YES">
+        <attribute name="attribute" optional="YES"/>
+        <attribute name="attribute1" optional="YES"/>
         <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="icon" optional="YES" attributeType="Transformable" valueTransformerName="CueIconTransformer" customClassName="CueIcon"/>
         <attribute name="schedule" optional="YES" attributeType="Transformable" valueTransformerName="CueReminderScheduleTransformer" customClassName="CueReminderSchedule"/>
         <attribute name="tasksContainer" optional="YES" attributeType="Transformable" valueTransformerName="CueTaskTransformer" customClassName="CueTaskContainer"/>
         <attribute name="title" optional="YES" attributeType="String"/>
+        <relationship name="reminderLogs" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ReminderLog" inverseName="reminder" inverseEntity="ReminderLog"/>
     </entity>
+    <entity name="ReminderLog" representedClassName="ReminderLog" syncable="YES" codeGenerationType="class">
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="reminder" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Reminder" inverseName="reminderLogs" inverseEntity="Reminder"/>
+    </entity>
+    <entity name="ReminderTask" representedClassName="ReminderTask" syncable="YES" codeGenerationType="class"/>
 </model>

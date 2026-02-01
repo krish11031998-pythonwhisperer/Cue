@@ -41,7 +41,7 @@
 /* Begin PBXFileReference section */
 		EF079D722F1BE5EC00986EF8 /* Cue.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cue.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EF079D8A2F1BFFC600986EF8 /* Model.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Model.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		EF3225912F1F1F050054901C /* vanor-ui-library */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vanor-ui-library"; path = "../Shipyard/vanor-ui-library"; sourceTree = SOURCE_ROOT; };
+		EF8B949A2F2D8FEE00518FF4 /* vanor-ui-library */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vanor-ui-library"; path = "../Shipyard/vanor-ui-library"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -86,7 +86,7 @@
 				EF079D8B2F1BFFC600986EF8 /* Model */,
 				EF32251F2F1EF02B0054901C /* Frameworks */,
 				EF079D732F1BE5EC00986EF8 /* Products */,
-				EF3225912F1F1F050054901C /* vanor-ui-library */,
+				EF8B949A2F2D8FEE00518FF4 /* vanor-ui-library */,
 			);
 			sourceTree = "<group>";
 		};
