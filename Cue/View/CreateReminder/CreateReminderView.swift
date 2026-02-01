@@ -37,7 +37,7 @@ struct CreateReminderView: View {
                                       of: { $0.frame(in: .global) },
                                       action: { imageFrame = $0 })
                     
-                    TextField("Create Reminder",
+                    TextField("What would you like to be reminded of?",
                               text: $viewModel.reminderTitle,
                               axis: .vertical)
                     .font(.title3)

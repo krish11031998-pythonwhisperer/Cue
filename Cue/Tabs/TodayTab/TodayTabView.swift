@@ -71,6 +71,32 @@ struct TodayTabView: View {
                             .font(.body)
                     }
                 }
+                
+                if viewModel.today?.date.isToday == false {
+                    ToolbarItem(placement: .title) {
+                        Button {
+                            withAnimation(.easeInOut) {
+                                self.viewModel.today = self.viewModel.calendarDay.first(where: { $0.date.isToday })
+                            }
+                        } label: {
+//                            Label("Today", systemImage: "\(Date.now.day).calendar")
+                            Text("Today")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                        }
+                        .buttonStyle(.glass)
+                    }
+                }
+                
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        print("(DEBUGG) tapped on calendar")
+                    } label: {
+                        Image(systemSymbol: .calendar)
+                            .font(.body)
+                    }
+
+                }
             }
         }
         .task(id: store.reminders) {

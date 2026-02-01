@@ -6,11 +6,5 @@
         <attribute name="schedule" optional="YES" attributeType="Transformable" valueTransformerName="CueReminderScheduleTransformer" customClassName="CueReminderSchedule"/>
         <attribute name="tasksContainer" optional="YES" attributeType="Transformable" valueTransformerName="CueTaskTransformer" customClassName="CueTaskContainer"/>
         <attribute name="title" optional="YES" attributeType="String"/>
-        <relationship name="reminderLogs" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ReminderLog" inverseName="reminder" inverseEntity="ReminderLog"/>
     </entity>
-    <entity name="ReminderLog" representedClassName="ReminderLog" syncable="YES" codeGenerationType="class">
-        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <relationship name="reminder" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Reminder" inverseName="reminderLogs" inverseEntity="Reminder"/>
-    </entity>
-    <entity name="ReminderTask" representedClassName="ReminderTask" syncable="YES" codeGenerationType="class"/>
 </model>
