@@ -9,9 +9,13 @@ import Foundation
 import SwiftUI
 import Model
 import VanorUI
-import SFSafeSymbols
-import ColorTokensKit
-import KKit
+internal import EmojiKit
+
+extension CalendarDay: @retroactive CalendarDateCarouselDataElement, @retroactive Identifiable {
+    public var id: Int {
+        date.hashValue
+    }
+}
 
 struct TodayTabView: View {
     
@@ -24,16 +28,38 @@ struct TodayTabView: View {
     let store: Store
     @State private var presentation: Presentation? = nil
     @State private var viewModel: TodayViewModel = .init()
+    @State private var topPadding: CGFloat = .zero
+    
+    init(store: Store) {
+        self.store = store
+    }
     
     var body: some View {
         NavigationView {
             ZStack(alignment: .center) {
+                Color(uiColor: .systemBackground)
                 if store.reminders.isEmpty {
                     ContentUnavailableView("No Reminders", systemImage: "bell.fill", description: descriptionText)
                         .font(.headline)
-                } else {
-                    CollectionView(section: viewModel.sections(for: store.reminders),
-                                   completion: nil)
+                } else if let today = viewModel.today {
+                    TabView(selection: $viewModel.today) {
+                        ForEach(viewModel.calendarDay, id: \.date) { calendarDay in
+                            CalendarDayView(store: store, calendarDay: calendarDay)
+                                .tag(calendarDay)
+                                .environment(\.timeCompactViewTopPadding, topPadding)
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .indexViewStyle(.page(backgroundDisplayMode: .never))
+                    .safeAreaBar(edge: .top, alignment: .center, spacing: 0, content: {
+                        CalendarDateCarousel(dateElements: viewModel.calendarDay, selectedDate: today)
+                            .background { Color.clear }
+                            .scrollIndicators(.hidden)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
+                                self.topPadding = newValue.height
+                            }
+                    })
                 }
             }
             .toolbar {
@@ -44,9 +70,11 @@ struct TodayTabView: View {
                         Image(systemSymbol: .plus)
                             .font(.body)
                     }
-
                 }
             }
+        }
+        .task(id: store.reminders) {
+            viewModel.setupCalendarForOneMonth(reminders: store.reminders)
         }
         .sheet(item: $presentation) { presentation in
             switch presentation {
@@ -65,5 +93,4 @@ struct TodayTabView: View {
             .font(.caption)
             .foregroundColor(.foregroundSecondary)
     }
-    
 }

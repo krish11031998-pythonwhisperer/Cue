@@ -26,13 +26,12 @@ struct MainTab: View {
         TabView(selection: $selectedTab) {
             Tab(value: Tabs.home) {
                 TodayTabView(store: store)
-                    .tabItem {
-                        Label {
-                            Text("Reminders")
-                        } icon: {
-                            Image(systemName: "calendar")
-                        }
-                    }
+            } label: {
+                Label {
+                    Text("Reminders")
+                } icon: {
+                    Image(systemName: "calendar")
+                }
             }
         }
     }

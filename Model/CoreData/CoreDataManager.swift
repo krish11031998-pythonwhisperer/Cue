@@ -27,6 +27,7 @@ class CoreDataManager {
         setupContainer()
         #warning("Add Transformers here")
         CueTaskTransformer.register()
+        CueIconTransformer.register()
     }
     
     static var storeURL: URL {

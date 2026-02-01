@@ -1,0 +1,181 @@
+//
+//  CalendarDayViewModel.swift
+//  Cue
+//
+//  Created by Krishna Venkatramani on 27/01/2026.
+//
+
+import SwiftUI
+import Model
+import SFSafeSymbols
+import ColorTokensKit
+import VanorUI
+
+@Observable
+class CalendarDayViewModel {
+    
+    enum TimeOfDay: String, CaseIterable {
+        case morning
+        case afternoon
+        case evening
+        
+        func timeRange(date: Date = .now) -> Range<Date> {
+            let startTime: DateComponents
+            let endTime: DateComponents
+            switch self {
+            case .morning:
+                startTime = DateComponents(calendar: .current, year: date.year, month: date.month, day: date.day, hour: 0, minute: 0)
+                endTime = DateComponents(calendar: .current, year: date.year, month: date.month, day: date.day, hour: 11, minute: 59)
+            case .afternoon:
+                startTime = DateComponents(calendar: .current, year: date.year, month: date.month, day: date.day, hour: 12, minute: 0)
+                endTime = DateComponents(calendar: .current, year: date.year, month: date.month, day: date.day, hour: 16, minute: 59)
+            case .evening:
+                startTime = DateComponents(calendar: .current, year: Date.now.year, month: Date.now.month, day: Date.now.day, hour: 17, minute: 0)
+                endTime = DateComponents(calendar: .current, year: Date.now.year, month: Date.now.month, day: Date.now.day, hour: 23, minute: 59)
+            }
+            
+            return startTime.date!..<endTime.date!
+        }
+        
+        var title: String {
+            switch self {
+            case .morning:
+                return "Morning"
+            case .afternoon:
+                return "Afternoon"
+            case .evening:
+                return "Evening"
+            }
+        }
+        
+        var symbol: SFSymbol {
+            switch self {
+            case .morning:
+                return .sunrise
+            case .afternoon:
+                return .sunMax
+            case .evening:
+                return .moonStars
+            }
+        }
+        
+        var color: LCHColor {
+            switch self {
+            case .morning:
+                let light = Color(hex: "#7FB3D5")
+                let dark = Color(hex: "#FFD6A5")
+                let color = Color(light: .init(light), dark: .init(dark))
+                return .init(color: color)
+            case .afternoon:
+                return .init(color: .init(hex: "#C8E06F"))
+            case .evening:
+                let light = Color(hex: "#9A9AA3")
+                let dark = Color(hex: "#C9CAD6")
+                let color = Color(light: .init(light), dark: .init(dark))
+                return .init(color: color)
+//                return .init(color: .init(hex: "#F2B880"))
+//            case .lateEvening:
+//                let light = Color(hex: "#9A9AA3")
+//                let dark = Color(hex: "#C9CAD6")
+//                let color = Color(light: .init(light), dark: .init(dark))
+//                return .init(color: color)
+            }
+        }
+    }
+    
+    struct Section: Hashable, Identifiable {
+        let timeOfDay: TimeOfDay
+        let reminders: [ReminderView.Model]
+        
+        var id: Int {
+            var hasher: Hasher = .init()
+            reminders.forEach {
+                hasher.combine($0)
+            }
+            hasher.combine(timeOfDay.color)
+            hasher.combine(timeOfDay.title)
+            return hasher.finalize()
+        }
+    }
+    
+    var calendarDay: CalendarDay?
+    var store: Store
+    
+    init(store: Store) {
+        self.store = store
+    }
+    
+    func sections(calendarDay: CalendarDay) -> [Section] {
+        var remindersInDay: [TimeOfDay: [ReminderView.Model]] = [:]
+        print("(DEBUG) ", #function)
+        for reminder in calendarDay.reminders {
+            if let schedule = reminder.schedule,
+               let startTime = DateComponents(calendar: .current,
+                                              year: calendarDay.date.year,
+                                              month: calendarDay.date.month,
+                                              day: calendarDay.date.day,
+                                              hour: schedule.hour,
+                                              minute: schedule.minute).date {
+                let reminderViewModel = reminderModels(reminder)
+                switch startTime {
+                case TimeOfDay.morning.timeRange(date: calendarDay.date):
+                    remindersInDay[.morning, default: []].append(reminderViewModel)
+                case TimeOfDay.afternoon.timeRange(date: calendarDay.date):
+                    remindersInDay[.afternoon, default: []].append(reminderViewModel)
+                case TimeOfDay.evening.timeRange(date: calendarDay.date):
+                    remindersInDay[.evening, default: []].append(reminderViewModel)
+                default:
+                    break
+                }
+            }
+        }
+        
+        let sections: [Section] = TimeOfDay.allCases.map { .init(timeOfDay: $0, reminders: remindersInDay[$0] ?? []) }
+        return sections
+    }
+    
+    func reminderModels(_ reminder: Reminder) -> ReminderView.Model {
+        let tasks: [ReminderView.TaskModel] = reminder.tasks.map { task in
+            let icon: Icon
+            switch task.icon {
+            case .emoji(let emoji):
+                icon = .emoji(.init(emoji))
+            case .symbol(let symbol):
+                icon = .symbol(.init(rawValue: symbol))
+            default:
+                icon = .symbol(.circle)
+            }
+            return .init(title: task.title, icon: icon) {
+                print("(DEBUG) logged this \(task.title)")
+            }
+        }
+        
+        let icon: VanorUI.Icon
+        if let symbol = reminder.icon.symbol {
+            icon = .symbol(.init(rawValue: symbol))
+        } else if let emoji = reminder.icon.emoji {
+            icon = .emoji(.init(emoji))
+        } else {
+            icon = .symbol(.circle)
+        }
+        
+        let model: ReminderView.Model = .init(title: reminder.title,
+                                              icon: icon,
+                                              theme: Color.proSky,
+                                              time: reminder.date,
+                                              state: .hasLogged(.init(hasLogged: false)),
+                                              tasks: tasks) { [weak self] in
+            self?.logReminder(reminder)
+        } deleteReminder: { [weak self] in
+            withAnimation(.snappy) {
+                self?.store.deleteReminder(reminder: reminder)
+            }
+        }
+        
+        return model
+    }
+    
+    func logReminder(_ reminder: Reminder) {
+        print("(DEBUG) tapped on logging Reminder!")
+    }
+}

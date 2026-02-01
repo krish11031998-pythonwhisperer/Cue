@@ -17,6 +17,7 @@ public class Store {
     }
     
     public init() {
+        self.reminders = Reminder.fetchAll(context: self.viewContext)
         observingTask()
     }
     
@@ -36,10 +37,20 @@ public class Store {
     // MARK: - Reminders
     
     @discardableResult
-    public func createReminder(title: String, iconName: String, date: Date, tasks: [CueTask] = []) -> Reminder {
-        let reminder = Reminder.createReminder(context: viewContext, title: title, iconName: iconName, date: date, tasks: tasks)
+    public func createReminder(title: String, symbol: String, date: Date, scheduleBuilder: Reminder.ScheduleBuilder?, tasks: [CueTask] = []) -> Reminder {
+        let reminder = Reminder.createReminder(context: viewContext, title: title, symbol: symbol, date: date, schedule: scheduleBuilder, tasks: tasks)
         viewContext.saveContext()
         return reminder
     }
     
+    @discardableResult
+    public func createReminder(title: String, emoji: String, date: Date, scheduleBuilder: Reminder.ScheduleBuilder?, tasks: [CueTask] = []) -> Reminder {
+        let reminder = Reminder.createReminder(context: viewContext, title: title, emoji: emoji, date: date, schedule: scheduleBuilder, tasks: tasks)
+        viewContext.saveContext()
+        return reminder
+    }
+    
+    public func deleteReminder(reminder: Reminder) {
+        reminder.delete(context: viewContext)
+    }
 }

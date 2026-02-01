@@ -31,12 +31,12 @@ class CueTaskTransformer: ValueTransformer {
         }
         
         do {
-            let motorConfiguration = try NSKeyedUnarchiver
+            let cueTask = try NSKeyedUnarchiver
                 .unarchivedObject(ofClasses: [
                     CueTaskContainer.self, NSDictionary.self,
                     NSArray.self, NSNumber.self],
                                   from: data)
-            return motorConfiguration
+            return cueTask
         } catch {
             print(error)
             return nil

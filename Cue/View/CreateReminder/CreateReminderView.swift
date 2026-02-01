@@ -8,109 +8,116 @@
 import SwiftUI
 import VanorUI
 import Model
-import SFSafeSymbols
-import ColorTokensKit
+internal import EmojiKit
 
 struct CreateReminderView: View {
     
     @State private var viewModel: CreateReminderViewModel
     @Namespace private var animation
     @Environment(\.dismiss) var dismiss
+    @State private var imageFrame: CGRect = .zero
     
     init(store: Store) {
         self._viewModel = .init(initialValue: .init(store: store))
     }
     
     var body: some View {
-        ScrollView(.vertical) {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                TextField("Create Reminder", text: $viewModel.reminderTitle, axis: .vertical)
-                    .font(.title)
+        NavigationView {
+            ScrollView(.vertical) {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    CreateReminderImageButton(color: viewModel.color,
+                                              icon: viewModel.icon) {
+                        viewModel.presentation = .symbolAndColor
+                    }
+                    .aspectRatio(1, contentMode: .fit)
+                    .frame(width: 108, alignment: .center)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.bottom, 32)
+                    .onGeometryChange(for: CGRect.self,
+                                      of: { $0.frame(in: .global) },
+                                      action: { imageFrame = $0 })
+                    
+                    TextField("Create Reminder",
+                              text: $viewModel.reminderTitle,
+                              axis: .vertical)
+                    .font(.title3)
                     .fontWeight(.medium)
-                    .padding(.top, 16)
-                
-                OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 10) {
-                    ForEach(CreateReminderViewModel.Presentation.allCases) { presentation in
-                        ReminderButton(presentation: presentation,
-                                       buttonTitle: viewModel.buttonTitleForElement(presentation),
-                                       animation: animation) { presentation in
-                            self.viewModel.presentation = presentation
+                    
+                    OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 10) {
+                        ForEach(CreateReminderViewModel.ReminderCalendarPresentation.allCases) { presentation in
+                            ReminderButton(presentation: presentation,
+                                           buttonTitle: viewModel.buttonTitleForElement(presentation),
+                                           animation: animation) { presentation in
+                                self.viewModel.presentation = presentation
+                            }
                         }
                     }
-                }
-                .padding(.top, 12)
-                
-                Section {
-                    VStack(alignment: .leading, spacing: 2) {
-                        ForEach(viewModel.taskViewModels) { taskViewModel in
-                            ReminderTaskView(model: taskViewModel)
-                                .transition(.scale(scale: 1, anchor: .center))
+                    .padding(.top, 12)
+                    
+                    CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions, isLoadingSuggestions: viewModel.isLoadingSuggestions,
+                                            taskViewModels: viewModel.taskViewModels) { taskName in
+                        withAnimation(.easeInOut) {
+                            viewModel.addTask(title: taskName)
                         }
-                    }
-                    .padding(.top, 16)
-                } header: {
-                    HStack(alignment: .center, spacing: 8) {
-                        Text("Add Tasks")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Button {
-                            print("(DEBUG) AI tapped")
-                        } label: {
-                            Image(systemSymbol: .sparkles)
-                                .font(.subheadline)
-                        }
-                        .tint(Color.proSky.baseColor)
-                        .buttonStyle(.glassProminent)
+                    } deleteTask: { _ in
+                        print("(DEBUG) tapped on delete")
+                    } generateTasks: {
+                        viewModel.suggestionSubtasks()
                     }
                     .padding(.top, 32)
-                } footer: {
-                    Button {
-                        viewModel.addTask()
-                    } label: {
-                        Label {
-                            Text("Add")
-                        } icon: {
-                            Image(systemSymbol: .plus)
-                        }
-                        .font(.footnote)
-                        .fontWeight(.semibold)
+                    .animation(.default, value: viewModel.taskViewModels)
+
+                }
+                .padding(.horizontal, 20)
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(role: .confirm) {
+                        viewModel.createReminder()
+                        self.dismiss()
                     }
-                    .buttonStyle(.glass)
-                    .padding(.top, 12)
+                    .tint(Color.proSky.baseColor)
+                    .disabled(!viewModel.canCreateReminder)
                 }
             }
-            .padding(.horizontal, 20)
-        }
-        .safeAreaInset(edge: .bottom, alignment: .center, spacing: 8) {
-            Button(action: viewModel.createReminder) {
-                Text("Create Reminder")
-                    .font(.headline)
-            }
-            .tint(.proSky.baseColor)
-            .buttonStyle(.glassProminent)
         }
         .sheet(item: $viewModel.presentation) { sheet in
             Group {
                 switch sheet {
                 case .alarmAt:
-                    DatePicker(selection: $viewModel.timeDate, displayedComponents: [.hourAndMinute]) {
-                        Color.clear
-                            .frame(width: 0, height: 0)
-                    }
-                    .datePickerStyle(.wheel)
-                    .padding(.horizontal, 20)
+                    DatePickerView(date: $viewModel.timeDate, viewType: .time("Reminder me at", .alarmFill))
+                    .fittedPresentationDetent()
                 case .duration:
-                    SnoozeTimerSheet(timeDuration: $viewModel.snoozeDuration)
+                    TimerSheetView(timeDuration: $viewModel.snoozeDuration, title: "Snooze Duration", bound: .hour)
+                        .fittedPresentationDetent()
                 case .date:
-                    DatePicker("Select Date",
-                               selection: $viewModel.date,
-                               displayedComponents: [.date])
-                    .datePickerStyle(.graphical)
+                    DatePickerView(date: $viewModel.date, viewType: .date("Reminder Start Date", .calendar))
+                    .fittedPresentationDetent()
+                case .repeat:
+                    ReminderWeekPlannerView {
+                        viewModel.scheduleBuilder = $0
+                    }
+                        .fittedPresentationDetent()
+                case .symbolAndColor:
+                    SymbolSheet(selectedIcon: $viewModel.icon,
+                                color: $viewModel.color)
+                    .presentationDetents([.fraction(0.5), .height(.totalHeight - imageFrame.maxY)])
+                    .presentationDragIndicator(.automatic)
+                    .presentationBackground(.clear)
+                    .presentationContentInteraction(.resizes)
                 }
             }
-            .fittedPresentationDetent()
             .navigationTransition(.zoom(sourceID: sheet, in: animation))
+        }
+        .fullScreenCover(item: $viewModel.fullScreenPresentation) { fullScreenPresentation in
+            switch fullScreenPresentation {
+            case .symbolSheet:
+                SymbolSelectorView(color: viewModel.color, topPadding: 0, searchText: "") { [weak viewModel] symbol in
+                    viewModel?.fullScreenPresentation = nil
+                    viewModel?.icon = symbol
+                }
+                .ignoresSafeArea(edges: .vertical)
+            }
         }
     }
     
@@ -119,10 +126,10 @@ struct CreateReminderView: View {
     
     struct ReminderButton: View {
         
-        let presentation: CreateReminderViewModel.Presentation
+        let presentation: CreateReminderViewModel.ReminderCalendarPresentation
         let buttonTitle: String
         var animation: Namespace.ID
-        let action: (CreateReminderViewModel.Presentation) -> Void
+        let action: (CreateReminderViewModel.ReminderCalendarPresentation) -> Void
         
         var body: some View {
             Button {
@@ -135,8 +142,10 @@ struct CreateReminderView: View {
                 }
                 .font(.subheadline)
                 .fontWeight(.semibold)
+                .padding(.init(top: 6, leading: 8, bottom: 6, trailing: 8))
+                .background(Color.backgroundSecondary, in: .capsule)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(.plain)
             .matchedTransitionSource(id: presentation,
                                      in: animation)
         }
@@ -152,6 +161,67 @@ struct CreateReminderView: View {
                 return .zzz
             case .date:
                 return .calendar
+            case .repeat:
+                return .arrow2Squarepath
+            case .symbolAndColor:
+                fatalError("\(presentation.rawValue) has no symbol")
+            }
+        }
+    }
+    
+    
+    // MARK: - DatePickerView
+    
+    struct DatePickerView: View {
+        enum ViewType {
+            case time(String, SFSymbol)
+            case date(String, SFSymbol)
+            
+            var title: String {
+                switch self {
+                case .time(let string, _):
+                    return string
+                case .date(let string, _):
+                    return string
+                }
+            }
+            
+            var symbol: SFSymbol {
+                switch self {
+                case .time(_, let sFSymbol):
+                    return sFSymbol
+                case .date(_, let sFSymbol):
+                    return sFSymbol
+                }
+            }
+        }
+        
+        @Binding var date: Date
+        let viewType: ViewType
+        
+        var body: some View {
+            VStack(alignment: .center, spacing: 16) {
+                Label(viewType.title, systemSymbol: viewType.symbol)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 32)
+                
+                Group {
+                    switch viewType {
+                    case .time:
+                        DatePicker(selection: $date, displayedComponents: [.hourAndMinute]) {
+                            Text("DatePicker")
+                        }
+                        .datePickerStyle(.wheel)
+                    case .date:
+                        DatePicker(selection: $date, displayedComponents: [.date]) {
+                            Text("DatePicker")
+                        }
+                        .datePickerStyle(.graphical)
+                    }
+                }
+                .labelsHidden()
             }
         }
         
