@@ -8,6 +8,7 @@
 import Foundation
 import CoreData
 
+@objc(CueReminderSchedule)
 public class CueReminderSchedule: NSObject, NSSecureCoding, Codable {
     
     public static var supportsSecureCoding: Bool { true }

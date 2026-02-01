@@ -8,6 +8,7 @@
 import Foundation
 import CoreData
 
+@objc(CueIcon)
 public class CueIcon: NSObject, NSSecureCoding, Codable {
     
     public static var supportsSecureCoding: Bool { true }

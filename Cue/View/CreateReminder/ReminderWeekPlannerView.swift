@@ -16,13 +16,13 @@ struct ReminderWeekPlannerView: View {
         
         var id: Int {
             switch self {
-            case .sunday: return 0
-            case .monday: return 1
-            case .tuesday: return 2
-            case .wednesday: return 3
-            case .thursday: return 4
-            case .friday: return 5
-            case .saturday: return 6
+            case .sunday: return 1
+            case .monday: return 2
+            case .tuesday: return 3
+            case .wednesday: return 4
+            case .thursday: return 5
+            case .friday: return 6
+            case .saturday: return 7
             }
         }
     }
@@ -91,7 +91,7 @@ struct ReminderWeekPlannerView: View {
                                 selectedDays.insert(day)
                             }
                         } label: {
-                            Text(Calendar.current.shortStandaloneWeekdaySymbols[day.id])
+                            Text(Calendar.current.shortStandaloneWeekdaySymbols[day.id - 1])
                                 .font(.headline)
                         }
                         .buttonStyle(.circleGlass(.regular.tint(selectedDays.contains(day) ? Color.proSky.outlinePrimary : nil)))
@@ -151,7 +151,7 @@ struct ReminderWeekPlannerView: View {
         let scheduleBuilder: Reminder.ScheduleBuilder
         switch reminderType {
         case .weekly:
-            scheduleBuilder = .init(intervalWeek: nil, weekdays: Set(selectedDays.map(\.id)), dates: nil)
+            scheduleBuilder = .init(intervalWeek: weekInterval, weekdays: Set(selectedDays.map(\.id)), dates: nil)
         case .monthly:
             scheduleBuilder = .init(intervalWeek: nil, weekdays: nil, dates: Set(datesInMonth))
         }

@@ -9,15 +9,15 @@ import Foundation
 import CoreData
 
 @objc(Reminder)
-public final class Reminder: NSManagedObject, CoreDataEntity {
+public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     @NSManaged public private(set) var title: String!
     @NSManaged public private(set) var icon: CueIcon!
     @NSManaged public private(set) var date: Date!
-    @NSManaged public private(set) var tasksContainer: CueTaskContainer!
+    @NSManaged private var tasksContainer: CueTaskContainer!
     @NSManaged public private(set) var schedule: CueReminderSchedule!
 
-    private var tasks: [CueTask] {
-        tasksContainer.tasks
+    public var tasks: [CueTask] {
+        tasksContainer?.tasks ?? []
     }
     
     public struct ScheduleBuilder {
@@ -46,7 +46,7 @@ public final class Reminder: NSManagedObject, CoreDataEntity {
     
     // MARK: - Create
     
-    static func createReminder(context: NSManagedObjectContext, title: String, symbol: String, date: Date, schedule: ScheduleBuilder? = nil,  tasks: [CueTask]) -> Reminder {
+    static func createReminder(context: NSManagedObjectContext, title: String, symbol: String, date: Date, schedule: ScheduleBuilder?,  tasks: [CueTask]) -> Reminder {
         let reminder = create(context: context)
         reminder.title = title
         reminder.icon = .init(symbol: symbol, emoji: nil)
@@ -64,5 +64,26 @@ public final class Reminder: NSManagedObject, CoreDataEntity {
         reminder.tasksContainer = .init(tasks: tasks)
         reminder.schedule = .init(hour: schedule?.hour ?? 0, minute: schedule?.minute ?? 0, intervalWeeks: schedule?.intervalWeek, weekdays: schedule?.weekdays, calendarDates: schedule?.dates)
         return reminder
+    }
+    
+    
+    // MARK: - Delete
+    
+    func delete(context: NSManagedObjectContext) {
+        context.delete(self)
+        context.saveContext()
+    }
+    
+    
+    // MARK: - Identifiable
+    
+    public var id: Int {
+        var hasher = Hasher()
+        hasher.combine(title)
+        hasher.combine(icon)
+        hasher.combine(date)
+        hasher.combine(tasks)
+        hasher.combine(schedule)
+        return hasher.finalize()
     }
 }
