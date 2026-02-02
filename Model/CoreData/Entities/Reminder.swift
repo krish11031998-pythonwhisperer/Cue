@@ -15,12 +15,17 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     @NSManaged public private(set) var date: Date!
     @NSManaged private var tasksContainer: CueTaskContainer!
     @NSManaged public private(set) var schedule: CueReminderSchedule!
+    @NSManaged public private(set) var reminderLogs: NSSet!
 
     public var tasks: [CueTask] {
         tasksContainer?.tasks ?? []
     }
     
-    public struct ScheduleBuilder {
+    public var logs: [ReminderLog] {
+        reminderLogs.allObjects as! [ReminderLog]
+    }
+    
+    public struct ScheduleBuilder: Hashable, Sendable {
         public var hour: Int
         public var minute: Int
         public var intervalWeek: Int?
@@ -69,7 +74,7 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     
     // MARK: - Delete
     
-    func delete(context: NSManagedObjectContext) {
+    public func delete(context: NSManagedObjectContext) {
         context.delete(self)
         context.saveContext()
     }
@@ -84,6 +89,7 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
         hasher.combine(date)
         hasher.combine(tasks)
         hasher.combine(schedule)
+        hasher.combine(logs)
         return hasher.finalize()
     }
 }

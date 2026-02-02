@@ -56,6 +56,8 @@ class CreateReminderViewModel {
     @ObservationIgnored
     var suggestionTask: Task<Void, Never>?
     
+    
+    var imageFrame: CGRect = .zero
     var reminderTitle: String = ""
     var snoozeDuration: Double = 15
     var date: Date = .now

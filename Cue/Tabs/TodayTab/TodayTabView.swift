@@ -27,11 +27,19 @@ struct TodayTabView: View {
     
     let store: Store
     @State private var presentation: Presentation? = nil
-    @State private var viewModel: TodayViewModel = .init()
+    @State private var viewModel: TodayViewModel
     @State private var topPadding: CGFloat = .zero
+    
+    var id: Int {
+        var hasher = Hasher()
+        store.reminders.forEach { hasher.combine($0.hashValue) }
+//        store.reminderLogs.forEach { hasher.com}
+        return hasher.finalize()
+    }
     
     init(store: Store) {
         self.store = store
+        self._viewModel = .init(initialValue: .init(store: store))
     }
     
     var body: some View {
@@ -100,8 +108,17 @@ struct TodayTabView: View {
             }
         }
         .task(id: store.reminders) {
+            print("(DEBUG) newReminders: ", store.reminders)
             viewModel.setupCalendarForOneMonth(reminders: store.reminders)
         }
+        .task {
+            for await _ in store.hasLoggedReminder {
+                viewModel.setupCalendarForOneMonth(reminders: store.reminders)
+            }
+        }
+        .onChange(of: viewModel.calendarDay, { oldValue, newValue in
+            print("(DEBUG) newCalendaryDay: \(newValue)")
+        })
         .sheet(item: $presentation) { presentation in
             switch presentation {
             case .addReminder:

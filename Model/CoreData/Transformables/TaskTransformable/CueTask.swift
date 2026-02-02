@@ -8,7 +8,7 @@
 import Foundation
 import CoreData
 
-public class CueTask: NSObject, NSSecureCoding, Codable {
+public class CueTask: NSObject, NSSecureCoding, Codable, @unchecked Sendable {
     public static var supportsSecureCoding: Bool = true
     
     public enum TaskIcon: Hashable, Codable {

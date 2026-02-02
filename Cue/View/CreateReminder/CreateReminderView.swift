@@ -15,7 +15,7 @@ struct CreateReminderView: View {
     @State private var viewModel: CreateReminderViewModel
     @Namespace private var animation
     @Environment(\.dismiss) var dismiss
-    @State private var imageFrame: CGRect = .zero
+    @FocusState var textFieldIsFocused: Bool
     
     init(store: Store) {
         self._viewModel = .init(initialValue: .init(store: store))
@@ -35,13 +35,14 @@ struct CreateReminderView: View {
                     .padding(.bottom, 32)
                     .onGeometryChange(for: CGRect.self,
                                       of: { $0.frame(in: .global) },
-                                      action: { imageFrame = $0 })
+                                      action: { viewModel.imageFrame = $0 })
                     
                     TextField("What would you like to be reminded of?",
                               text: $viewModel.reminderTitle,
                               axis: .vertical)
                     .font(.title3)
                     .fontWeight(.medium)
+                    .focused($textFieldIsFocused)
                     
                     OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 10) {
                         ForEach(CreateReminderViewModel.ReminderCalendarPresentation.allCases) { presentation in
@@ -57,11 +58,13 @@ struct CreateReminderView: View {
                     CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions, isLoadingSuggestions: viewModel.isLoadingSuggestions,
                                             taskViewModels: viewModel.taskViewModels) { taskName in
                         withAnimation(.easeInOut) {
+                            textFieldIsFocused = false
                             viewModel.addTask(title: taskName)
                         }
                     } deleteTask: { _ in
                         print("(DEBUG) tapped on delete")
                     } generateTasks: {
+                        textFieldIsFocused = false
                         viewModel.suggestionSubtasks()
                     }
                     .padding(.top, 32)
@@ -101,7 +104,7 @@ struct CreateReminderView: View {
                 case .symbolAndColor:
                     SymbolSheet(selectedIcon: $viewModel.icon,
                                 color: $viewModel.color)
-                    .presentationDetents([.fraction(0.5), .height(.totalHeight - imageFrame.maxY)])
+                    .presentationDetents([.fraction(0.5), .height(.totalHeight - viewModel.imageFrame.maxY)])
                     .presentationDragIndicator(.automatic)
                     .presentationBackground(.clear)
                     .presentationContentInteraction(.resizes)

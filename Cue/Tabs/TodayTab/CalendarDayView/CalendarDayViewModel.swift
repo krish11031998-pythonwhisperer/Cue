@@ -10,6 +10,7 @@ import Model
 import SFSafeSymbols
 import ColorTokensKit
 import VanorUI
+import CoreData
 
 @Observable
 class CalendarDayViewModel {
@@ -98,11 +99,14 @@ class CalendarDayViewModel {
         }
     }
     
-    var calendarDay: CalendarDay?
+    @ObservationIgnored
+    var calendarDate: Date
+    @ObservationIgnored
     var store: Store
     
-    init(store: Store) {
+    init(calendarDate: Date, store: Store) {
         self.store = store
+        self.calendarDate = calendarDate
     }
     
     func sections(calendarDay: CalendarDay) -> [Section] {
@@ -115,7 +119,7 @@ class CalendarDayViewModel {
                                               day: calendarDay.date.day,
                                               hour: schedule.hour,
                                               minute: schedule.minute).date {
-                let reminderViewModel = reminderModels(reminder)
+                let reminderViewModel = reminderModels(reminder, calendarDay: calendarDay)
                 switch startTime {
                 case TimeOfDay.morning.timeRange(date: calendarDay.date):
                     remindersInDay[.morning, default: []].append(reminderViewModel)
@@ -133,7 +137,7 @@ class CalendarDayViewModel {
         return sections
     }
     
-    func reminderModels(_ reminder: Reminder) -> ReminderView.Model {
+    func reminderModels(_ reminder: ReminderModel, calendarDay: CalendarDay) -> ReminderView.Model {
         let tasks: [ReminderView.TaskModel] = reminder.tasks.map { task in
             let icon: Icon
             switch task.icon {
@@ -158,23 +162,31 @@ class CalendarDayViewModel {
             icon = .symbol(.circle)
         }
         
+        let isLogged = calendarDay.loggedReminders.contains(where: { $0 == reminder })
+        
         let model: ReminderView.Model = .init(title: reminder.title,
                                               icon: icon,
                                               theme: Color.proSky,
                                               time: reminder.date,
-                                              state: .hasLogged(.init(hasLogged: false)),
+                                              state: .hasLogged(.init(hasLogged: isLogged)),
                                               tasks: tasks) { [weak self] in
-            self?.logReminder(reminder)
+            self?.logReminder(isLoggedBefore: isLogged, date: calendarDay.date, reminderID: reminder.objectId)
         } deleteReminder: { [weak self] in
             withAnimation(.snappy) {
-                self?.store.deleteReminder(reminder: reminder)
+                self?.store.deleteReminder(reminderID: reminder.objectId)
             }
         }
         
         return model
     }
     
-    func logReminder(_ reminder: Reminder) {
+    func logReminder(isLoggedBefore: Bool, date: Date, reminderID: NSManagedObjectID) {
         print("(DEBUG) tapped on logging Reminder!")
+        let dateOfLog = min(Date.now, date.endOfDay)
+        if !isLoggedBefore {
+            store.logReminder(at: dateOfLog, for: reminderID)
+        } else {
+//            store.deleteLogsFor(at: date, for: reminder)
+        }
     }
 }

@@ -39,7 +39,7 @@ public struct CalendarDayView: View {
     @Environment(\.timeCompactViewTopPadding) var topPadding
     
     init (store: Store, calendarDay: CalendarDay) {
-        self._viewModel = .init(initialValue: .init(store: store))
+        self._viewModel = .init(initialValue: .init(calendarDate: calendarDay.date, store: store))
         self.store = store
         self.calendarDay = calendarDay
     }
@@ -58,6 +58,7 @@ public struct CalendarDayView: View {
                         Section {
                             ForEach(section.reminders) { model in
                                 ReminderView(model: model)
+                                    .id(model)
                                     .padding(.bottom, 8)
                             }
                         } header: {
@@ -77,9 +78,6 @@ public struct CalendarDayView: View {
                                        systemSymbol: .squareSlash)
                     .font(.headline)
             }
-        }
-        .onChange(of: calendarDay) { oldValue, newValue in
-            self.viewModel.calendarDay = newValue
         }
     }
     
