@@ -12,8 +12,13 @@ import CoreData
 public class Store {
     
     public var reminders: [Reminder] = []
-    var viewContext: NSManagedObjectContext {
+//    public var hasLoggedReminder: AnyPubl
+    public var viewContext: NSManagedObjectContext {
         CoreDataManager.shared.persistentContainer.viewContext
+    }
+    
+    public func backgroundContext() -> NSManagedObjectContext {
+        CoreDataManager.shared.persistentContainer.newBackgroundContext()
     }
     
     public init() {
@@ -25,14 +30,28 @@ public class Store {
     // MARK: - Binding
     
     private func observingTask() {
-        Task { @MainActor in
-            for await _ in self.viewContext.changesStream(for: Reminder.self, changeTypes: [.inserted, .deleted, .updated]) {
-                self.reminders = Reminder.fetchAll(context: self.viewContext)
-                print("(DEBUG) reminders: ", self.reminders)
+        let remindersChangeStrem = self.viewContext.changesStream(for: Reminder.self, changeTypes: [.inserted, .deleted, .updated])
+        Task { @MainActor [weak self] in
+            for await _ in remindersChangeStrem {
+                if let context = self?.viewContext {
+                    self?.reminders = Reminder.fetchAll(context: context)
+                    print("(DEBUG) reminders: ", self?.reminders)
+                }
             }
+            
+//            for await _ in reminderLogsChangeStrem {
+//                if let context = self?.viewContext {
+//                    self?.reminderLogs = ReminderLog.fetchReminderLogsWithinTimeRange(context: context, startTime: Date.now.startOfYear, endTime: Date.now.endOfYear)
+//                    print("(DEBUG) reminderLogs: ", self?.reminderLogs)
+//                }
+//            }
         }
     }
     
+    
+    public var hasLoggedReminder: AsyncStream<Void> {
+        self.viewContext.changesStream(for: ReminderLog.self, changeTypes: [.inserted, .deleted, .updated])
+    }
     
     // MARK: - Reminders
     
@@ -50,7 +69,29 @@ public class Store {
         return reminder
     }
     
-    public func deleteReminder(reminder: Reminder) {
+    public func deleteReminder(reminderID: NSManagedObjectID) {
+        let reminder = Reminder.fetch(context: viewContext, for: reminderID)
         reminder.delete(context: viewContext)
     }
+    
+    
+    // MARK: - ReminderLogs
+    
+    public func fetchReminderLogs(context: NSManagedObjectContext? = nil, from start: Date, to end: Date) -> [ReminderLog] {
+        let viewContext = context ?? self.viewContext
+        return ReminderLog.fetchReminderLogsWithinTimeRange(context: viewContext, startTime: start, endTime: end)
+    }
+    
+    @discardableResult
+    public func logReminder(at date: Date, for reminderID: NSManagedObjectID) -> ReminderLog {
+        let reminder = Reminder.fetch(context: viewContext, for: reminderID)
+        let reminderLog = ReminderLog.createReminderLog(date: date, context: viewContext, reminder: reminder)
+        return reminderLog
+    }
+    
+    public func deleteLogsFor(at date: Date, for reminderID: NSManagedObjectID) {
+        let reminder = Reminder.fetch(context: viewContext, for: reminderID)
+        ReminderLog.deleteLog(at: date, reminder: reminder, context: viewContext)
+    }
+    
 }

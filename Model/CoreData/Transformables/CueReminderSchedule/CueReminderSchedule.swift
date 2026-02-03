@@ -37,14 +37,14 @@ public class CueReminderSchedule: NSObject, NSSecureCoding, Codable {
     }
     
     public required init?(coder: NSCoder) {
-        let hour = coder.decodeObject(of: NSNumber.self, forKey: Keys.hour.rawValue) as? Int
-        let minute = coder.decodeObject(of: NSNumber.self, forKey: Keys.minute.rawValue) as? Int
-        let intervalWeeks = coder.decodeObject(of: NSNumber.self, forKey: Keys.intervalWeeks.rawValue) as? Int
+        let hour = coder.decodeInteger(forKey: Keys.hour.rawValue)
+        let minute = coder.decodeInteger(forKey: Keys.minute.rawValue)
+        let intervalWeeks = coder.decodeObject(forKey: Keys.minute.rawValue) as? Int
         let weekdays = coder.decodeObject(of: NSSet.self, forKey: Keys.weekdays.rawValue) as? Set<Int>
         let calendarDates = coder.decodeObject(of: NSSet.self, forKey: Keys.calendarDates.rawValue) as? Set<Int>
         
-        self.hour = hour ?? 0
-        self.minute = minute ?? 0
+        self.hour = hour
+        self.minute = minute
         self.intervalWeeks = intervalWeeks
         self.weekdays = weekdays
         self.calendarDates = calendarDates
@@ -52,8 +52,8 @@ public class CueReminderSchedule: NSObject, NSSecureCoding, Codable {
     
     public func encode(with coder: NSCoder) {
         
-        coder.encode(hour as NSNumber, forKey: Keys.hour.rawValue)
-        coder.encode(minute as NSNumber, forKey: Keys.minute.rawValue)
+        coder.encode(hour, forKey: Keys.hour.rawValue)
+        coder.encode(minute, forKey: Keys.minute.rawValue)
         
         if let intervalWeeks = intervalWeeks {
             coder.encode(intervalWeeks as NSNumber, forKey: Keys.intervalWeeks.rawValue)

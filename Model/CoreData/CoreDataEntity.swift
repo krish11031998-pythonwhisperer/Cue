@@ -7,13 +7,20 @@
 
 import CoreData
 
-internal protocol CoreDataEntity: NSManagedObject {
+public protocol CoreDataEntity: NSManagedObject {
+    static func fetch(context: NSManagedObjectContext, for id: NSManagedObjectID) -> Self
     static func fetchAll(context: NSManagedObjectContext) -> [Self]
+    static func fetch(context: NSManagedObjectContext, predicate: NSPredicate?, sortDescriptors: [NSSortDescriptor]) -> [Self]?
     static func create(context: NSManagedObjectContext) -> Self
     func delete(context: NSManagedObjectContext)
 }
 
-extension CoreDataEntity where Self: NSManagedObject {
+public extension CoreDataEntity where Self: NSManagedObject {
+    
+    static func fetch(context: NSManagedObjectContext, for id: NSManagedObjectID) -> Self {
+        context.object(with: id) as! Self
+    }
+    
     static func fetchAll(context: NSManagedObjectContext) -> [Self] {
         let fetchRequest: NSFetchRequest<NSFetchRequestResult> = .init(entityName: "\(Self.self)")
         let objects = try? context.fetch(fetchRequest)
@@ -23,5 +30,13 @@ extension CoreDataEntity where Self: NSManagedObject {
     static func create(context: NSManagedObjectContext) -> Self {
         let object = NSEntityDescription.insertNewObject(forEntityName: "\(Self.self)", into: context) as! Self
         return object
+    }
+    
+    static func fetch(context: NSManagedObjectContext, predicate: NSPredicate? = nil, sortDescriptors: [NSSortDescriptor] = []) -> [Self]? {
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: String(NSStringFromClass(Self.self)))
+        fetchRequest.predicate = predicate
+        fetchRequest.sortDescriptors = sortDescriptors
+        
+        return try? context.fetch(fetchRequest) as? [Self]
     }
 }

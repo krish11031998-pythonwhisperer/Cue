@@ -27,11 +27,18 @@ struct TodayTabView: View {
     
     let store: Store
     @State private var presentation: Presentation? = nil
-    @State private var viewModel: TodayViewModel = .init()
+    @State private var viewModel: TodayViewModel
     @State private var topPadding: CGFloat = .zero
+    
+    var id: Int {
+        var hasher = Hasher()
+        store.reminders.forEach { hasher.combine($0.hashValue) }
+        return hasher.finalize()
+    }
     
     init(store: Store) {
         self.store = store
+        self._viewModel = .init(initialValue: .init(store: store))
     }
     
     var body: some View {
@@ -41,25 +48,8 @@ struct TodayTabView: View {
                 if store.reminders.isEmpty {
                     ContentUnavailableView("No Reminders", systemImage: "bell.fill", description: descriptionText)
                         .font(.headline)
-                } else if let today = viewModel.today {
-                    TabView(selection: $viewModel.today) {
-                        ForEach(viewModel.calendarDay, id: \.date) { calendarDay in
-                            CalendarDayView(store: store, calendarDay: calendarDay)
-                                .tag(calendarDay)
-                                .environment(\.timeCompactViewTopPadding, topPadding)
-                        }
-                    }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    .indexViewStyle(.page(backgroundDisplayMode: .never))
-                    .safeAreaBar(edge: .top, alignment: .center, spacing: 0, content: {
-                        CalendarDateCarousel(dateElements: viewModel.calendarDay, selectedDate: today)
-                            .background { Color.clear }
-                            .scrollIndicators(.hidden)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
-                                self.topPadding = newValue.height
-                            }
-                    })
+                } else {
+                    tabView()
                 }
             }
             .toolbar {
@@ -71,10 +61,40 @@ struct TodayTabView: View {
                             .font(.body)
                     }
                 }
+                
+                if viewModel.today.isToday == false {
+                    ToolbarItem(placement: .title) {
+                        Button {
+                            withAnimation(.easeInOut) {
+                                self.viewModel.today = Date.now.startOfDay
+                            }
+                        } label: {
+                            Text("Today")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                        }
+                        .buttonStyle(.glass)
+                    }
+                }
+                
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        print("(DEBUGG) tapped on calendar")
+                    } label: {
+                        Image(systemSymbol: .calendar)
+                            .font(.body)
+                    }
+
+                }
             }
         }
         .task(id: store.reminders) {
             viewModel.setupCalendarForOneMonth(reminders: store.reminders)
+        }
+        .task {
+            for await _ in store.hasLoggedReminder {
+                viewModel.setupCalendarForOneMonth(reminders: store.reminders)
+            }
         }
         .sheet(item: $presentation) { presentation in
             switch presentation {
@@ -83,6 +103,27 @@ struct TodayTabView: View {
                     .presentationDetents([.fraction(1)])
             }
         }
+    }
+    
+    private func tabView() -> some View {
+        TabView(selection: $viewModel.today) {
+            ForEach(viewModel.calendarDay, id: \.date) { calendarDay in
+                CalendarDayView(store: store, calendarDay: calendarDay)
+                    .tag(calendarDay.date)
+                    .environment(\.timeCompactViewTopPadding, topPadding)
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .indexViewStyle(.page(backgroundDisplayMode: .never))
+        .safeAreaBar(edge: .top, alignment: .center, spacing: 0, content: {
+            CalendarDateCarousel(dateElements: viewModel.calendarDay, selectedDate: viewModel.todayInCalendar)
+                .background { Color.clear }
+                .scrollIndicators(.hidden)
+                .fixedSize(horizontal: false, vertical: true)
+                .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
+                    self.topPadding = newValue.height
+                }
+        })
     }
     
     
