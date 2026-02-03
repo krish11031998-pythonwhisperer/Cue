@@ -50,7 +50,7 @@ public class Store {
     
     
     public var hasLoggedReminder: AsyncStream<Void> {
-        self.viewContext.changesStream(for: ReminderLog.self, changeTypes: [.inserted])
+        self.viewContext.changesStream(for: ReminderLog.self, changeTypes: [.inserted, .deleted, .updated])
     }
     
     // MARK: - Reminders
@@ -89,7 +89,8 @@ public class Store {
         return reminderLog
     }
     
-    public func deleteLogsFor(at date: Date, for reminder: Reminder) {
+    public func deleteLogsFor(at date: Date, for reminderID: NSManagedObjectID) {
+        let reminder = Reminder.fetch(context: viewContext, for: reminderID)
         ReminderLog.deleteLog(at: date, reminder: reminder, context: viewContext)
     }
     

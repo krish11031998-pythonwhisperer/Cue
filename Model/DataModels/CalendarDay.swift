@@ -45,40 +45,6 @@ public class CalendarDay: Hashable, @unchecked Sendable {
         }
     }
     
-//    private func filterReminderForDate(reminders: [Reminder]) {
-//        var filteredReminders: [Reminder] = []
-//        var filteredReminderLogs: [ReminderLog] = []
-//         reminders.forEach { reminder in
-//            
-//            let startDate = reminder.date!
-//            guard let schedule = reminder.schedule, date.startOfDay >= startDate.startOfDay else {
-//                return
-//            }
-//            
-//             var reminderToAppend: Reminder?
-//            // WeekInterval
-//            if let intervalWeeks = schedule.intervalWeeks {
-//                guard let weekdays = schedule.weekdays,
-//                        checkIfDateIsInWeekInterval(startDate: startDate, intervalWeeks: intervalWeeks),
-//                        checkIfDateInWeekdays(weekDays: weekdays) else { return }
-//                reminderToAppend = reminder
-//            } else if let calendarDates = schedule.calendarDates, calendarDates.contains(Calendar.current.component(.day, from: date)) {
-//                reminderToAppend = reminder
-//            } else if date.startOfDay == startDate.startOfDay {
-//                reminderToAppend = reminder
-//            }
-//             
-//             if let reminderToAppend {
-//                 filteredReminders.append(reminderToAppend)
-//                 filteredReminderLogs = reminderToAppend.logs.filter {
-//                     return $0.date >= date.startOfDay && $0.date <= date.endOfDay
-//                 }
-//             }
-//        }
-//        self.reminders = filteredReminders
-//        self.reminderLogs = filteredReminderLogs
-//    }
-    
     private func checkIfDateIsInWeekInterval(startDate: Date, intervalWeeks: Int) -> Bool {
         
         let startWeek = Calendar.current.component(.weekOfYear, from: startDate)

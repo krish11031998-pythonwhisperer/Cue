@@ -182,11 +182,11 @@ class CalendarDayViewModel {
     
     func logReminder(isLoggedBefore: Bool, date: Date, reminderID: NSManagedObjectID) {
         print("(DEBUG) tapped on logging Reminder!")
-        let dateOfLog = min(Date.now, date.endOfDay)
+        let dateOfLog = max(date.startOfDay, min(Date.now, date.endOfDay))
         if !isLoggedBefore {
             store.logReminder(at: dateOfLog, for: reminderID)
         } else {
-//            store.deleteLogsFor(at: date, for: reminder)
+            store.deleteLogsFor(at: date, for: reminderID)
         }
     }
 }

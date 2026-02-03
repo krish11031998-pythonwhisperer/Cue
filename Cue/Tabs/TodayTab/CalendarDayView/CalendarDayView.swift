@@ -74,9 +74,31 @@ public struct CalendarDayView: View {
         }
         .background(alignment: .center) {
             if calendarDay.reminders.isEmpty {
-                ContentUnavailableView("You have no scheduled Reminders or Habits for today.",
-                                       systemSymbol: .squareSlash)
-                    .font(.headline)
+                ContentUnavailableView {
+                    Image(systemSymbol: .squareSlash)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 120, height: 120, alignment: .center)
+                } description: {
+                    Text("There is nothing in the Cue yet.")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .fontWeight(.semibold)
+                        .padding(.top, 12)
+                } actions: {
+                    Button {
+                        print("(DEBUG) add reminders")
+                    } label: {
+                        Text("Add an reminder")
+                            .font(.headline)
+                            .padding(.init(top: 8, leading: 12, bottom: 8, trailing: 12))
+                            .font(.headline)
+                    }
+                    .buttonStyle(.glass)
+                }
+
+//                ContentUnavailableView("You have no scheduled Reminders or Habits for today.",
+//                                       systemSymbol: .squareSlash)
             }
         }
     }

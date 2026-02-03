@@ -47,7 +47,7 @@ public final class ReminderLog: NSManagedObject, CoreDataEntity {
     
     // MARK: - Fetch
     
-    static func fetchReminderLogsWithinTimeRange(context: NSManagedObjectContext, startTime: Date, endTime: Date) -> [ReminderLog] {
+    public static func fetchReminderLogsWithinTimeRange(context: NSManagedObjectContext, startTime: Date, endTime: Date) -> [ReminderLog] {
         let dateOfLogPredicate = NSPredicate(format: "date >= %@ AND date < %@", startTime as NSDate, endTime as NSDate)
         return Self.fetch(context: context, predicate: dateOfLogPredicate, sortDescriptors: []) ?? []
     }
