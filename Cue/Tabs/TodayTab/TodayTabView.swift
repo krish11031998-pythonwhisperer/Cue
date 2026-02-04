@@ -20,7 +20,7 @@ extension CalendarDay: @retroactive CalendarDateCarouselDataElement, @retroactiv
 struct TodayTabView: View {
     
     enum Presentation: Int, Identifiable {
-        case addReminder = 0
+        case reminderDetail = 0
         
         var id: Int { rawValue }
     }
@@ -52,15 +52,6 @@ struct TodayTabView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        self.viewModel.presentation = .addReminder
-                    } label: {
-                        Image(systemSymbol: .plus)
-                            .font(.body)
-                    }
-                }
-                
                 if viewModel.today.isToday == false {
                     ToolbarItem(placement: .title) {
                         Button {
@@ -104,20 +95,14 @@ struct TodayTabView: View {
                 CalendarView()
             }
         })
-        .sheet(item: $viewModel.presentation) { presentation in
-            switch presentation {
-            case .addReminder:
-                CreateReminderView(store: store)
-                    .presentationDetents([.fraction(1)])
-            }
-        }
+      
     }
     
     private func tabView() -> some View {
-        TabView(selection: $viewModel.today) {
+        TabView(selection: $viewModel.todayInCalendar) {
             ForEach(viewModel.calendarDay, id: \.date) { calendarDay in
                 CalendarDayView(store: store, calendarDay: calendarDay)
-                    .tag(calendarDay.date)
+                    .tag(calendarDay)
                     .environment(\.timeCompactViewTopPadding, viewModel.topPadding)
             }
         }

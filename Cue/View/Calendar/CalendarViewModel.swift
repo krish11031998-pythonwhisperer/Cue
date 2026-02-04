@@ -7,6 +7,8 @@
 
 import Foundation
 import Model
+import VanorUI
+import SwiftUI
 
 @Observable
 class CalendarViewModel {
@@ -51,6 +53,22 @@ class CalendarViewModel {
             await MainActor.run { [weak self] in
                 self?.calendarData = sections
             }
+        }
+    }
+    
+    
+    func buildBubbleConfig(for day: CalendarDay) -> ReminderBubbleView.ElementType? {
+        guard !day.loggedReminders.isEmpty else { return nil }
+        let firstThreeLoggedReminders = day.loggedReminders.prefix(3)
+        
+        switch firstThreeLoggedReminders.count {
+        case 2, 3:
+            return .group(firstThreeLoggedReminders.map({ .init(iconName: $0.icon.symbol ?? $0.icon.emoji ?? "", color: Color.proSky.baseColor)}))
+        case 1:
+            return .single(.init(iconName: firstThreeLoggedReminders.first!.icon.symbol ?? firstThreeLoggedReminders.first!.icon.emoji ?? "", color: Color.proSky.baseColor))
+        default:
+            fatalError("Shouldn't end up here!")
+            
         }
     }
 }

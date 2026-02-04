@@ -40,8 +40,8 @@ struct CreateReminderTasksView: View {
                 .padding(.top, 12)
             }
         }
-        .padding(.init(top: 16, leading: 12, bottom: 16, trailing: 12))
-        .background(Color.secondarySystemGroupedBackground, in: .roundedRect(cornerRadius: 16))
+//        .padding(.init(top: 16, leading: 12, bottom: 16, trailing: 12))
+//        .background(Color.secondarySystemGroupedBackground, in: .roundedRect(cornerRadius: 16))
     }
     
 }

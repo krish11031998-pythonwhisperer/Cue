@@ -30,14 +30,11 @@ class TodayViewModel {
     var topPadding: CGFloat = .zero
     var calendarDay: [CalendarDay] = []
     var loggedReminders: [Reminder] = []
+    var todayInCalendar: CalendarDay? = nil
     var today: Date = Date.now.startOfDay
-    var todayCalendar: CalendarDay? = nil
     @ObservationIgnored
     private var calendarParsingTask: Task<Void, Never>?
     
-    var todayInCalendar: CalendarDay? {
-        calendarDay.first(where: { $0.date == today })
-    }
     
     func setupCalendarForOneMonth(reminders: [Reminder]) {
         guard !reminders.isEmpty else { return }
@@ -46,8 +43,17 @@ class TodayViewModel {
         calendarParsingTask = Task {
             let days = await CalendarManager.shared.setupCalendarForOneMonthFromToday()
             await MainActor.run { [weak self] in
+                self?.updateTodayInCalendar(days.first(where: { $0.date.startOfDay == Date.now.startOfDay }))
                 self?.calendarDay = days
             }
+        }
+    }
+    
+    @MainActor
+    private func updateTodayInCalendar(_ today: CalendarDay?) {
+        if self.todayInCalendar == nil {
+            print("(DEBUG) todayInCalendar is nil, setting it")
+            self.todayInCalendar = today
         }
     }
     
