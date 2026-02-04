@@ -25,20 +25,19 @@ struct TodayTabView: View {
         var id: Int { rawValue }
     }
     
-    let store: Store
-    @State private var presentation: Presentation? = nil
-    @State private var viewModel: TodayViewModel
-    @State private var topPadding: CGFloat = .zero
+    enum FullScreenSheet: Int, Identifiable {
+        case calendar = 0
+        
+        var id: Int { rawValue }
+    }
+    
+    @Environment(Store.self) var store
+    @State private var viewModel: TodayViewModel = .init()
     
     var id: Int {
         var hasher = Hasher()
         store.reminders.forEach { hasher.combine($0.hashValue) }
         return hasher.finalize()
-    }
-    
-    init(store: Store) {
-        self.store = store
-        self._viewModel = .init(initialValue: .init(store: store))
     }
     
     var body: some View {
@@ -55,7 +54,7 @@ struct TodayTabView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        self.presentation = .addReminder
+                        self.viewModel.presentation = .addReminder
                     } label: {
                         Image(systemSymbol: .plus)
                             .font(.body)
@@ -79,7 +78,9 @@ struct TodayTabView: View {
                 
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        print("(DEBUGG) tapped on calendar")
+                        withAnimation(.easeInOut) {
+                            self.viewModel.fullScreenSheet = .calendar
+                        }
                     } label: {
                         Image(systemSymbol: .calendar)
                             .font(.body)
@@ -96,7 +97,14 @@ struct TodayTabView: View {
                 viewModel.setupCalendarForOneMonth(reminders: store.reminders)
             }
         }
-        .sheet(item: $presentation) { presentation in
+        .fullScreenCover(item: $viewModel.fullScreenSheet,
+                         content: { sheet in
+            switch sheet {
+            case .calendar:
+                CalendarView()
+            }
+        })
+        .sheet(item: $viewModel.presentation) { presentation in
             switch presentation {
             case .addReminder:
                 CreateReminderView(store: store)
@@ -110,7 +118,7 @@ struct TodayTabView: View {
             ForEach(viewModel.calendarDay, id: \.date) { calendarDay in
                 CalendarDayView(store: store, calendarDay: calendarDay)
                     .tag(calendarDay.date)
-                    .environment(\.timeCompactViewTopPadding, topPadding)
+                    .environment(\.timeCompactViewTopPadding, viewModel.topPadding)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
@@ -121,7 +129,7 @@ struct TodayTabView: View {
                 .scrollIndicators(.hidden)
                 .fixedSize(horizontal: false, vertical: true)
                 .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
-                    self.topPadding = newValue.height
+                    self.viewModel.topPadding = newValue.height
                 }
         })
     }

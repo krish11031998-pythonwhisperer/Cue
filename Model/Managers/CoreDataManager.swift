@@ -53,6 +53,13 @@ class CoreDataManager {
     }
     
     
+    // MARK: - Background Context
+    
+    func retrieveBackgroundContext() -> NSManagedObjectContext {
+        persistentContainer.newBackgroundContext()
+    }
+    
+    
     // MARK: - Read
     
     func fetch<T: NSManagedObject>(for id: NSManagedObjectID) -> T? {

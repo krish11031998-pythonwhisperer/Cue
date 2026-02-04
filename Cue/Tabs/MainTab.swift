@@ -25,7 +25,7 @@ struct MainTab: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab(value: Tabs.home) {
-                TodayTabView(store: store)
+                TodayTabView()
             } label: {
                 Label {
                     Text("Reminders")
