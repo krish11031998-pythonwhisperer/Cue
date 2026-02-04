@@ -18,7 +18,6 @@ extension CalendarDay: @retroactive CalendarDateCarouselDataElement, @retroactiv
 }
 
 struct TodayTabView: View {
-    
     enum Presentation: Int, Identifiable {
         case reminderDetail = 0
         
@@ -32,7 +31,11 @@ struct TodayTabView: View {
     }
     
     @Environment(Store.self) var store
+//    private let store: Store
+    @State private var presentation: Presentation? = nil
+    @State private var fullScreenSheet: FullScreenSheet? = nil
     @State private var viewModel: TodayViewModel = .init()
+    @State private var topPadding: CGFloat = .zero
     
     var id: Int {
         var hasher = Hasher()
@@ -70,7 +73,7 @@ struct TodayTabView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         withAnimation(.easeInOut) {
-                            self.viewModel.fullScreenSheet = .calendar
+                            self.fullScreenSheet = .calendar
                         }
                     } label: {
                         Image(systemSymbol: .calendar)
@@ -88,7 +91,7 @@ struct TodayTabView: View {
                 viewModel.setupCalendarForOneMonth(reminders: store.reminders)
             }
         }
-        .fullScreenCover(item: $viewModel.fullScreenSheet,
+        .fullScreenCover(item: $fullScreenSheet,
                          content: { sheet in
             switch sheet {
             case .calendar:
@@ -99,11 +102,11 @@ struct TodayTabView: View {
     }
     
     private func tabView() -> some View {
-        TabView(selection: $viewModel.todayInCalendar) {
+        TabView(selection: $viewModel.today) {
             ForEach(viewModel.calendarDay, id: \.date) { calendarDay in
                 CalendarDayView(store: store, calendarDay: calendarDay)
-                    .tag(calendarDay)
-                    .environment(\.timeCompactViewTopPadding, viewModel.topPadding)
+                    .tag(calendarDay.date)
+                    .environment(\.timeCompactViewTopPadding, topPadding)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
@@ -114,7 +117,7 @@ struct TodayTabView: View {
                 .scrollIndicators(.hidden)
                 .fixedSize(horizontal: false, vertical: true)
                 .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
-                    self.viewModel.topPadding = newValue.height
+                    self.topPadding = newValue.height
                 }
         })
     }

@@ -13,48 +13,38 @@ import CoreData
 @Observable
 class TodayViewModel {
     
-    enum Presentation: Int, Identifiable {
-        case addReminder = 0
-        
-        var id: Int { rawValue }
-    }
-    
-    enum FullScreenSheet: Int, Identifiable {
-        case calendar = 0
-        
-        var id: Int { rawValue }
-    }
-    
-    var presentation: Presentation? = nil
-    var fullScreenSheet: FullScreenSheet? = nil
-    var topPadding: CGFloat = .zero
     var calendarDay: [CalendarDay] = []
     var loggedReminders: [Reminder] = []
-    var todayInCalendar: CalendarDay? = nil
     var today: Date = Date.now.startOfDay
+    var todayCalendar: CalendarDay? = nil
     @ObservationIgnored
     private var calendarParsingTask: Task<Void, Never>?
     
+    var todayInCalendar: CalendarDay? {
+        calendarDay.first(where: { $0.date == today })
+    }
     
     func setupCalendarForOneMonth(reminders: [Reminder]) {
-        guard !reminders.isEmpty else { return }
         print(#function)
+        guard !reminders.isEmpty else { return }
         calendarParsingTask?.cancel()
-        calendarParsingTask = Task {
-            let days = await CalendarManager.shared.setupCalendarForOneMonthFromToday()
+        calendarParsingTask = Task { [weak self] in
+            let calendarValues = await CalendarManager.shared.setupCalendarForOneMonthFromToday()
+            
             await MainActor.run { [weak self] in
-                self?.updateTodayInCalendar(days.first(where: { $0.date.startOfDay == Date.now.startOfDay }))
-                self?.calendarDay = days
+                guard calendarValues.isEmpty == false else { return }
+                let today = calendarValues.first {
+                    return $0.date == Date.now.startOfDay
+                }
+                
+                if self?.todayCalendar == nil {
+                    self?.todayCalendar = today
+                }
+                
+                self?.calendarDay = calendarValues
             }
+            
         }
     }
-    
-    @MainActor
-    private func updateTodayInCalendar(_ today: CalendarDay?) {
-        if self.todayInCalendar == nil {
-            print("(DEBUG) todayInCalendar is nil, setting it")
-            self.todayInCalendar = today
-        }
-    }
-    
+
 }
