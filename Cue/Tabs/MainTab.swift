@@ -13,10 +13,12 @@ struct MainTab: View {
     
     enum Tabs: Hashable {
         case home
+        case create
     }
     
     private let store: Store
     @State private var selectedTab: Tabs = .home
+    @State private var presentCreateReminder: Bool = false
     
     init(store: Store) {
         self.store = store
@@ -25,7 +27,7 @@ struct MainTab: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab(value: Tabs.home) {
-                TodayTabView(store: store)
+                TodayTabView()
             } label: {
                 Label {
                     Text("Reminders")
@@ -33,6 +35,20 @@ struct MainTab: View {
                     Image(systemName: "calendar")
                 }
             }
+            
+            Tab("", systemImage: "plus", value: .create, role: .search) {
+                Color.clear
+            }
+        }
+        .onChange(of: selectedTab) { oldValue, newValue in
+            if newValue == .create {
+                self.presentCreateReminder = true
+                self.selectedTab = oldValue
+            }
+        }
+        .sheet(isPresented: $presentCreateReminder) {
+            CreateReminderView(store: store)
+                .presentationDetents([.fraction(1)])
         }
     }
     

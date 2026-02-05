@@ -12,7 +12,8 @@ import CoreData
 public class Store {
     
     public var reminders: [Reminder] = []
-//    public var hasLoggedReminder: AnyPubl
+    public var presentCreateReminder: Bool = false
+    
     public var viewContext: NSManagedObjectContext {
         CoreDataManager.shared.persistentContainer.viewContext
     }

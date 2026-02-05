@@ -168,9 +168,9 @@ class CalendarDayViewModel {
                                               icon: icon,
                                               theme: Color.proSky,
                                               time: reminder.date,
-                                              state: .hasLogged(.init(hasLogged: isLogged)),
+                                              state: .hasLogged(isLogged),
                                               tasks: tasks) { [weak self] in
-            self?.logReminder(isLoggedBefore: isLogged, date: calendarDay.date, reminderID: reminder.objectId)
+            self?.logReminder(isLoggedBefore: isLogged, date: calendarDay.date, reminder: reminder)
         } deleteReminder: { [weak self] in
             withAnimation(.snappy) {
                 self?.store.deleteReminder(reminderID: reminder.objectId)
@@ -180,9 +180,15 @@ class CalendarDayViewModel {
         return model
     }
     
-    func logReminder(isLoggedBefore: Bool, date: Date, reminderID: NSManagedObjectID) {
-        print("(DEBUG) tapped on logging Reminder!")
-        let dateOfLog = max(date.startOfDay, min(Date.now, date.endOfDay))
+    func logReminder(isLoggedBefore: Bool, date: Date, reminder: ReminderModel) {
+        let dateOfLog: Date
+        if date.startOfDay < Date.now.startOfDay {
+            dateOfLog = Calendar.current.date(byAdding: .init(hour: reminder.schedule?.hour ?? 0, minute: reminder.schedule?.minute ?? 0), to: date.startOfDay) ?? date.startOfDay
+        } else {
+            dateOfLog = max(date.startOfDay, min(Date.now, date.endOfDay))
+        }
+        
+        let reminderID = reminder.objectId!
         if !isLoggedBefore {
             store.logReminder(at: dateOfLog, for: reminderID)
         } else {

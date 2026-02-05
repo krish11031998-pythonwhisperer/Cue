@@ -18,27 +18,29 @@ extension CalendarDay: @retroactive CalendarDateCarouselDataElement, @retroactiv
 }
 
 struct TodayTabView: View {
-    
     enum Presentation: Int, Identifiable {
-        case addReminder = 0
+        case reminderDetail = 0
         
         var id: Int { rawValue }
     }
     
-    let store: Store
+    enum FullScreenSheet: Int, Identifiable {
+        case calendar = 0
+        
+        var id: Int { rawValue }
+    }
+    
+    @Environment(Store.self) var store
+//    private let store: Store
     @State private var presentation: Presentation? = nil
-    @State private var viewModel: TodayViewModel
+    @State private var fullScreenSheet: FullScreenSheet? = nil
+    @State private var viewModel: TodayViewModel = .init()
     @State private var topPadding: CGFloat = .zero
     
     var id: Int {
         var hasher = Hasher()
         store.reminders.forEach { hasher.combine($0.hashValue) }
         return hasher.finalize()
-    }
-    
-    init(store: Store) {
-        self.store = store
-        self._viewModel = .init(initialValue: .init(store: store))
     }
     
     var body: some View {
@@ -53,15 +55,6 @@ struct TodayTabView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        self.presentation = .addReminder
-                    } label: {
-                        Image(systemSymbol: .plus)
-                            .font(.body)
-                    }
-                }
-                
                 if viewModel.today.isToday == false {
                     ToolbarItem(placement: .title) {
                         Button {
@@ -79,7 +72,9 @@ struct TodayTabView: View {
                 
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        print("(DEBUGG) tapped on calendar")
+                        withAnimation(.easeInOut) {
+                            self.fullScreenSheet = .calendar
+                        }
                     } label: {
                         Image(systemSymbol: .calendar)
                             .font(.body)
@@ -96,13 +91,14 @@ struct TodayTabView: View {
                 viewModel.setupCalendarForOneMonth(reminders: store.reminders)
             }
         }
-        .sheet(item: $presentation) { presentation in
-            switch presentation {
-            case .addReminder:
-                CreateReminderView(store: store)
-                    .presentationDetents([.fraction(1)])
+        .fullScreenCover(item: $fullScreenSheet,
+                         content: { sheet in
+            switch sheet {
+            case .calendar:
+                CalendarView()
             }
-        }
+        })
+      
     }
     
     private func tabView() -> some View {
