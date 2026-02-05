@@ -101,7 +101,7 @@ public class CalendarManager {
             for date in dates {
                 group.addTask { [weak self] in
                     guard !Task.isCancelled else { return nil }
-//                    let date = Calendar.current.date(byAdding: .day, value: i, to: .now)!.startOfDay
+                    
                     if let self {
                         return await self.retrieveCalendayDay(backgroundContext: backgroundContext, date: date, reminders: reminderModels)
                     } else {

@@ -51,7 +51,7 @@ public struct CalendarDayView: View {
     public var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                DateView(todayModel: .init(date: date, reminderCompleted: .random(in: 1...5), reminderTotal: 5))
+                DateView(todayModel: .init(date: date, showArc: true))
                     .padding(.bottom, 32)
                 if !calendarDay.reminders.isEmpty {
                     ForEach(viewModel.sections(calendarDay: calendarDay)) { section in

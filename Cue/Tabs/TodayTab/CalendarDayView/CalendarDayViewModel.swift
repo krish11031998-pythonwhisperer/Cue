@@ -168,7 +168,7 @@ class CalendarDayViewModel {
                                               icon: icon,
                                               theme: Color.proSky,
                                               time: reminder.date,
-                                              state: .hasLogged(.init(hasLogged: isLogged)),
+                                              state: .hasLogged(isLogged),
                                               tasks: tasks) { [weak self] in
             self?.logReminder(isLoggedBefore: isLogged, date: calendarDay.date, reminder: reminder)
         } deleteReminder: { [weak self] in

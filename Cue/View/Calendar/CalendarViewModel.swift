@@ -20,13 +20,20 @@ class CalendarViewModel {
         var id: Int {
             month
         }
+        
+        var firstDayInMonth: Int {
+            guard let firstDay = days.first else {
+                fatalError("Must have a first Day!")
+            }
+            
+            return firstDay.date.weekDayValue
+        }
     }
     
     @ObservationIgnored
     private var calendarDayTask: Task<Void, Never>?
     
     var calendarData: [Section] = []
-    
     
     func fetchCalendarSection() {
         calendarDayTask?.cancel()
@@ -61,11 +68,22 @@ class CalendarViewModel {
         guard !day.loggedReminders.isEmpty else { return nil }
         let firstThreeLoggedReminders = day.loggedReminders.prefix(3)
         
+        func getIcon(_ cueIcon: CueIcon) -> Icon {
+            if let symbol = cueIcon.symbol {
+                return .symbol(.init(rawValue: symbol))
+            } else if let emoji = cueIcon.emoji {
+                return .emoji(.init(emoji))
+            } else {
+                fatalError("No Icon!")
+            }
+        }
+        
+        
         switch firstThreeLoggedReminders.count {
         case 2, 3:
-            return .group(firstThreeLoggedReminders.map({ .init(iconName: $0.icon.symbol ?? $0.icon.emoji ?? "", color: Color.proSky.baseColor)}))
+            return .group(firstThreeLoggedReminders.map({ .init(icon: getIcon($0.icon), color: Color.proSky.baseColor)}))
         case 1:
-            return .single(.init(iconName: firstThreeLoggedReminders.first!.icon.symbol ?? firstThreeLoggedReminders.first!.icon.emoji ?? "", color: Color.proSky.baseColor))
+            return .single(.init(icon: getIcon(firstThreeLoggedReminders.first!.icon), color: Color.proSky.baseColor))
         default:
             fatalError("Shouldn't end up here!")
             
