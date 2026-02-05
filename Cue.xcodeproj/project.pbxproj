@@ -39,7 +39,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		EF079D722F1BE5EC00986EF8 /* Cue.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cue.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EF079D722F1BE5EC00986EF8 /* Kyu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kyu.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EF079D8A2F1BFFC600986EF8 /* Model.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Model.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -91,7 +91,7 @@
 		EF079D732F1BE5EC00986EF8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				EF079D722F1BE5EC00986EF8 /* Cue.app */,
+				EF079D722F1BE5EC00986EF8 /* Kyu.app */,
 				EF079D8A2F1BFFC600986EF8 /* Model.framework */,
 			);
 			name = Products;
@@ -117,9 +117,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		EF079D712F1BE5EC00986EF8 /* Cue */ = {
+		EF079D712F1BE5EC00986EF8 /* Kyu */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EF079D822F1BE5ED00986EF8 /* Build configuration list for PBXNativeTarget "Cue" */;
+			buildConfigurationList = EF079D822F1BE5ED00986EF8 /* Build configuration list for PBXNativeTarget "Kyu" */;
 			buildPhases = (
 				EF079D6E2F1BE5EC00986EF8 /* Sources */,
 				EF079D6F2F1BE5EC00986EF8 /* Frameworks */,
@@ -134,13 +134,13 @@
 			fileSystemSynchronizedGroups = (
 				EF079D742F1BE5EC00986EF8 /* Cue */,
 			);
-			name = Cue;
+			name = Kyu;
 			packageProductDependencies = (
 				EF079DF92F1C304200986EF8 /* KKit */,
 				EFA0BE6E2F1C3BDF00866D42 /* VanorUI */,
 			);
 			productName = Cue;
-			productReference = EF079D722F1BE5EC00986EF8 /* Cue.app */;
+			productReference = EF079D722F1BE5EC00986EF8 /* Kyu.app */;
 			productType = "com.apple.product-type.application";
 		};
 		EF079D892F1BFFC600986EF8 /* Model */ = {
@@ -204,7 +204,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				EF079D712F1BE5EC00986EF8 /* Cue */,
+				EF079D712F1BE5EC00986EF8 /* Kyu */,
 				EF079D892F1BFFC600986EF8 /* Model */,
 			);
 		};
@@ -380,11 +380,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Cue/Cue.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Kyu;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -395,15 +397,20 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.Krishna.Cue;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Krishna.Kyu;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -413,11 +420,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Cue/Cue.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Kyu;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -428,15 +437,20 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.Krishna.Cue;
+				PRODUCT_BUNDLE_IDENTIFIER = com.Krishna.Kyu;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -528,7 +542,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		EF079D822F1BE5ED00986EF8 /* Build configuration list for PBXNativeTarget "Cue" */ = {
+		EF079D822F1BE5ED00986EF8 /* Build configuration list for PBXNativeTarget "Kyu" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EF079D832F1BE5ED00986EF8 /* Debug */,
