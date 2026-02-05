@@ -12,9 +12,11 @@ import VanorUI
 public struct CalendaryDetailSheetView: View {
     
     let calendarDay: CalendarDay
+    let presentCreateReminder: () -> Void
     
-    public init(calendarDay: CalendarDay) {
+    public init(calendarDay: CalendarDay, presentCreateReminder: @escaping () -> Void) {
         self.calendarDay = calendarDay
+        self.presentCreateReminder = presentCreateReminder
     }
     
     public var body: some View {
@@ -23,9 +25,6 @@ public struct CalendaryDetailSheetView: View {
                 .padding(.bottom, 8)
             if calendarDay.reminders.isEmpty {
                 VStack(alignment: .center, spacing: 8) {
-//                    EmojiImageView(emoji: .init("😇"), sizing: .font(.la))
-//                        .padding(.all, 4)
-//                        .frame(width: 72, height: 72, alignment: .center)
                     Text("😇")
                         .font(.system(.largeTitle))
                     
@@ -33,9 +32,7 @@ public struct CalendaryDetailSheetView: View {
                         .font(.headline)
                         .fontWeight(.semibold)
                     
-                    Button {
-                        print("(DEBUG) starting adding a new one!")
-                    } label: {
+                    Button (action: presentCreateReminder) {
                         Text("Add an reminder")
                             .font(.headline)
                             .padding(.init(top: 8, leading: 12, bottom: 8, trailing: 12))

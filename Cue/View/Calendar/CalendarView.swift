@@ -17,6 +17,11 @@ struct CalendarView: View {
     @State private var size: CGSize = .zero
     @State private var viewModel: CalendarViewModel = .init()
     @State private var selectedCalendarDay: CalendarDay? = nil
+    private let createReminder: () -> Void
+    
+    init(createReminder: @escaping () -> Void) {
+        self.createReminder = createReminder
+    }
     
     var chipBackgroundColor: Color {
         switch colorScheme {
@@ -70,8 +75,10 @@ struct CalendarView: View {
             viewModel.fetchCalendarSection()
         }
         .sheet(item: $selectedCalendarDay) { selectedCalendarDay in
-            CalendaryDetailSheetView(calendarDay: selectedCalendarDay)
-                .fittedPresentationDetent()
+            CalendaryDetailSheetView(calendarDay: selectedCalendarDay) {
+                self.createReminder()
+            }
+            .fittedPresentationDetent()
         }
     }
     

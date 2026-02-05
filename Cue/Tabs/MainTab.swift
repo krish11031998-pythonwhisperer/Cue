@@ -27,7 +27,9 @@ struct MainTab: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab(value: Tabs.home) {
-                TodayTabView()
+                TodayTabView {
+                    self.presentCreateReminder = true
+                }
             } label: {
                 Label {
                     Text("Reminders")

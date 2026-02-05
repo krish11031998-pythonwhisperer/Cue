@@ -30,12 +30,17 @@ struct TodayTabView: View {
         var id: Int { rawValue }
     }
     
+    @Environment(\.dismiss) var dismiss
     @Environment(Store.self) var store
-//    private let store: Store
+    private var presentCreateReminder: () -> Void
     @State private var presentation: Presentation? = nil
     @State private var fullScreenSheet: FullScreenSheet? = nil
     @State private var viewModel: TodayViewModel = .init()
     @State private var topPadding: CGFloat = .zero
+    
+    init(presentCreateReminder: @escaping () -> Void) {
+        self.presentCreateReminder = presentCreateReminder
+    }
     
     var id: Int {
         var hasher = Hasher()
@@ -95,7 +100,10 @@ struct TodayTabView: View {
                          content: { sheet in
             switch sheet {
             case .calendar:
-                CalendarView()
+                CalendarView {
+                    self.dismiss()
+                    self.presentCreateReminder()
+                }
             }
         })
       
