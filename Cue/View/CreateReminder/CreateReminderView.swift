@@ -17,8 +17,18 @@ struct CreateReminderView: View {
     @Environment(\.dismiss) var dismiss
     @FocusState var textFieldIsFocused: Bool
     
-    init(store: Store) {
-        self._viewModel = .init(initialValue: .init(store: store))
+    enum Mode {
+        case create
+        case edit(ReminderModel)
+    }
+    
+    init(mode: Mode, store: Store) {
+        switch mode {
+        case .create:
+            self._viewModel = .init(initialValue: .init(store: store))
+        case .edit(let reminderModel):
+            self._viewModel = .init(initialValue: .init(reminderModel: reminderModel, store: store))
+        }
     }
     
     var body: some View {
@@ -97,7 +107,7 @@ struct CreateReminderView: View {
                     DatePickerView(date: $viewModel.date, viewType: .date("Reminder Start Date", .calendar))
                     .fittedPresentationDetent()
                 case .repeat:
-                    ReminderWeekPlannerView {
+                    ReminderWeekPlannerView(selectedDays: viewModel.scheduleBuilder.weekdays ?? [], weekInterval: viewModel.scheduleBuilder.intervalWeek ?? 1, datesInMonth: viewModel.scheduleBuilder.dates ?? [], reminderType: viewModel.scheduleBuilder.dates != nil ? .monthly : .weekly) {
                         viewModel.scheduleBuilder = $0
                     }
                         .fittedPresentationDetent()
@@ -232,5 +242,5 @@ struct CreateReminderView: View {
 }
 
 #Preview {
-    CreateReminderView(store: .init())
+    CreateReminderView(mode: .create, store: .init())
 }

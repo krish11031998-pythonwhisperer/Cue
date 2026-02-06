@@ -11,8 +11,8 @@ import Model
 
 struct ReminderWeekPlannerView: View {
     
-    enum Day: CaseIterable, Identifiable {
-        case sunday, monday, tuesday, wednesday, thursday, friday, saturday
+    enum Day: Int, CaseIterable, Identifiable {
+        case sunday = 1, monday, tuesday, wednesday, thursday, friday, saturday
         
         var id: Int {
             switch self {
@@ -41,7 +41,12 @@ struct ReminderWeekPlannerView: View {
     private let dateToSelect: Int
     let action: (Reminder.ScheduleBuilder) -> Void
     
-    init(action: @escaping (Reminder.ScheduleBuilder) -> Void) {
+    init(selectedDays: Set<Int>, weekInterval: Int, datesInMonth: Set<Int>, reminderType: ReminderType, action: @escaping (Reminder.ScheduleBuilder) -> Void) {
+        let selectedDaysInDay = Set(selectedDays.compactMap({ Day(rawValue: $0) }))
+        self._selectedDays = .init(initialValue: selectedDaysInDay)
+        self._weekInterval = .init(initialValue: weekInterval)
+        self._datesInMonth = .init(initialValue: datesInMonth)
+        self._reminderType = .init(initialValue: reminderType)
         dateToSelect = Date.now.day
         self.action = action
     }
@@ -93,6 +98,7 @@ struct ReminderWeekPlannerView: View {
                         } label: {
                             Text(Calendar.current.shortStandaloneWeekdaySymbols[day.id - 1])
                                 .font(.headline)
+                                .foregroundStyle(selectedDays.contains(day) ? .white : .primary)
                         }
                         .buttonStyle(.circleGlass(.regular.tint(selectedDays.contains(day) ? Color.proSky.outlinePrimary : nil)))
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -101,20 +107,13 @@ struct ReminderWeekPlannerView: View {
                 }
                 
                 Menu("\(weekInterval == 1 ? "Every week" : "Every \(weekInterval) weeks")") {
-                    Button("every Week") {
+                    Button("every week") {
                         weekInterval = 1
                     }
-                    Button("every 2 Week") {
-                        weekInterval = 2
-                    }
-                    Button("every 3 Week") {
-                        weekInterval = 3
-                    }
-                    Button("every 4 Week") {
-                        weekInterval = 4
-                    }
-                    Button("every 5 Week") {
-                        weekInterval = 5
+                    ForEach(2..<5) { count in
+                        Button("every \(count) weeks") {
+                            weekInterval = count
+                        }
                     }
                 }
                 .font(.headline)
@@ -221,10 +220,11 @@ struct ReminderWeekPlannerView: View {
                 Text(datesInMonthString)
                     .contentTransition(.opacity)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
-            }.task {
-                print("(DEBUG) set Date!")
-                self.datesInMonth = [Date.now.day]
             }
+//            .task {
+//                print("(DEBUG) set Date!")
+//                self.datesInMonth = [Date.now.day]
+//            }
             
         }
             
@@ -233,7 +233,7 @@ struct ReminderWeekPlannerView: View {
 
 
 #Preview {
-    ReminderWeekPlannerView { scheduleBuilder in
+    ReminderWeekPlannerView(selectedDays: [], weekInterval: 1, datesInMonth: [], reminderType: .weekly) { scheduleBuilder in
         print("(DEBUG) Schedule Builder: \(scheduleBuilder)")
     }
 }

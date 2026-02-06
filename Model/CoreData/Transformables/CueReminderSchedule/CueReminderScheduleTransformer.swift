@@ -26,7 +26,7 @@ class CueReminderScheduleTransformer: ValueTransformer {
         guard let data = value as? Data else { return nil }
         
         do {
-            let cueIcon = try NSKeyedUnarchiver.unarchivedObject(ofClasses: [CueReminderSchedule.self, NSSet.self, NSNumber.self, NSDate.self], from: data)
+            let cueIcon = try NSKeyedUnarchiver.unarchivedObject(ofClasses: [CueReminderSchedule.self, NSNumber.self, NSDate.self], from: data)
             return cueIcon
         } catch {
             print(error)

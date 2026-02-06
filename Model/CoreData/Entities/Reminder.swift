@@ -51,24 +51,28 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     
     // MARK: - Create
     
-    static func createReminder(context: NSManagedObjectContext, title: String, symbol: String, date: Date, schedule: ScheduleBuilder?,  tasks: [CueTask]) -> Reminder {
+    static func createReminder(context: NSManagedObjectContext, title: String, icon: CueIcon, date: Date, schedule: ScheduleBuilder? = nil, tasks: [CueTask]) -> Reminder {
         let reminder = create(context: context)
         reminder.title = title
-        reminder.icon = .init(symbol: symbol, emoji: nil)
+        reminder.icon = icon
         reminder.date = date
         reminder.tasksContainer = .init(tasks: tasks)
         reminder.schedule = .init(hour: schedule?.hour ?? 0, minute: schedule?.minute ?? 0, intervalWeeks: schedule?.intervalWeek, weekdays: schedule?.weekdays, calendarDates: schedule?.dates)
         return reminder
     }
     
-    static func createReminder(context: NSManagedObjectContext, title: String, emoji: String, date: Date, schedule: ScheduleBuilder? = nil, tasks: [CueTask]) -> Reminder {
-        let reminder = create(context: context)
-        reminder.title = title
-        reminder.icon = .init(symbol: nil, emoji: emoji)
-        reminder.date = date
-        reminder.tasksContainer = .init(tasks: tasks)
-        reminder.schedule = .init(hour: schedule?.hour ?? 0, minute: schedule?.minute ?? 0, intervalWeeks: schedule?.intervalWeek, weekdays: schedule?.weekdays, calendarDates: schedule?.dates)
-        return reminder
+    
+    
+    public func updateProperties(title: String, icon: CueIcon, date: Date, scheduleBuilder: ScheduleBuilder? = nil, tasks: [CueTask]) {
+        self.title = title
+        self.icon = icon
+        self.date = date
+        self.tasksContainer = .init(tasks: tasks)
+        self.schedule = .init(hour: scheduleBuilder?.hour ?? 0,
+                              minute: scheduleBuilder?.minute ?? 0,
+                              intervalWeeks: scheduleBuilder?.intervalWeek,
+                              weekdays: scheduleBuilder?.weekdays,
+                              calendarDates: scheduleBuilder?.dates)
     }
     
     

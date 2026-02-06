@@ -57,15 +57,8 @@ public class Store {
     // MARK: - Reminders
     
     @discardableResult
-    public func createReminder(title: String, symbol: String, date: Date, scheduleBuilder: Reminder.ScheduleBuilder?, tasks: [CueTask] = []) -> Reminder {
-        let reminder = Reminder.createReminder(context: viewContext, title: title, symbol: symbol, date: date, schedule: scheduleBuilder, tasks: tasks)
-        viewContext.saveContext()
-        return reminder
-    }
-    
-    @discardableResult
-    public func createReminder(title: String, emoji: String, date: Date, scheduleBuilder: Reminder.ScheduleBuilder?, tasks: [CueTask] = []) -> Reminder {
-        let reminder = Reminder.createReminder(context: viewContext, title: title, emoji: emoji, date: date, schedule: scheduleBuilder, tasks: tasks)
+    public func createReminder(title: String, icon: CueIcon, date: Date, scheduleBuilder: Reminder.ScheduleBuilder?, tasks: [CueTask] = []) -> Reminder {
+        let reminder = Reminder.createReminder(context: viewContext, title: title, icon: icon, date: date, schedule: scheduleBuilder, tasks: tasks)
         viewContext.saveContext()
         return reminder
     }
@@ -75,6 +68,10 @@ public class Store {
         reminder.delete(context: viewContext)
     }
     
+    public func updateReminder(for id: NSManagedObjectID, transform: (Reminder) -> Void) {
+        let reminder = Reminder.fetch(context: viewContext, for: id)
+        reminder.update(context: viewContext, transform: transform)
+    }
     
     // MARK: - ReminderLogs
     
