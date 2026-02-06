@@ -87,39 +87,38 @@ struct ReminderWeekPlannerView: View {
             switch reminderType {
             case .weekly:
                 VStack(alignment: .center, spacing: 16) {
-                HStack(alignment: .center, spacing: 8) {
-                    ForEach(Day.allCases, id: \.self) { day in
-                        Button {
-                            if selectedDays.contains(day) {
-                                selectedDays.remove(day)
-                            } else {
-                                selectedDays.insert(day)
+                    HStack(alignment: .center, spacing: 8) {
+                        ForEach(Day.allCases, id: \.self) { day in
+                            Button {
+                                if selectedDays.contains(day) {
+                                    selectedDays.remove(day)
+                                } else {
+                                    selectedDays.insert(day)
+                                }
+                            } label: {
+                                Text(Calendar.current.shortStandaloneWeekdaySymbols[day.id - 1])
+                                    .font(.headline)
+                                    .foregroundStyle(selectedDays.contains(day) ? .white : .primary)
                             }
-                        } label: {
-                            Text(Calendar.current.shortStandaloneWeekdaySymbols[day.id - 1])
-                                .font(.headline)
-                                .foregroundStyle(selectedDays.contains(day) ? .white : .primary)
-                        }
-                        .buttonStyle(.circleGlass(.regular.tint(selectedDays.contains(day) ? Color.proSky.outlinePrimary : nil)))
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .frame(height: 56)
-                    }
-                }
-                
-                Menu("\(weekInterval == 1 ? "Every week" : "Every \(weekInterval) weeks")") {
-                    Button("every week") {
-                        weekInterval = 1
-                    }
-                    ForEach(2..<5) { count in
-                        Button("every \(count) weeks") {
-                            weekInterval = count
+                            .buttonStyle(.circleGlass(.regular.tint(selectedDays.contains(day) ? Color.proSky.outlinePrimary : nil)))
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .frame(height: 56)
                         }
                     }
+                    
+                    Menu("\(weekInterval == 1 ? "Every week" : "Every \(weekInterval) weeks")") {
+                        Button("every week") {
+                            weekInterval = 1
+                        }
+                        ForEach(2..<5) { count in
+                            Button("every \(count) weeks") {
+                                weekInterval = count
+                            }
+                        }
+                    }
+                    .font(.headline)
+                    .buttonStyle(.glass)
                 }
-                .font(.headline)
-                .buttonStyle(.glass)
-            }
-                
             case .monthly:
                DateGridView(datesInMonth: $datesInMonth)
             }
@@ -221,11 +220,6 @@ struct ReminderWeekPlannerView: View {
                     .contentTransition(.opacity)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
-//            .task {
-//                print("(DEBUG) set Date!")
-//                self.datesInMonth = [Date.now.day]
-//            }
-            
         }
             
     }
@@ -233,7 +227,21 @@ struct ReminderWeekPlannerView: View {
 
 
 #Preview {
-    ReminderWeekPlannerView(selectedDays: [], weekInterval: 1, datesInMonth: [], reminderType: .weekly) { scheduleBuilder in
-        print("(DEBUG) Schedule Builder: \(scheduleBuilder)")
-    }
+    @Previewable @State var showSheet: Bool = false
+    VStack {
+        Button {
+            showSheet.toggle()
+        } label: {
+            Text("Pesent Sheet")
+                .padding(.vertical, 12)
+        }
+        .buttonSizing(.flexible)
+        .buttonStyle(.glassProminent)
+
+    }.sheet(isPresented: $showSheet, content: {
+        ReminderWeekPlannerView(selectedDays: [], weekInterval: 1, datesInMonth: [], reminderType: .weekly) { scheduleBuilder in
+            print("(DEBUG) Schedule Builder: \(scheduleBuilder)")
+        }
+        .fittedPresentationDetent()
+    })
 }
