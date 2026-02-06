@@ -11,8 +11,8 @@ import Model
 
 struct ReminderWeekPlannerView: View {
     
-    enum Day: CaseIterable, Identifiable {
-        case sunday, monday, tuesday, wednesday, thursday, friday, saturday
+    enum Day: Int, CaseIterable, Identifiable {
+        case sunday = 1, monday, tuesday, wednesday, thursday, friday, saturday
         
         var id: Int {
             switch self {
@@ -41,7 +41,12 @@ struct ReminderWeekPlannerView: View {
     private let dateToSelect: Int
     let action: (Reminder.ScheduleBuilder) -> Void
     
-    init(action: @escaping (Reminder.ScheduleBuilder) -> Void) {
+    init(selectedDays: Set<Int>, weekInterval: Int, datesInMonth: Set<Int>, reminderType: ReminderType, action: @escaping (Reminder.ScheduleBuilder) -> Void) {
+        let selectedDaysInDay = Set(selectedDays.compactMap({ Day(rawValue: $0) }))
+        self._selectedDays = .init(initialValue: selectedDaysInDay)
+        self._weekInterval = .init(initialValue: weekInterval)
+        self._datesInMonth = .init(initialValue: datesInMonth)
+        self._reminderType = .init(initialValue: reminderType)
         dateToSelect = Date.now.day
         self.action = action
     }
@@ -82,45 +87,38 @@ struct ReminderWeekPlannerView: View {
             switch reminderType {
             case .weekly:
                 VStack(alignment: .center, spacing: 16) {
-                HStack(alignment: .center, spacing: 8) {
-                    ForEach(Day.allCases, id: \.self) { day in
-                        Button {
-                            if selectedDays.contains(day) {
-                                selectedDays.remove(day)
-                            } else {
-                                selectedDays.insert(day)
+                    HStack(alignment: .center, spacing: 8) {
+                        ForEach(Day.allCases, id: \.self) { day in
+                            Button {
+                                if selectedDays.contains(day) {
+                                    selectedDays.remove(day)
+                                } else {
+                                    selectedDays.insert(day)
+                                }
+                            } label: {
+                                Text(Calendar.current.shortStandaloneWeekdaySymbols[day.id - 1])
+                                    .font(.headline)
+                                    .foregroundStyle(selectedDays.contains(day) ? .white : .primary)
                             }
-                        } label: {
-                            Text(Calendar.current.shortStandaloneWeekdaySymbols[day.id - 1])
-                                .font(.headline)
+                            .buttonStyle(.circleGlass(.regular.tint(selectedDays.contains(day) ? Color.proSky.outlinePrimary : nil)))
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .frame(height: 56)
                         }
-                        .buttonStyle(.circleGlass(.regular.tint(selectedDays.contains(day) ? Color.proSky.outlinePrimary : nil)))
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .frame(height: 56)
                     }
+                    
+                    Menu("\(weekInterval == 1 ? "Every week" : "Every \(weekInterval) weeks")") {
+                        Button("every week") {
+                            weekInterval = 1
+                        }
+                        ForEach(2..<5) { count in
+                            Button("every \(count) weeks") {
+                                weekInterval = count
+                            }
+                        }
+                    }
+                    .font(.headline)
+                    .buttonStyle(.glass)
                 }
-                
-                Menu("\(weekInterval == 1 ? "Every week" : "Every \(weekInterval) weeks")") {
-                    Button("every Week") {
-                        weekInterval = 1
-                    }
-                    Button("every 2 Week") {
-                        weekInterval = 2
-                    }
-                    Button("every 3 Week") {
-                        weekInterval = 3
-                    }
-                    Button("every 4 Week") {
-                        weekInterval = 4
-                    }
-                    Button("every 5 Week") {
-                        weekInterval = 5
-                    }
-                }
-                .font(.headline)
-                .buttonStyle(.glass)
-            }
-                
             case .monthly:
                DateGridView(datesInMonth: $datesInMonth)
             }
@@ -221,11 +219,7 @@ struct ReminderWeekPlannerView: View {
                 Text(datesInMonthString)
                     .contentTransition(.opacity)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
-            }.task {
-                print("(DEBUG) set Date!")
-                self.datesInMonth = [Date.now.day]
             }
-            
         }
             
     }
@@ -233,7 +227,21 @@ struct ReminderWeekPlannerView: View {
 
 
 #Preview {
-    ReminderWeekPlannerView { scheduleBuilder in
-        print("(DEBUG) Schedule Builder: \(scheduleBuilder)")
-    }
+    @Previewable @State var showSheet: Bool = false
+    VStack {
+        Button {
+            showSheet.toggle()
+        } label: {
+            Text("Pesent Sheet")
+                .padding(.vertical, 12)
+        }
+        .buttonSizing(.flexible)
+        .buttonStyle(.glassProminent)
+
+    }.sheet(isPresented: $showSheet, content: {
+        ReminderWeekPlannerView(selectedDays: [], weekInterval: 1, datesInMonth: [], reminderType: .weekly) { scheduleBuilder in
+            print("(DEBUG) Schedule Builder: \(scheduleBuilder)")
+        }
+        .fittedPresentationDetent()
+    })
 }

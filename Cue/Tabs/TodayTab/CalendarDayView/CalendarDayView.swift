@@ -26,10 +26,15 @@ public extension EnvironmentValues {
 
 public struct CalendarDayView: View {
     
-    enum Presentation: Int, Identifiable {
-        case addReminder = 0
+    enum Presentation: Identifiable {
+        case editReminder(ReminderModel)
         
-        var id: Int { rawValue }
+        var id: Int {
+            switch self {
+            case .editReminder(let reminderModel):
+                return reminderModel.hashValue
+            }
+        }
     }
     
     private let store: Store
@@ -57,9 +62,14 @@ public struct CalendarDayView: View {
                     ForEach(viewModel.sections(calendarDay: calendarDay)) { section in
                         Section {
                             ForEach(section.reminders) { model in
-                                ReminderView(model: model)
-                                    .id(model)
-                                    .padding(.bottom, 8)
+                                Button {
+                                    self.presentation = .editReminder(model.reminder)
+                                } label: {
+                                    ReminderView(model: model.viewConfig)
+                                        .id(model)
+                                        .padding(.bottom, 8)
+                                }
+                                .buttonStyle(.plain)
                             }
                         } header: {
                             SectionHeader(section: section.timeOfDay)
@@ -72,6 +82,15 @@ public struct CalendarDayView: View {
             .padding(.horizontal, 20)
             .padding(.top, 12)
         }
+        .ignoresSafeArea(edges: .bottom)
+        .scrollEdgeEffectStyle(.soft, for: .bottom)
+        .sheet(item: $presentation, content: { presentation in
+            switch presentation {
+            case .editReminder(let model):
+                CreateReminderView(mode: .edit(model), store: store)
+                    .presentationDetents([.fraction(1)])
+            }
+        })
         .background(alignment: .center) {
             if calendarDay.reminders.isEmpty {
                 ContentUnavailableView {
@@ -96,9 +115,6 @@ public struct CalendarDayView: View {
                     }
                     .buttonStyle(.glass)
                 }
-
-//                ContentUnavailableView("You have no scheduled Reminders or Habits for today.",
-//                                       systemSymbol: .squareSlash)
             }
         }
     }

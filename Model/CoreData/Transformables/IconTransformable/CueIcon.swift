@@ -42,13 +42,8 @@ public class CueIcon: NSObject, NSSecureCoding, Codable, @unchecked Sendable {
     }
     
     public func encode(with coder: NSCoder) {
-        if let symbol {
-            coder.encode(symbol as NSString, forKey: Keys.symbol.rawValue)
-        }
-        
-        if let emoji {
-            coder.encode(emoji as NSString, forKey: Keys.emoji.rawValue)
-        }
+        coder.encode(symbol as? NSString, forKey: Keys.symbol.rawValue)
+        coder.encode(emoji as? NSString, forKey: Keys.emoji.rawValue)
     }
     
     // MARK: - isEqual

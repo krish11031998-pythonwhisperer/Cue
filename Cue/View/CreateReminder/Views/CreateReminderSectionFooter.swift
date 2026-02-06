@@ -29,7 +29,7 @@ struct CreateReminderSectionFooterView: View {
             .font(.subheadline)
             .fontWeight(.medium)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(.clear, in: .roundedRect(cornerRadius: 12))
+            .background(Color.secondarySystemBackground, in: .roundedRect(cornerRadius: 12))
     }
     
 }

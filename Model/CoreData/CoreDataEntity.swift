@@ -39,4 +39,12 @@ public extension CoreDataEntity where Self: NSManagedObject {
         
         return try? context.fetch(fetchRequest) as? [Self]
     }
+    
+    
+    // MARK: - Update
+    
+    func update(context: NSManagedObjectContext, transform: (Self) -> Void) {
+        transform(self)
+        context.saveContext()
+    }
 }

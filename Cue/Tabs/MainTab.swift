@@ -49,7 +49,7 @@ struct MainTab: View {
             }
         }
         .sheet(isPresented: $presentCreateReminder) {
-            CreateReminderView(store: store)
+            CreateReminderView(mode: .create, store: store)
                 .presentationDetents([.fraction(1)])
         }
     }

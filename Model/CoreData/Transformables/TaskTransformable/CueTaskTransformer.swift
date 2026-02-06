@@ -32,9 +32,7 @@ class CueTaskTransformer: ValueTransformer {
         
         do {
             let cueTask = try NSKeyedUnarchiver
-                .unarchivedObject(ofClasses: [
-                    CueTaskContainer.self, NSDictionary.self,
-                    NSArray.self, NSNumber.self],
+                .unarchivedObject(ofClass: CueTaskContainer.self,
                                   from: data)
             return cueTask
         } catch {

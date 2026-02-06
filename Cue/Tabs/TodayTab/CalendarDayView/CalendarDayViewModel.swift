@@ -85,8 +85,21 @@ class CalendarDayViewModel {
     }
     
     struct Section: Hashable, Identifiable {
+        
+        struct RowModel: Hashable, Identifiable {
+            let viewConfig: ReminderView.Model
+            let reminder: ReminderModel
+            
+            var id: Int {
+                var hasher = Hasher()
+                hasher.combine(viewConfig)
+                hasher.combine(reminder)
+                return hasher.finalize()
+            }
+        }
+        
         let timeOfDay: TimeOfDay
-        let reminders: [ReminderView.Model]
+        let reminders: [RowModel]
         
         var id: Int {
             var hasher: Hasher = .init()
@@ -110,7 +123,7 @@ class CalendarDayViewModel {
     }
     
     func sections(calendarDay: CalendarDay) -> [Section] {
-        var remindersInDay: [TimeOfDay: [ReminderView.Model]] = [:]
+        var remindersInDay: [TimeOfDay: [Section.RowModel]] = [:]
         for reminder in calendarDay.reminders {
             if let schedule = reminder.schedule,
                let startTime = DateComponents(calendar: .current,
@@ -120,13 +133,14 @@ class CalendarDayViewModel {
                                               hour: schedule.hour,
                                               minute: schedule.minute).date {
                 let reminderViewModel = reminderModels(reminder, calendarDay: calendarDay)
+                let rowModel: Section.RowModel = .init(viewConfig: reminderViewModel, reminder: reminder)
                 switch startTime {
                 case TimeOfDay.morning.timeRange(date: calendarDay.date):
-                    remindersInDay[.morning, default: []].append(reminderViewModel)
+                    remindersInDay[.morning, default: []].append(rowModel)
                 case TimeOfDay.afternoon.timeRange(date: calendarDay.date):
-                    remindersInDay[.afternoon, default: []].append(reminderViewModel)
+                    remindersInDay[.afternoon, default: []].append(rowModel)
                 case TimeOfDay.evening.timeRange(date: calendarDay.date):
-                    remindersInDay[.evening, default: []].append(reminderViewModel)
+                    remindersInDay[.evening, default: []].append(rowModel)
                 default:
                     break
                 }

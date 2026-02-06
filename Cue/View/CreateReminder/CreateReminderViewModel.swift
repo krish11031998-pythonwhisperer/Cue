@@ -8,6 +8,7 @@
 import SwiftUI
 import VanorUI
 import Model
+import CoreData
 
 @Observable
 class CreateReminderViewModel {
@@ -55,7 +56,10 @@ class CreateReminderViewModel {
     let reminderSubtasksSession: ReminderSubtaskSession = .init()
     @ObservationIgnored
     var suggestionTask: Task<Void, Never>?
-    
+    @ObservationIgnored
+    var edittingMode: Bool
+    @ObservationIgnored
+    var reminderID: NSManagedObjectID?
     
     var imageFrame: CGRect = .zero
     var reminderTitle: String = ""
@@ -72,6 +76,22 @@ class CreateReminderViewModel {
     
     init(store: Store) {
         self.store = store
+        self.edittingMode = false
+        self.reminderID = nil
+    }
+    
+    init(reminderModel: ReminderModel, store: Store) {
+        self.reminderTitle = reminderModel.title
+        self.date = reminderModel.date
+        if let schedule = reminderModel.schedule {
+            self.timeDate = Calendar.current.date(bySettingHour: schedule.hour, minute: schedule.minute, second: 0, of: reminderModel.date) ?? .now
+            self.tasks = reminderModel.tasks
+            self.scheduleBuilder = .init(hour: schedule.hour, minute: schedule.minute, intervalWeek: schedule.intervalWeeks, weekdays: schedule.weekdays, dates: schedule.calendarDates)
+        }
+        self.icon = .init(reminderModel.icon) ?? .symbol(SFSymbol.allSymbols.randomElement()!)
+        self.store = store
+        self.edittingMode = true
+        self.reminderID = reminderModel.objectId
     }
     
     var theme: LCHColor {
@@ -190,11 +210,20 @@ class CreateReminderViewModel {
     func createReminder() {
         scheduleBuilder.hour = timeDate.hours
         scheduleBuilder.minute = timeDate.minutes
-        switch icon {
-        case .emoji(let emoji):
-            store.createReminder(title: reminderTitle, emoji: emoji.char, date: date, scheduleBuilder: scheduleBuilder, tasks: tasks)
-        case .symbol(let symbol):
-            store.createReminder(title: reminderTitle, symbol: symbol.rawValue, date: date, scheduleBuilder: scheduleBuilder, tasks: tasks)
+        if edittingMode, let reminderID {
+            store.updateReminder(for: reminderID) { reminder in
+                reminder.updateProperties(title: reminderTitle,
+                                          icon: .from(icon),
+                                          date: date,
+                                          scheduleBuilder: scheduleBuilder,
+                                          tasks: tasks)
+            }
+        } else {
+            store.createReminder(title: reminderTitle,
+                                 icon: .from(icon),
+                                 date: date,
+                                 scheduleBuilder: scheduleBuilder,
+                                 tasks: tasks)
         }
     }
     
