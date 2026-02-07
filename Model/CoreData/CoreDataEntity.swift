@@ -13,6 +13,7 @@ public protocol CoreDataEntity: NSManagedObject {
     static func fetch(context: NSManagedObjectContext, predicate: NSPredicate?, sortDescriptors: [NSSortDescriptor]) -> [Self]?
     static func create(context: NSManagedObjectContext) -> Self
     func delete(context: NSManagedObjectContext)
+    func update(context: NSManagedObjectContext, transform: (Self) -> Void)
 }
 
 public extension CoreDataEntity where Self: NSManagedObject {

@@ -13,6 +13,7 @@ public class CalendarDay: Hashable, @unchecked Sendable {
     public var date: Date
     public var reminders: [ReminderModel] = []
     public var loggedReminders: [ReminderModel] = []
+    public var loggedReminderTasks: [ReminderTaskModel] = []
     
     public init(date: Date,
                 reminders: [ReminderModel],

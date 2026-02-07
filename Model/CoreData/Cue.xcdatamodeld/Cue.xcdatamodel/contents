@@ -1,21 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24512" systemVersion="25B78" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="CueLog" representedClassName=".CueLog" isAbstract="YES" syncable="YES">
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="reminder" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Reminder" inverseName="reminderLogs" inverseEntity="Reminder"/>
+    </entity>
     <entity name="Reminder" representedClassName=".Reminder" syncable="YES">
         <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="icon" optional="YES" attributeType="Transformable" valueTransformerName="CueIconTransformer" customClassName="CueIcon"/>
         <attribute name="schedule" optional="YES" attributeType="Transformable" valueTransformerName="CueReminderScheduleTransformer" customClassName="CueReminderSchedule"/>
-        <attribute name="tasksContainer" optional="YES" attributeType="Transformable" valueTransformerName="CueTaskTransformer" customClassName="CueTaskContainer"/>
         <attribute name="title" optional="YES" attributeType="String"/>
-        <relationship name="reminderLogs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ReminderLog" inverseName="reminder" inverseEntity="ReminderLog"/>
-        <relationship name="reminderTasks" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ReminderTask" inverseName="reminder" inverseEntity="ReminderTask"/>
+        <relationship name="reminderLogs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ReminderLog" inverseName="reminder" inverseEntity="CueLog"/>
+        <relationship name="reminderTasks" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="ReminderTask" inverseName="reminder" inverseEntity="ReminderTask"/>
     </entity>
-    <entity name="ReminderLog" representedClassName=".ReminderLog" syncable="YES">
-        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <relationship name="reminder" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Reminder" inverseName="reminderLogs" inverseEntity="Reminder"/>
-    </entity>
+    <entity name="ReminderLog" representedClassName=".ReminderLog" parentEntity="CueLog" syncable="YES"/>
     <entity name="ReminderTask" representedClassName=".ReminderTask" syncable="YES">
         <attribute name="icon" optional="YES" attributeType="Transformable" valueTransformerName="CueIconTransformer" customClassName="CueIcon"/>
         <attribute name="title" optional="YES" attributeType="String"/>
         <relationship name="reminder" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Reminder" inverseName="reminderTasks" inverseEntity="Reminder"/>
+        <relationship name="reminderTaskLogs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ReminderTaskLog" inverseName="reminderTask" inverseEntity="ReminderTaskLog"/>
+    </entity>
+    <entity name="ReminderTaskLog" representedClassName=".ReminderTaskLog" parentEntity="CueLog" syncable="YES">
+        <relationship name="reminderTask" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ReminderTask" inverseName="reminderTaskLogs" inverseEntity="ReminderTask"/>
     </entity>
 </model>

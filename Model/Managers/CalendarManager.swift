@@ -125,10 +125,18 @@ public class CalendarManager {
     nonisolated
     private func retrieveCalendayDay(backgroundContext: NSManagedObjectContext, date: Date, reminders: [ReminderModel]) async -> CalendarDay {
         let reminderLogs = await backgroundContext.perform {
-            ReminderLog.fetchReminderLogsWithinTimeRange(context: backgroundContext, startTime: date.startOfDay, endTime: date.endOfDay)
+            CueLog.fetchLogsWithinTimeRange(context: backgroundContext, startTime: date.startOfDay, endTime: date.endOfDay)
         }
         
-        let loggedReminders = reminderLogs.map { ReminderModel(from: $0.reminder) }
+        var loggedReminders: [ReminderModel] = []
+        var loggedReminderTasks: [ReminderTaskModel] = []
+        reminderLogs.forEach { cueLog in
+            if let reminderLog = cueLog as? ReminderLog {
+                loggedReminders.append(.init(from: reminderLog.reminder))
+            } else if let reminderTasks = cueLog as? ReminderTaskLog {
+                loggedReminderTasks.append(.init(from: reminderTasks.reminderTask))
+            }
+        }
         
         return CalendarDay(date: date, reminders: reminders, loggedReminders: loggedReminders)
     }

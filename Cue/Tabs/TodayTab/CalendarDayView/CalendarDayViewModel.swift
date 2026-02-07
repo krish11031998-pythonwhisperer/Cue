@@ -153,16 +153,9 @@ class CalendarDayViewModel {
     
     func reminderModels(_ reminder: ReminderModel, calendarDay: CalendarDay) -> ReminderView.Model {
         let tasks: [ReminderView.TaskModel] = reminder.tasks.map { task in
-            let icon: Icon
-            switch task.icon {
-            case .emoji(let emoji):
-                icon = .emoji(.init(emoji))
-            case .symbol(let symbol):
-                icon = .symbol(.init(rawValue: symbol))
-            default:
-                icon = .symbol(.circle)
-            }
-            return .init(title: task.title, icon: icon) {
+            let icon: Icon = .init(task.icon) ?? .symbol(.circle)
+            let isLogged = calendarDay.loggedReminderTasks.reduce(false, { $0 || $1.objectId == task.objectId })
+            return .init(title: task.title, icon: icon, isLogged: isLogged) {
                 print("(DEBUG) logged this \(task.title)")
             }
         }
