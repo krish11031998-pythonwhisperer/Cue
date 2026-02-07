@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreData
+import AsyncAlgorithms
 
 @Observable
 public class Store {
@@ -32,20 +33,20 @@ public class Store {
     
     private func observingTask() {
         let remindersChangeStrem = self.viewContext.changesStream(for: Reminder.self, changeTypes: [.inserted, .deleted, .updated])
+        let reminderTasksChangeStrem = self.viewContext.changesStream(for: ReminderTask.self, changeTypes: [.inserted, .deleted, .updated])
         Task { @MainActor [weak self] in
             for await _ in remindersChangeStrem {
                 if let context = self?.viewContext {
                     self?.reminders = Reminder.fetchAll(context: context)
-                    print("(DEBUG) reminders: ", self?.reminders)
                 }
             }
             
-//            for await _ in reminderLogsChangeStrem {
-//                if let context = self?.viewContext {
-//                    self?.reminderLogs = ReminderLog.fetchReminderLogsWithinTimeRange(context: context, startTime: Date.now.startOfYear, endTime: Date.now.endOfYear)
-//                    print("(DEBUG) reminderLogs: ", self?.reminderLogs)
-//                }
-//            }
+            for await _ in reminderTasksChangeStrem {
+                if let context = self?.viewContext {
+                    let reminderTask = ReminderTask.fetchAll(context: context)
+                    print("(DEBUG) reminderTasks: ", reminderTask)
+                }
+            }
         }
     }
     
@@ -53,6 +54,11 @@ public class Store {
     public var hasLoggedReminder: AsyncStream<Void> {
         self.viewContext.changesStream(for: ReminderLog.self, changeTypes: [.inserted, .deleted, .updated])
     }
+    
+    public var hasLoggedTasks: AsyncStream<Void> {
+        self.viewContext.changesStream(for: ReminderTaskLog.self, changeTypes: [.inserted, .deleted, .updated])
+    }
+    
     
     // MARK: - Reminders
     
@@ -118,5 +124,17 @@ public class Store {
     public func deleteReminderTask(reminderTaskID: NSManagedObjectID) {
         let reminder = ReminderTask.fetch(context: viewContext, for: reminderTaskID)
         reminder.delete(context: viewContext)
+    }
+    
+    @discardableResult
+    public func logReminderTask(at date: Date, for reminderTaskID: NSManagedObjectID) -> ReminderTaskLog {
+        let reminderTask = ReminderTask.fetch(context: viewContext, for: reminderTaskID)
+        let reminderLog = ReminderTaskLog.createReminderTaskLog(date: date, context: viewContext, reminderTask: reminderTask)
+        return reminderLog
+    }
+    
+    public func deleteTaskLogsFor(at date: Date, for reminderTaskID: NSManagedObjectID) {
+        let reminderTask = ReminderTask.fetch(context: viewContext, for: reminderTaskID)
+        ReminderTaskLog.deleteLog(at: date, reminderTask: reminderTask, context: viewContext)
     }
 }

@@ -105,7 +105,7 @@ public class CalendarManager {
                     if let self {
                         return await self.retrieveCalendayDay(backgroundContext: backgroundContext, date: date, reminders: reminderModels)
                     } else {
-                        return .init(date: date, reminders: reminderModels, loggedReminders: [])
+                        return .init(date: date, reminders: reminderModels, loggedReminders: [], loggedReminderTasks: [])
                     }
                 }
             }
@@ -138,7 +138,7 @@ public class CalendarManager {
             }
         }
         
-        return CalendarDay(date: date, reminders: reminders, loggedReminders: loggedReminders)
+        return CalendarDay(date: date, reminders: reminders, loggedReminders: loggedReminders, loggedReminderTasks: loggedReminderTasks)
     }
     
 }

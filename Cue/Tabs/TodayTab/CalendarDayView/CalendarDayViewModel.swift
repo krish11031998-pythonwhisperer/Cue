@@ -155,8 +155,12 @@ class CalendarDayViewModel {
         let tasks: [ReminderView.TaskModel] = reminder.tasks.map { task in
             let icon: Icon = .init(task.icon) ?? .symbol(.circle)
             let isLogged = calendarDay.loggedReminderTasks.reduce(false, { $0 || $1.objectId == task.objectId })
-            return .init(title: task.title, icon: icon, isLogged: isLogged) {
-                print("(DEBUG) logged this \(task.title)")
+            return .init(title: task.title, icon: icon, isLogged: isLogged) { [weak self] in
+                if isLogged {
+                    self?.store.deleteTaskLogsFor(at: calendarDay.date, for: task.objectId)
+                } else {
+                    self?.store.logReminderTask(at: calendarDay.date, for: task.objectId)
+                }
             }
         }
         
