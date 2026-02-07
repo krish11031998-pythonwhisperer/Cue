@@ -12,23 +12,20 @@ internal import EmojiKit
 
 struct CreateReminderView: View {
     
+    enum Mode: Equatable {
+        case create
+        case edit(ReminderModel)
+    }
+
     @State private var viewModel: CreateReminderViewModel
     @Namespace private var animation
     @Environment(\.dismiss) var dismiss
     @FocusState var textFieldIsFocused: Bool
-    
-    enum Mode {
-        case create
-        case edit(ReminderModel)
-    }
+    private let mode: Mode
     
     init(mode: Mode, store: Store) {
-        switch mode {
-        case .create:
-            self._viewModel = .init(initialValue: .init(store: store))
-        case .edit(let reminderModel):
-            self._viewModel = .init(initialValue: .init(reminderModel: reminderModel, store: store))
-        }
+        self.mode = mode
+        self._viewModel = .init(initialValue: .init(store: store))
     }
     
     var body: some View {
@@ -131,6 +128,12 @@ struct CreateReminderView: View {
                 }
                 .ignoresSafeArea(edges: .vertical)
             }
+        }
+        .task(id: mode) {
+            guard case .edit(let reminderModel) = mode else {
+                return
+            }
+            viewModel.updateBasedOnMode(reminderModel: reminderModel)
         }
     }
     

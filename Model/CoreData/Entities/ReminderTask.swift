@@ -12,27 +12,27 @@ public final class ReminderTask: NSManagedObject, CoreDataEntity {
     
     @NSManaged public private(set) var title: String
     @NSManaged public private(set) var icon: CueIcon!
-    @NSManaged public private(set) var reminder: Reminder!
+    @NSManaged public internal(set) var reminder: Reminder!
+    @NSManaged public internal(set) var reminderTaskLogs: NSSet!
     
     
     // MARK: - Create
     
-    public static func createTask(context: NSManagedObjectContext, title: String, emoji: String, reminder: Reminder) -> ReminderTask {
+    @discardableResult
+    public static func createTask(context: NSManagedObjectContext, title: String, icon: CueIcon) -> ReminderTask {
         let reminderTask = create(context: context)
         reminderTask.title = title
-        reminderTask.icon = .init(symbol: nil , emoji: emoji)
-        reminderTask.reminder = reminder
+        reminderTask.icon = icon
         return reminderTask
     }
     
-    public static func createTask(context: NSManagedObjectContext, title: String, symbol: String, reminder: Reminder) -> ReminderTask {
-        let reminderTask = create(context: context)
-        reminderTask.title = title
-        reminderTask.icon = .init(symbol: symbol , emoji: nil)
-        reminderTask.reminder = reminder
-        return reminderTask
-    }
     
+    // MARK: - Update
+    
+    public func updateProperties(title: String, icon: CueIcon) {
+        self.title = title
+        self.icon = icon
+    }
     
     // MARK: - Delete
 

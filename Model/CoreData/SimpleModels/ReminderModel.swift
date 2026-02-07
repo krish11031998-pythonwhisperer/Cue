@@ -13,10 +13,10 @@ public struct ReminderModel: Hashable, Sendable {
     public let title: String
     public let icon: CueIcon
     public let date: Date
-    public let tasks: [CueTask]
+    public let tasks: [ReminderTaskModel]
     public let schedule: ReminderSchedule?
     
-    public init(title: String, icon: CueIcon, date: Date, tasks: [CueTask], schedule: ReminderSchedule?) {
+    public init(title: String, icon: CueIcon, date: Date, tasks: [ReminderTaskModel], schedule: ReminderSchedule?) {
         self.title = title
         self.icon = icon
         self.date = date
@@ -29,7 +29,7 @@ public struct ReminderModel: Hashable, Sendable {
         self.title = reminder.title
         self.icon = reminder.icon
         self.date = reminder.date
-        self.tasks = reminder.tasks
+        self.tasks = reminder.tasks.map {ReminderTaskModel(from: $0) }
         self.schedule = .init(from: reminder.schedule)
         self.objectId = reminder.objectID
     }

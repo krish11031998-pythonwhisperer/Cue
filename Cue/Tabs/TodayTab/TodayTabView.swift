@@ -88,6 +88,9 @@ struct TodayTabView: View {
                 }
             }
         }
+        .onChange(of: viewModel.today, { _, _ in
+            SensoryFeedbackManager.shared.playSelection()
+        })
         .task(id: store.reminders) {
             viewModel.setupCalendarForOneMonth(reminders: store.reminders)
         }

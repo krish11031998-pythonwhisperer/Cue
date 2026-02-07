@@ -31,6 +31,9 @@ class CreateReminderViewModel {
         var id: String { self.rawValue }
     }
     
+    
+    // MARK: Time
+    
     struct Time {
         let hour: Int
         let minute: Int
@@ -50,6 +53,28 @@ class CreateReminderViewModel {
         }
     }
     
+    
+    // MARK: - Task
+    
+    struct CreateReminderTask: Identifiable {
+        let title: String
+        let icon: Icon
+        let objectID: NSManagedObjectID?
+        
+        init(title: String, icon: Icon, objectID: NSManagedObjectID?) {
+            self.title = title
+            self.icon = icon
+            self.objectID = objectID
+        }
+        
+        var id: Int {
+            var hasher = Hasher()
+            hasher.combine(title)
+            hasher.combine(icon)
+            return hasher.finalize()
+        }
+    }
+    
     @ObservationIgnored
     let store: Store
     @ObservationIgnored
@@ -66,7 +91,7 @@ class CreateReminderViewModel {
     var snoozeDuration: Double = 15
     var date: Date = .now
     var timeDate: Date = .now
-    var tasks: [CueTask] = []
+    var tasks: [CreateReminderTask] = []
     var scheduleBuilder: Reminder.ScheduleBuilder = .init(.now)
     var icon: Icon = .symbol(SFSymbol.allSymbols.randomElement()!)
     var color: Color = (Color.proSky.baseColor)
@@ -75,23 +100,10 @@ class CreateReminderViewModel {
     var fullScreenPresentation: FullScreenPresentation? = nil
     
     init(store: Store) {
+        print("(DEBUG) init is called!!!")
         self.store = store
         self.edittingMode = false
         self.reminderID = nil
-    }
-    
-    init(reminderModel: ReminderModel, store: Store) {
-        self.reminderTitle = reminderModel.title
-        self.date = reminderModel.date
-        if let schedule = reminderModel.schedule {
-            self.timeDate = Calendar.current.date(bySettingHour: schedule.hour, minute: schedule.minute, second: 0, of: reminderModel.date) ?? .now
-            self.tasks = reminderModel.tasks
-            self.scheduleBuilder = .init(hour: schedule.hour, minute: schedule.minute, intervalWeek: schedule.intervalWeeks, weekdays: schedule.weekdays, dates: schedule.calendarDates)
-        }
-        self.icon = .init(reminderModel.icon) ?? .symbol(SFSymbol.allSymbols.randomElement()!)
-        self.store = store
-        self.edittingMode = true
-        self.reminderID = reminderModel.objectId
     }
     
     var theme: LCHColor {
@@ -162,31 +174,27 @@ class CreateReminderViewModel {
         
         let edit: (Int) -> ((String) -> Void) = { [weak self] index in
             { [weak self] newTaskName in
-                self?.tasks[index] = .init(title: newTaskName, icon: .symbol("number.circle.fill"))
+                if let task = self?.tasks[index] {
+                    self?.tasks[index] = .init(title: newTaskName, icon: task.icon, objectID: task.objectID)
+                }
             }
         }
 
         let delete: (Int) -> (() -> Void) = { [weak self] index in
             { [weak self] in
-                self?.tasks.remove(at: index)
+                let task = self?.tasks[index]
+                if let objectID = task?.objectID {
+                    self?.store.deleteReminderTask(reminderTaskID: objectID)
+                    self?.tasks.remove(at: index)
+                }
             }
         }
 
         for(index, task) in tasks.enumerated() {
             let viewType = ReminderTaskView.ViewType.displayOnly(edit(index), delete(index))
-            
-            let icon: Icon
-            switch task.icon {
-            case .emoji(let emoji):
-                icon = .emoji(.init(emoji))
-            case .symbol(let symbol):
-                icon = .symbol(.init(rawValue: symbol))
-            default:
-                icon = .symbol(.exclamationmark)
-            }
-            
+        
             let model = ReminderTaskView.Model(taskTitle: task.title,
-                                               icon: icon,
+                                               icon: task.icon,
                                                viewType: viewType,
                                                action: nil)
             models.append(model)
@@ -204,26 +212,37 @@ class CreateReminderViewModel {
     }
     
     func addTask(title: String) {
-        self.tasks.append(.init(title: title, icon: .symbol("number.circle.fill")))
+        self.tasks.append(.init(title: title, icon: .emoji(Emoji.all.randomElement()!), objectID: nil))
     }
     
     func createReminder() {
         scheduleBuilder.hour = timeDate.hours
         scheduleBuilder.minute = timeDate.minutes
         if edittingMode, let reminderID {
+            tasks.forEach { task in
+                if let objectID = task.objectID {
+                    store.updateReminderTask(for: objectID) { reminderTask in
+                        reminderTask.updateProperties(title: task.title, icon: .from(task.icon))
+                    }
+                }
+            }
+            
             store.updateReminder(for: reminderID) { reminder in
                 reminder.updateProperties(title: reminderTitle,
                                           icon: .from(icon),
                                           date: date,
-                                          scheduleBuilder: scheduleBuilder,
-                                          tasks: tasks)
+                                          scheduleBuilder: scheduleBuilder)
             }
         } else {
+            let reminderTasks = tasks.map { task in
+                let task = store.createReminderTask(title: task.title, icon: .from(task.icon))
+                return ReminderTaskModel(from: task)
+            }
             store.createReminder(title: reminderTitle,
                                  icon: .from(icon),
                                  date: date,
                                  scheduleBuilder: scheduleBuilder,
-                                 tasks: tasks)
+                                 tasks: reminderTasks)
         }
     }
     
@@ -233,8 +252,8 @@ class CreateReminderViewModel {
         suggestionTask = Task { [weak self] in
             guard let reminderTitle = self?.reminderTitle else { return }
             let suggestions = await self?.reminderSubtasksSession.suggestionTasks(for: reminderTitle)
-            let tasks: [CueTask]? = suggestions?.subTasks.map { suggestion in
-                    .init(title: suggestion.title, icon: .emoji(suggestion.icon ))
+            let tasks: [CreateReminderTask]? = suggestions?.subTasks.map { suggestion in
+                    .init(title: suggestion.title, icon: .emoji(.init(suggestion.icon)), objectID: nil)
             }
             
             await MainActor.run { [weak self] in
@@ -246,4 +265,19 @@ class CreateReminderViewModel {
         }
     }
     
+    
+    // MARK: - Setup Based on Mode
+    
+    func updateBasedOnMode(reminderModel: ReminderModel) {
+        self.reminderTitle = reminderModel.title
+        self.date = reminderModel.date
+        if let schedule = reminderModel.schedule {
+            self.timeDate = Calendar.current.date(bySettingHour: schedule.hour, minute: schedule.minute, second: 0, of: reminderModel.date) ?? .now
+            self.scheduleBuilder = .init(hour: schedule.hour, minute: schedule.minute, intervalWeek: schedule.intervalWeeks, weekdays: schedule.weekdays, dates: schedule.calendarDates)
+        }
+        self.tasks = reminderModel.tasks.map { .init(title: $0.title, icon: .init($0.icon)!, objectID: $0.objectId) }
+        self.icon = .init(reminderModel.icon) ?? .symbol(SFSymbol.allSymbols.randomElement()!)
+        self.reminderID = reminderModel.objectId
+        self.edittingMode = true
+    }
 }

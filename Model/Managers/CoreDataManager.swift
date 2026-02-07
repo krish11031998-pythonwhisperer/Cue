@@ -26,7 +26,6 @@ class CoreDataManager {
     private init() {
         setupContainer()
         #warning("Add Transformers here")
-        CueTaskTransformer.register()
         CueIconTransformer.register()
     }
     

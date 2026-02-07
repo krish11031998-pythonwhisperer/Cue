@@ -13,13 +13,16 @@ public class CalendarDay: Hashable, @unchecked Sendable {
     public var date: Date
     public var reminders: [ReminderModel] = []
     public var loggedReminders: [ReminderModel] = []
+    public var loggedReminderTasks: [ReminderTaskModel] = []
     
     public init(date: Date,
                 reminders: [ReminderModel],
-                loggedReminders: [ReminderModel]) {
+                loggedReminders: [ReminderModel],
+                loggedReminderTasks: [ReminderTaskModel]) {
         self.date = date
         self.loggedReminders = loggedReminders
         self.filterReminderForDate(reminders: reminders)
+        self.loggedReminderTasks = loggedReminderTasks
     }
     
     private func filterReminderForDate(reminders: [ReminderModel]) {
@@ -81,9 +84,10 @@ public class CalendarDay: Hashable, @unchecked Sendable {
         hasher.combine(date)
         hasher.combine(reminders)
         hasher.combine(loggedReminders)
+        hasher.combine(loggedReminderTasks)
     }
     
     public static func == (lhs: CalendarDay, rhs: CalendarDay) -> Bool {
-        return lhs.date == rhs.date && lhs.reminders == rhs.reminders && lhs.loggedReminders == rhs.loggedReminders
+        return lhs.date == rhs.date && lhs.reminders == rhs.reminders && lhs.loggedReminders == rhs.loggedReminders && lhs.loggedReminderTasks == rhs.loggedReminderTasks
     }
 }

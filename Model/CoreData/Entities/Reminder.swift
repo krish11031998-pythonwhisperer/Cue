@@ -13,12 +13,12 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     @NSManaged public private(set) var title: String!
     @NSManaged public private(set) var icon: CueIcon!
     @NSManaged public private(set) var date: Date!
-    @NSManaged private var tasksContainer: CueTaskContainer!
     @NSManaged public private(set) var schedule: CueReminderSchedule!
     @NSManaged public private(set) var reminderLogs: NSSet!
+    @NSManaged public private(set) var reminderTasks: NSSet!
 
-    public var tasks: [CueTask] {
-        tasksContainer?.tasks ?? []
+    public var tasks: [ReminderTask] {
+        reminderTasks.allObjects as! [ReminderTask]
     }
     
     public var logs: [ReminderLog] {
@@ -51,23 +51,21 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     
     // MARK: - Create
     
-    static func createReminder(context: NSManagedObjectContext, title: String, icon: CueIcon, date: Date, schedule: ScheduleBuilder? = nil, tasks: [CueTask]) -> Reminder {
+    static func createReminder(context: NSManagedObjectContext, title: String, icon: CueIcon, date: Date, schedule: ScheduleBuilder? = nil) -> Reminder {
         let reminder = create(context: context)
         reminder.title = title
         reminder.icon = icon
         reminder.date = date
-        reminder.tasksContainer = .init(tasks: tasks)
         reminder.schedule = .init(hour: schedule?.hour ?? 0, minute: schedule?.minute ?? 0, intervalWeeks: schedule?.intervalWeek, weekdays: schedule?.weekdays, calendarDates: schedule?.dates)
         return reminder
     }
     
     
     
-    public func updateProperties(title: String, icon: CueIcon, date: Date, scheduleBuilder: ScheduleBuilder? = nil, tasks: [CueTask]) {
+    public func updateProperties(title: String, icon: CueIcon, date: Date, scheduleBuilder: ScheduleBuilder? = nil) {
         self.title = title
         self.icon = icon
         self.date = date
-        self.tasksContainer = .init(tasks: tasks)
         self.schedule = .init(hour: scheduleBuilder?.hour ?? 0,
                               minute: scheduleBuilder?.minute ?? 0,
                               intervalWeeks: scheduleBuilder?.intervalWeek,
