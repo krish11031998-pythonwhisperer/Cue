@@ -9,6 +9,7 @@ import SwiftUI
 import VanorUI
 import Model
 import CoreData
+import FoundationModels
 
 @Observable
 class CreateReminderViewModel {
@@ -117,7 +118,14 @@ class CreateReminderViewModel {
     }
     
     var canLoadSuggestions: Bool {
-        !self.reminderTitle.isEmpty
+        switch SystemLanguageModel.default.availability {
+        case .available:
+            return !self.reminderTitle.isEmpty
+        
+        case .unavailable(let reason):
+            print("(DEBUG) Reason: ", reason)
+            return false
+        }
     }
     
     var durationString: String {

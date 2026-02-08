@@ -14,12 +14,16 @@ public class CalendarManager {
     
     public func setupCalendarForOneMonthFromToday() async -> [CalendarDay] {
         let dayInWeek = Date.now.day
-        let start = -dayInWeek - 13
-        let end = 7 - dayInWeek + 14
+        let start = Calendar.current.date(byAdding: .day, value: -13, to: Date.now.startOfDay)!
+        let end = Calendar.current.date(byAdding: .day, value: 14, to: Date.now.startOfDay)!
         
-        let dates = Array(start...end).map { i in
-            return Calendar.current.date(byAdding: .day, value: i, to: .now)!.startOfDay
+        var currentDate = start
+        var dates: [Date] = []
+        while currentDate <= end {
+            dates.append(currentDate)
+            currentDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!.startOfDay
         }
+        
         guard !Task.isCancelled else { return []}
         
         let calendarDays = await self.fetchCalendarDays(for: dates)

@@ -59,6 +59,11 @@ internal extension Date {
         let date = Calendar.current.component(.weekday, from: self)
         return date
     }
+
+    var weekOfYear: Int {
+        let date = Calendar.current.component(.weekOfYear, from: self)
+        return date
+    }
     
     var hours: Int {
         let component = Calendar.current.component(.hour, from: self)

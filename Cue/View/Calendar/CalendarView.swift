@@ -89,7 +89,7 @@ struct CalendarView: View {
     func sectionBuilder(section: CalendarViewModel.Section) -> some View {
         Section {
             if section.firstDayInMonth < 7 {
-                ForEach(0..<section.firstDayInMonth, id: \.self) { id in
+                ForEach(0..<section.firstDayInMonth - 1, id: \.self) { id in
                     RoundedRectangle(cornerRadius: 16)
                         .fill(emptyChipBackgroundColor)
                         .padding(.horizontal, 2)
@@ -116,9 +116,20 @@ struct CalendarView: View {
                 .buttonStyle(.plain)
             }
         } header: {
-            Text(Calendar.current.monthSymbols[section.month - 1])
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(Calendar.current.monthSymbols[section.month - 1])
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                HStack(alignment: .center, spacing: 0) {
+                    ForEach(Calendar.current.shortWeekdaySymbols, id: \.self) { sym in
+                        Text(sym)
+                            .font(.footnote)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Color.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                }
+            }
         }
         .padding(.bottom, 12)
     }

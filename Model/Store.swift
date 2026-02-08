@@ -14,6 +14,8 @@ public class Store {
     
     public var reminders: [Reminder] = []
     public var presentCreateReminder: Bool = false
+    @ObservationIgnored
+    private var notificationManager: NotificationManager
     
     public var viewContext: NSManagedObjectContext {
         CoreDataManager.shared.persistentContainer.viewContext
@@ -24,6 +26,7 @@ public class Store {
     }
     
     public init() {
+        self.notificationManager = .init(context: CoreDataManager.shared.persistentContainer.viewContext)
         self.reminders = Reminder.fetchAll(context: self.viewContext)
         observingTask()
     }
@@ -32,16 +35,17 @@ public class Store {
     // MARK: - Binding
     
     private func observingTask() {
-        let remindersChangeStrem = self.viewContext.changesStream(for: Reminder.self, changeTypes: [.inserted, .deleted, .updated])
-        let reminderTasksChangeStrem = self.viewContext.changesStream(for: ReminderTask.self, changeTypes: [.inserted, .deleted, .updated])
+        let remindersChangeStream: AsyncStream<()> = self.viewContext.changesStream(for: Reminder.self, changeTypes: [.inserted, .deleted, .updated])
+        let reminderTasksChangeStream: AsyncStream<()> = self.viewContext.changesStream(for: ReminderTask.self, changeTypes: [.inserted, .deleted, .updated])
         Task { @MainActor [weak self] in
-            for await _ in remindersChangeStrem {
+            for await _ in remindersChangeStream {
                 if let context = self?.viewContext {
-                    self?.reminders = Reminder.fetchAll(context: context)
+                    let reminders = Reminder.fetchAll(context: context)
+                    self?.reminders = reminders
                 }
             }
             
-            for await _ in reminderTasksChangeStrem {
+            for await _ in reminderTasksChangeStream {
                 if let context = self?.viewContext {
                     let reminderTask = ReminderTask.fetchAll(context: context)
                     print("(DEBUG) reminderTasks: ", reminderTask)
@@ -49,7 +53,6 @@ public class Store {
             }
         }
     }
-    
     
     public var hasLoggedReminder: AsyncStream<Void> {
         self.viewContext.changesStream(for: ReminderLog.self, changeTypes: [.inserted, .deleted, .updated])
@@ -70,17 +73,20 @@ public class Store {
             reminderTask.reminder = reminder
         }
         viewContext.saveContext()
+        NotificationCenter.default.post(name: .addedReminder, object: nil)
         return reminder
     }
     
     public func deleteReminder(reminderID: NSManagedObjectID) {
         let reminder = Reminder.fetch(context: viewContext, for: reminderID)
         reminder.delete(context: viewContext)
+        NotificationCenter.default.post(name: .deletedReminder, object: nil)
     }
     
     public func updateReminder(for id: NSManagedObjectID, transform: (Reminder) -> Void) {
         let reminder = Reminder.fetch(context: viewContext, for: id)
         reminder.update(context: viewContext, transform: transform)
+        NotificationCenter.default.post(name: .updatedReminder , object: nil)
     }
     
     // MARK: - ReminderLogs
