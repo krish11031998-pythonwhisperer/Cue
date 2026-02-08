@@ -39,7 +39,7 @@ public class NotificationScheduler: NSObject, UNUserNotificationCenterDelegate {
                 authorization == .authorized else { return }
         
         
-        let identifierPrefix = NotificationReminder.reminder(reminder).identifier
+        let id = reminder.notificationID.uuidString
         var identifiers: [String] = []
         var notificationRequests: [UNNotificationRequest] = []
   
@@ -50,14 +50,14 @@ public class NotificationScheduler: NSObject, UNUserNotificationCenterDelegate {
            let weekdays = reminderSchedule.weekdays
         {
             triggersWithId = triggers(startDate: reminder.date,
-                                          hour: reminderSchedule.hour,
-                                          minute: reminderSchedule.minute,
-                                          for: Array(weekdays),
-                                          intervalWeeks: weekInterval,
-                                          prefixID: identifierPrefix)
+                                      hour: reminderSchedule.hour,
+                                      minute: reminderSchedule.minute,
+                                      for: Array(weekdays),
+                                      intervalWeeks: weekInterval,
+                                      prefixID: id)
             
         } else if let calendarDates = reminderSchedule.calendarDates {
-            triggersWithId = triggersForCalendarDate(startDate: reminder.date, hour: reminderSchedule.hour, minute: reminderSchedule.minute, calendarDates: Array(calendarDates), prefixID: identifierPrefix)
+            triggersWithId = triggersForCalendarDate(startDate: reminder.date, hour: reminderSchedule.hour, minute: reminderSchedule.minute, calendarDates: Array(calendarDates), prefixID: id)
         } else {
             var dateComponents = DateComponents()
             dateComponents.day = reminder.date.day
@@ -68,7 +68,7 @@ public class NotificationScheduler: NSObject, UNUserNotificationCenterDelegate {
             dateComponents.minute = reminderSchedule.minute
             dateComponents.calendar = .autoupdatingCurrent
             let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
-            triggersWithId = [("\(identifierPrefix)_\(dateComponents)", trigger)]
+            triggersWithId = [("\(id)_\(dateComponents)", trigger)]
         }
         
         for (id, trigger) in triggersWithId {
@@ -127,8 +127,6 @@ public class NotificationScheduler: NSObject, UNUserNotificationCenterDelegate {
                 triggers.append(weekdayTrigger)
             }
         } else {
-//            var currentDate = startDate
-//            let endOfYear = currentDate.endOfYear
             var currentWeek = startDate.weekOfYear
             let weeksInYear = currentWeek + 4//Calendar.autoupdatingCurrent.range(of: .weekOfYear, in: .yearForWeekOfYear, for: .now)!.count
             while currentWeek <= weeksInYear {

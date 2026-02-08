@@ -10,6 +10,7 @@ import VanorUI
 import Model
 import CoreData
 import FoundationModels
+internal import AlarmKit
 
 @Observable
 class CreateReminderViewModel {
@@ -90,6 +91,7 @@ class CreateReminderViewModel {
     var imageFrame: CGRect = .zero
     var reminderTitle: String = ""
     var snoozeDuration: Double = 15
+    var reminderNotification: ReminderNotification = .notification
     var date: Date = .now
     var timeDate: Date = .now
     var tasks: [CreateReminderTask] = []
@@ -123,7 +125,6 @@ class CreateReminderViewModel {
             return !self.reminderTitle.isEmpty
         
         case .unavailable(let reason):
-            print("(DEBUG) Reason: ", reason)
             return false
         }
     }
@@ -239,7 +240,9 @@ class CreateReminderViewModel {
                 reminder.updateProperties(title: reminderTitle,
                                           icon: .from(icon),
                                           date: date,
-                                          scheduleBuilder: scheduleBuilder)
+                                          snoozeDuration: snoozeDuration,
+                                          scheduleBuilder: scheduleBuilder,
+                                          reminderNotification: reminderNotification)
             }
         } else {
             let reminderTasks = tasks.map { task in
@@ -249,8 +252,10 @@ class CreateReminderViewModel {
             store.createReminder(title: reminderTitle,
                                  icon: .from(icon),
                                  date: date,
+                                 snoozeDuration: snoozeDuration,
                                  scheduleBuilder: scheduleBuilder,
-                                 tasks: reminderTasks)
+                                 tasks: reminderTasks,
+                                 reminderNotification: reminderNotification)
         }
     }
     
@@ -286,6 +291,24 @@ class CreateReminderViewModel {
         self.tasks = reminderModel.tasks.map { .init(title: $0.title, icon: .init($0.icon)!, objectID: $0.objectId) }
         self.icon = .init(reminderModel.icon) ?? .symbol(SFSymbol.allSymbols.randomElement()!)
         self.reminderID = reminderModel.objectId
+        self.reminderNotification = reminderModel.notificationType
         self.edittingMode = true
+    }
+    
+    
+    // MARK: - Notification Management
+    
+    func checkForPermissionForSendingNotification() {
+        store.notificationManager.requestForAuthorizationAfterCheckingNotificationSettings()
+    }
+    
+    
+    // MARK: - Alarm Management
+    
+    func checkForPermissionForSettingAlarm() {
+        guard store.alarmManager.authorizationState == .notDetermined else { return }
+        Task {
+            await store.alarmManager.requestForAuthortization()
+        }
     }
 }

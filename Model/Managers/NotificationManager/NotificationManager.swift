@@ -29,7 +29,7 @@ public class NotificationManager: NSObject, NotificationSchedulerDelegate {
         self.context = context
         super.init()
         self.scheduler.delegate = self
-        requestForAuthorizationAfterCheckingNotificationSettings()
+        getCurrentNotificationSettings()
         observe()
     }
     
@@ -118,27 +118,13 @@ public class NotificationManager: NSObject, NotificationSchedulerDelegate {
 
         changePublisher
             .map { _ in
-                let reminders = Reminder.fetchAll(context: self.context).map { ReminderModel(from: $0) }
+                let reminders = Reminder.fetchRemindersWithNotification(context: self.context).map { ReminderModel(from: $0) }
                 return reminders
             }
             .sink { [weak self] reminders in
                 self?.setupReminders(reminders: reminders)
             }
             .store(in: &subscribers)
-        
-        //        appOpen
-        //            .withUnretained(self)
-        //            .map { (manager, _) in
-        //                let habits = HabitModel.fetchHabits().map { $0.toSimpleHabit() }
-        //                return habits != manager.habits
-        //            }
-        //            .filter { $0 }
-        //            .withUnretained(self)
-        //            .sinkReceive { (manager, _) in
-        //                manager.habits = HabitModel.fetchHabits().map { $0.toSimpleHabit() }
-        //                manager.cleanUpHabitsReminders()
-        //            }
-        //            .store(in: &bag)
     }
     
     private func setupReminders(reminders: [ReminderModel]) {

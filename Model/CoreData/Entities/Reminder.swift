@@ -10,15 +10,42 @@ import CoreData
 
 @objc(Reminder)
 public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
+    @NSManaged public private(set) var notificationID: UUID!
     @NSManaged public private(set) var title: String!
     @NSManaged public private(set) var icon: CueIcon!
     @NSManaged public private(set) var date: Date!
     @NSManaged public private(set) var schedule: CueReminderSchedule!
     @NSManaged public private(set) var reminderLogs: NSSet!
     @NSManaged public private(set) var reminderTasks: NSSet!
+    @NSManaged public private(set) var notificationType: NSNumber!
+    @NSManaged public private(set) var snoozeDurationRawValue: NSNumber!
 
     public var tasks: [ReminderTask] {
         reminderTasks.allObjects as! [ReminderTask]
+    }
+    
+    public var reminderNotification: ReminderNotification {
+        get {
+            if let notificationType = notificationType as? Int {
+                .init(rawValue: notificationType)!
+            } else {
+                fatalError("Invalid ReminderNotification")
+            }
+        }
+        
+        set {
+            notificationType = newValue.rawValue as NSNumber
+        }
+    }
+    
+    public var snoozeDuration: TimeInterval {
+        get {
+            snoozeDurationRawValue!.doubleValue
+        }
+        
+        set {
+             snoozeDurationRawValue = newValue as NSNumber
+        }
     }
     
     public var logs: [ReminderLog] {
@@ -51,21 +78,26 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     
     // MARK: - Create
     
-    static func createReminder(context: NSManagedObjectContext, title: String, icon: CueIcon, date: Date, schedule: ScheduleBuilder? = nil) -> Reminder {
+    static func createReminder(context: NSManagedObjectContext, title: String, icon: CueIcon, date: Date, snoozeDuration: TimeInterval, schedule: ScheduleBuilder? = nil, reminderNotification: ReminderNotification) -> Reminder {
         let reminder = create(context: context)
+        reminder.notificationID = UUID()
         reminder.title = title
         reminder.icon = icon
         reminder.date = date
+        reminder.snoozeDuration = snoozeDuration
+        reminder.reminderNotification = reminderNotification
         reminder.schedule = .init(hour: schedule?.hour ?? 0, minute: schedule?.minute ?? 0, intervalWeeks: schedule?.intervalWeek, weekdays: schedule?.weekdays, calendarDates: schedule?.dates)
         return reminder
     }
     
     
     
-    public func updateProperties(title: String, icon: CueIcon, date: Date, scheduleBuilder: ScheduleBuilder? = nil) {
+    public func updateProperties(title: String, icon: CueIcon, date: Date, snoozeDuration: TimeInterval, scheduleBuilder: ScheduleBuilder? = nil, reminderNotification: ReminderNotification) {
         self.title = title
         self.icon = icon
         self.date = date
+        self.snoozeDuration = snoozeDuration
+        self.reminderNotification = reminderNotification
         self.schedule = .init(hour: scheduleBuilder?.hour ?? 0,
                               minute: scheduleBuilder?.minute ?? 0,
                               intervalWeeks: scheduleBuilder?.intervalWeek,
@@ -79,6 +111,19 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     public func delete(context: NSManagedObjectContext) {
         context.delete(self)
         context.saveContext()
+    }
+    
+    
+    // MARK: - Fetch
+    
+    internal static func fetchRemindersWithNotification(context: NSManagedObjectContext) -> [Reminder] {
+        let predicate = NSPredicate(format: "notificationType == %d", ReminderNotification.notification.rawValue)
+        return Self.fetch(context: context, predicate: predicate) ?? []
+    }
+    
+    internal static func fetchRemindersWithAlarm(context: NSManagedObjectContext) -> [Reminder] {
+        let predicate = NSPredicate(format: "notificationType == %d", ReminderNotification.alarm.rawValue)
+        return Self.fetch(context: context, predicate: predicate) ?? []
     }
     
     

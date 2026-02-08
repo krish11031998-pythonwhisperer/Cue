@@ -9,6 +9,7 @@ import SwiftUI
 import VanorUI
 import Model
 internal import EmojiKit
+internal import AlarmKit
 
 struct CreateReminderView: View {
     
@@ -55,9 +56,7 @@ struct CreateReminderView: View {
                         ForEach(CreateReminderViewModel.ReminderCalendarPresentation.allCases) { presentation in
                             ReminderButton(presentation: presentation,
                                            buttonTitle: viewModel.buttonTitleForElement(presentation),
-                                           animation: animation) { presentation in
-                                self.viewModel.presentation = presentation
-                            }
+                                           animation: animation, action: presentReminderButtonTap(_:))
                         }
                     }
                     .padding(.top, 12)
@@ -91,17 +90,17 @@ struct CreateReminderView: View {
                 }
             }
         }
-        .sheet(item: $viewModel.presentation) { sheet in
+        .sheet(item: $viewModel.presentation, onDismiss: onDismiss) { sheet in
             Group {
                 switch sheet {
                 case .alarmAt:
-                    DatePickerView(date: $viewModel.timeDate, viewType: .time("Reminder me at", .alarmFill))
-                    .fittedPresentationDetent()
+                    DatePickerView.time("Remind me at", date: $viewModel.timeDate, notification: $viewModel.reminderNotification)
+                        .fittedPresentationDetent()
                 case .duration:
                     TimerSheetView(timeDuration: $viewModel.snoozeDuration, title: "Snooze Duration", bound: .hour)
                         .fittedPresentationDetent()
                 case .date:
-                    DatePickerView(date: $viewModel.date, viewType: .date("Reminder Start Date", .calendar))
+                    DatePickerView.date("Reminder Start Date", date: $viewModel.date)
                     .fittedPresentationDetent()
                 case .repeat:
                     ReminderWeekPlannerView(selectedDays: viewModel.scheduleBuilder.weekdays ?? [], weekInterval: viewModel.scheduleBuilder.intervalWeek ?? 1, datesInMonth: viewModel.scheduleBuilder.dates ?? [], reminderType: viewModel.scheduleBuilder.dates != nil ? .monthly : .weekly) {
@@ -138,109 +137,30 @@ struct CreateReminderView: View {
     }
     
     
-    // MARK: - ReminderButton
+    // MARK: - Helper Methods
     
-    struct ReminderButton: View {
-        
-        let presentation: CreateReminderViewModel.ReminderCalendarPresentation
-        let buttonTitle: String
-        var animation: Namespace.ID
-        let action: (CreateReminderViewModel.ReminderCalendarPresentation) -> Void
-        
-        var body: some View {
-            Button {
-                action(presentation)
-            } label: {
-                Label {
-                    Text(buttonTitle)
-                } icon: {
-                    Image(systemSymbol: symbol)
-                }
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .padding(.init(top: 6, leading: 8, bottom: 6, trailing: 8))
-                .background(Color.backgroundSecondary, in: .capsule)
-            }
-            .buttonStyle(.plain)
-            .matchedTransitionSource(id: presentation,
-                                     in: animation)
-        }
-        
-        
-        // MARK:  Symbol
-        
-        var symbol: SFSymbol {
-            switch presentation {
-            case .alarmAt:
-                return .alarm
-            case .duration:
-                return .zzz
-            case .date:
-                return .calendar
-            case .repeat:
-                return .arrow2Squarepath
-            case .symbolAndColor:
-                fatalError("\(presentation.rawValue) has no symbol")
-            }
+    private func presentReminderButtonTap(_ presentation: CreateReminderViewModel.ReminderCalendarPresentation) {
+        switch presentation {
+        case .alarmAt:
+            // Check for notification
+            self.viewModel.presentation = presentation
+        case .duration:
+            // Check for alarm
+            self.viewModel.presentation = presentation
+        case .date, .repeat, .symbolAndColor:
+            self.viewModel.presentation = presentation
         }
     }
     
-    
-    // MARK: - DatePickerView
-    
-    struct DatePickerView: View {
-        enum ViewType {
-            case time(String, SFSymbol)
-            case date(String, SFSymbol)
-            
-            var title: String {
-                switch self {
-                case .time(let string, _):
-                    return string
-                case .date(let string, _):
-                    return string
-                }
-            }
-            
-            var symbol: SFSymbol {
-                switch self {
-                case .time(_, let sFSymbol):
-                    return sFSymbol
-                case .date(_, let sFSymbol):
-                    return sFSymbol
-                }
-            }
+    private func onDismiss() {
+        switch viewModel.reminderNotification {
+        case .alarm:
+            viewModel.checkForPermissionForSettingAlarm()
+        case .notification:
+            viewModel.checkForPermissionForSendingNotification()
+        default:
+            fatalError("Shouldn't happen")
         }
-        
-        @Binding var date: Date
-        let viewType: ViewType
-        
-        var body: some View {
-            VStack(alignment: .center, spacing: 16) {
-                Label(viewType.title, systemSymbol: viewType.symbol)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 32)
-                
-                Group {
-                    switch viewType {
-                    case .time:
-                        DatePicker(selection: $date, displayedComponents: [.hourAndMinute]) {
-                            Text("DatePicker")
-                        }
-                        .datePickerStyle(.wheel)
-                    case .date:
-                        DatePicker(selection: $date, displayedComponents: [.date]) {
-                            Text("DatePicker")
-                        }
-                        .datePickerStyle(.graphical)
-                    }
-                }
-                .labelsHidden()
-            }
-        }
-        
     }
 }
 

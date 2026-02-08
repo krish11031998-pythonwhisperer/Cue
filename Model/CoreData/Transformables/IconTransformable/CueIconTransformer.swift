@@ -26,7 +26,7 @@ class CueIconTransformer: ValueTransformer {
         guard let data = value as? Data else { return nil }
         
         do {
-            let cueIcon = try NSKeyedUnarchiver.unarchivedObject(ofClass:CueIcon.self, from: data)
+            let cueIcon = try NSKeyedUnarchiver.unarchivedObject(ofClasses: [CueIcon.self, NSString.self, NSNumber.self], from: data)
             return cueIcon
         } catch {
             print(error)
