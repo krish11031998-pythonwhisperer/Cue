@@ -1,5 +1,5 @@
 {
-  "originHash" : "f073d36d9b439b4fc451b73d73505fca5dad1042444ccc93b025b844918ef450",
+  "originHash" : "fdb276500a737900bd13493752a70bfb2c77fdbf8bbead878786cb73cddb2b7a",
   "pins" : [
     {
       "identity" : "colortokenskit-swift",
@@ -53,6 +53,15 @@
       "state" : {
         "revision" : "7b847a3b7008b2dc2f47ca3110d8c782fb2e5c7e",
         "version" : "1.3.0"
+      }
+    },
+    {
+      "identity" : "vanor-ui-library",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/krish11031998-pythonwhisperer/vanor-ui-library",
+      "state" : {
+        "revision" : "84701635a0d31d957690ea9f31da4dff75bafcb8",
+        "version" : "0.2.3"
       }
     }
   ],

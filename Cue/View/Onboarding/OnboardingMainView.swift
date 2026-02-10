@@ -114,6 +114,9 @@ struct OnboardingMainView: View {
             .ignoresSafeArea(edges: .vertical)
             .animation(.easeInOut, value: tabs)
         }
+        .task {
+            CueUserDefaultsManager.shared[.hasShowOnboarding] = true
+        }
     }
     
 }

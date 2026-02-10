@@ -65,7 +65,8 @@ struct MainTab: View {
             guard !hasShowOnboarding else { return }
             self.fullScreenPresentation = .onboarding
         }
-        .fullScreenCover(item: $fullScreenPresentation, onDismiss: {
+        .fullScreenCover(item: $fullScreenPresentation,
+                         onDismiss: {
             self.presentCreateReminder = true
         }) { fullScreenPresentation in
             switch fullScreenPresentation {
