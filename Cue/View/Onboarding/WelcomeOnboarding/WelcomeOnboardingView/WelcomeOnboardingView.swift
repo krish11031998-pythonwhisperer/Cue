@@ -36,7 +36,7 @@ struct WelcomeOnboardingView: View {
                     .offset(x: 0, y: -proxy.size.height * 0.1)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
     

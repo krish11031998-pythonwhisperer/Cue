@@ -49,7 +49,11 @@ struct CreateReminderView: View {
                               axis: .vertical)
                     .font(.title3)
                     .fontWeight(.medium)
+                    .submitLabel(.go)
                     .focused($textFieldIsFocused)
+                    .autoDismissOnReturn(text: $viewModel.reminderTitle) {
+                        self.textFieldIsFocused = false
+                    }
                     
                     OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 10) {
                         ForEach(CreateReminderViewModel.ReminderCalendarPresentation.allCases) { presentation in

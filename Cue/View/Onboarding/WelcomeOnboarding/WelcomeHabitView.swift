@@ -10,7 +10,9 @@ import SwiftUI
 
 struct WelcomeHabitView: View {
     
+    let onAppear: Bool
     let longPressAction: Callback
+    @State private var showHabitBubble: Bool = false
     
     var body: some View {
         VStack(alignment: .center, spacing: 12) {
@@ -21,14 +23,23 @@ struct WelcomeHabitView: View {
                     height * 0.2
                 }
                 .padding(.horizontal, 16)
-            HabitBubble(model: .init(habitName: "Long press you log a habit", habitIcon: "target", habitReminder: Date.now, theme: Color.proSky, longPressGesture: longPressAction))
-                .aspectRatio(1, contentMode: .fit)
-                .padding(.horizontal, 32)
-                .visualEffect({ content, proxy in
-                    content
-                        .offset(x: 0, y: -proxy.size.height * 0.2)
-                })
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            if onAppear {
+                HabitBubble(model: .init(habitName: "Long press to log a habit", habitIcon: "target", habitReminder: Date.now, theme: Color.proSky, longPressGesture: longPressAction))
+                    .aspectRatio(1, contentMode: .fit)
+                    .padding(.horizontal, 0)
+                    .visualEffect({ content, proxy in
+                        content
+                            .offset(x: 0, y: -proxy.size.height * 0.2)
+                    })
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)                
+            }
+        }
+        .padding(.horizontal, 20)
+        .task(id: onAppear) {
+            guard onAppear else { return }
+            withAnimation(.easeInOut) {
+                self.showHabitBubble = true
+            }
         }
     }
     
@@ -43,7 +54,7 @@ struct WelcomeHabitView: View {
 
 
 #Preview {
-    WelcomeHabitView {
+    WelcomeHabitView(onAppear: true) {
         print("(DEBUG) longPressed!")
     }
 }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import VanorUI
+import Model
 
 struct OnboardingMainView: View {
     
@@ -15,11 +16,14 @@ struct OnboardingMainView: View {
         case second
         case third
         case fourth
+        case fifth
         
         var id: String { rawValue }
     }
     
+    @Environment(\.dismiss) var dismiss
     @State private var tabs: Tabs = .first
+    let store: Store
     
     var themeColor: Color {
         Color.proSky.baseColor
@@ -33,34 +37,48 @@ struct OnboardingMainView: View {
                     case .first:
                         WelcomeOnboardingView()
                     case .second:
-                        WelcomeHabitView {
-                            withAnimation(.easeOut) {
-                                self.tabs = .third
+                        WelcomeAlarmAndNotificationView()
+                    case .third:
+                        WelcomeFocusView(isCurrentTab: tabs == tab)
+                    case .fourth:
+                        WelcomeHabitView(onAppear: tabs == tab) {
+                            print("(DEBUG) longPress")
+                            Task { @MainActor in
+                                try? await Task.sleep(for: .milliseconds(300))
+                                tabs = .fifth
                             }
                         }
-                    case .third:
-                        WelcomeFocusView()
-                    case .fourth:
-                        Color.indigo
-                            .ignoresSafeArea(edges: .all)
+                    case .fifth:
+                        WelcomeCreateReminderView(onAppear: tabs == tab)
                     }
                 }
                 .tag(tab)
             }
         }
-        .safeAreaBar(edge: .bottom, alignment: .trailing, spacing: 0) {
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .disabled(tabs != .second && tabs != .fourth)
+        .safeAreaBar(edge: .bottom, alignment: .trailing, spacing: 8) {
             Button {
-                withAnimation(.easeInOut) {
-                    switch tabs {
-                    case .first:
+                switch tabs {
+                case .first:
+                    withAnimation(.easeInOut) {
                         tabs = .second
-                    case .second:
-                        break
-                    case .third:
-                        tabs = .fourth
-                    case .fourth:
-                        break
                     }
+                case .second:
+                    withAnimation(.easeInOut) {
+                        tabs = .third
+                    }
+                case .third:
+                    withAnimation(.easeInOut) {
+                        tabs = .fourth
+                    }
+                case .fourth:
+                    tabs = .fifth
+                case .fifth:
+                    #if RELEASE
+                    CueUserDefaultsManager.shared[.hasShowOnboarding] = true
+                    #endif
+                    dismiss()
                 }
             } label: {
                 HStack(alignment: .center, spacing: 8) {
@@ -75,20 +93,31 @@ struct OnboardingMainView: View {
             .padding(.horizontal, 16)
             .animation(.easeInOut) { content in
                 content
-                    .opacity(tabs == .second ? 0 : 1)
-                    .disabled(tabs == .second)
+                    .opacity(tabs == .fourth ? 0 : 1)
+                    .disabled(tabs == .fourth)
             }
         }
-//        .ignoresSafeArea(edges: .all)
-        .tabViewStyle(.page(indexDisplayMode: .never))
         .background(alignment: .bottom) {
-            RadialGradient(stops: [.init(color: themeColor, location: 0), .init(color: themeColor.opacity(0.1), location: 1)], center: .bottom, startRadius: 0, endRadius: 300)
-                .ignoresSafeArea(edges: .vertical)
+            ZStack(alignment: .center) {
+                if tabs != .fifth {
+                    RadialGradient(stops: [.init(color: themeColor, location: 0), .init(color: themeColor.opacity(0.1), location: 1)], center: .bottom, startRadius: 0, endRadius: 300)
+                } else {
+                    GeometryReader { proxy in
+                        let bubbleStartSize = proxy.size.smallDim - 40
+                        ExpandingCircle(startFrame: .init(origin: .init(x: (proxy.size.width - bubbleStartSize).half, y: (proxy.size.height - bubbleStartSize).half), size: .init(squared: bubbleStartSize)),
+                                        finalCornerRadius: 0,
+                                        pct: tabs == .fifth  ? 1 : 0)
+                        .fill(Color.proSky.backgroundTertiary)
+                    }
+                }
+            }
+            .ignoresSafeArea(edges: .vertical)
+            .animation(.easeInOut, value: tabs)
         }
     }
     
 }
 
 #Preview {
-    OnboardingMainView()
+    OnboardingMainView(store: .init())
 }
