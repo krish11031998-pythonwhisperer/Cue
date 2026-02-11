@@ -10,8 +10,9 @@ import CoreData
 import AsyncAlgorithms
 
 @Observable
-public class Store {
+@MainActor public class Store {
     
+    public var user: User? = nil
     public var reminders: [Reminder] = []
     public var presentCreateReminder: Bool = false
     @ObservationIgnored
@@ -27,6 +28,7 @@ public class Store {
     
     public init() {
         self.notificationManager = .init(context: CoreDataManager.shared.persistentContainer.viewContext)
+        self.retrieveUser()
         self.reminders = Reminder.fetchAll(context: self.viewContext)
         observingTask()
     }
@@ -62,6 +64,19 @@ public class Store {
         self.viewContext.changesStream(for: ReminderTaskLog.self, changeTypes: [.inserted, .deleted, .updated])
     }
     
+    
+    // MARK: - Create User
+    
+    @MainActor
+    func retrieveUser() {
+        let users = User.fetchAll(context: viewContext)
+        if let firstUser = users.first {
+            self.user = firstUser
+        } else {
+            let user = User.createUser(context: viewContext)
+            self.user = user
+        }
+    }
     
     // MARK: - Reminders
     
@@ -142,5 +157,12 @@ public class Store {
     public func deleteTaskLogsFor(at date: Date, for reminderTaskID: NSManagedObjectID) {
         let reminderTask = ReminderTask.fetch(context: viewContext, for: reminderTaskID)
         ReminderTaskLog.deleteLog(at: date, reminderTask: reminderTask, context: viewContext)
+    }
+    
+    
+    // MARK: - User
+    
+    public func updateUser(transform: @escaping (User) -> Void) {
+        user?.update(context: viewContext, transform: transform)
     }
 }

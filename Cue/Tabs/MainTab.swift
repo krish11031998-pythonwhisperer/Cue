@@ -6,13 +6,14 @@
 //
 
 import SwiftUI
-import ColorTokensKit
+import VanorUI
 import Model
 
 struct MainTab: View {
     
     enum Tabs: Hashable {
         case home
+        case settings
         case create
     }
     
@@ -46,6 +47,17 @@ struct MainTab: View {
                     Image(systemName: "calendar")
                 }
             }
+            
+            Tab(value: Tabs.settings) {
+                SettingView()
+            } label: {
+                Label {
+                    Text("Settings")
+                } icon: {
+                    Image(systemSymbol: .gearshapeFill)
+                }
+            }
+
             
             Tab("", systemImage: "plus", value: .create, role: .search) {
                 Color.clear

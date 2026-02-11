@@ -12,6 +12,9 @@
 		EF079DFA2F1C304200986EF8 /* KKit in Frameworks */ = {isa = PBXBuildFile; productRef = EF079DF92F1C304200986EF8 /* KKit */; };
 		EF3225232F1EF04B0054901C /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = EF3225222F1EF04B0054901C /* AsyncAlgorithms */; };
 		EFA0BE6F2F1C3BDF00866D42 /* VanorUI in Frameworks */ = {isa = PBXBuildFile; productRef = EFA0BE6E2F1C3BDF00866D42 /* VanorUI */; };
+		EFD66AA02F3C24F7006E4599 /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = EFD66A9F2F3C24F7006E4599 /* ReceiptParser */; };
+		EFD66AA22F3C24F7006E4599 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = EFD66AA12F3C24F7006E4599 /* RevenueCat */; };
+		EFD66AA42F3C24F7006E4599 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = EFD66AA32F3C24F7006E4599 /* RevenueCatUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,6 +66,9 @@
 			files = (
 				EFA0BE6F2F1C3BDF00866D42 /* VanorUI in Frameworks */,
 				EF079D902F1BFFC600986EF8 /* Model.framework in Frameworks */,
+				EFD66AA42F3C24F7006E4599 /* RevenueCatUI in Frameworks */,
+				EFD66AA22F3C24F7006E4599 /* RevenueCat in Frameworks */,
+				EFD66AA02F3C24F7006E4599 /* ReceiptParser in Frameworks */,
 				EF079DFA2F1C304200986EF8 /* KKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -138,6 +144,9 @@
 			packageProductDependencies = (
 				EF079DF92F1C304200986EF8 /* KKit */,
 				EFA0BE6E2F1C3BDF00866D42 /* VanorUI */,
+				EFD66A9F2F3C24F7006E4599 /* ReceiptParser */,
+				EFD66AA12F3C24F7006E4599 /* RevenueCat */,
+				EFD66AA32F3C24F7006E4599 /* RevenueCatUI */,
 			);
 			productName = Cue;
 			productReference = EF079D722F1BE5EC00986EF8 /* Kyu.app */;
@@ -198,6 +207,7 @@
 				EF079DF82F1C304200986EF8 /* XCRemoteSwiftPackageReference "KKit-Swift-Package" */,
 				EFA0BE6D2F1C3BDF00866D42 /* XCRemoteSwiftPackageReference "vanor-ui-library" */,
 				EF32251C2F1EF0090054901C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
+				EFD66A9E2F3C24F7006E4599 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EF079D732F1BE5EC00986EF8 /* Products */;
@@ -589,6 +599,14 @@
 				minimumVersion = 0.1.3;
 			};
 		};
+		EFD66A9E2F3C24F7006E4599 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.58.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -606,6 +624,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EFA0BE6D2F1C3BDF00866D42 /* XCRemoteSwiftPackageReference "vanor-ui-library" */;
 			productName = VanorUI;
+		};
+		EFD66A9F2F3C24F7006E4599 /* ReceiptParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EFD66A9E2F3C24F7006E4599 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = ReceiptParser;
+		};
+		EFD66AA12F3C24F7006E4599 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EFD66A9E2F3C24F7006E4599 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCat;
+		};
+		EFD66AA32F3C24F7006E4599 /* RevenueCatUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EFD66A9E2F3C24F7006E4599 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCatUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
