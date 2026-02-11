@@ -89,6 +89,7 @@ struct SettingView: View {
     
     enum Presentation: String, Identifiable {
         case subscription
+        case manageSubscription
         case productRoadMap
         
         var id: String {
@@ -97,6 +98,7 @@ struct SettingView: View {
     }
     
     @Environment(Store.self) var store
+    @Environment(SubscriptionManager.self) var subscriptionManager
     @State private var presentation: Presentation?
     
     var body: some View {
@@ -104,9 +106,13 @@ struct SettingView: View {
             List {
                 Section {
                     Button {
-                        self.presentation = .subscription
+                        if subscriptionManager.userIsPro {
+                            self.presentation = .manageSubscription
+                        } else {
+                            self.presentation = .subscription
+                        }
                     } label: {
-                        CueItProCard(userIsPro: false)
+                        CueItProCard(userIsPro: subscriptionManager.userIsPro)
                     }
                 }
                 .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
@@ -138,9 +144,10 @@ struct SettingView: View {
         .sheet(item: $presentation) { item in
             Group {
                 switch item {
+                case .manageSubscription:
+                    ManageSubsriptionView()
                 case .subscription:
                     CuePaywallView()
-                        .presentationDetents([.large])
                 case .productRoadMap:
                     ProductRoadMap()
                 }

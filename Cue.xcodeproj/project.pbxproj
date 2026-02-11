@@ -10,9 +10,6 @@
 		EF079D902F1BFFC600986EF8 /* Model.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF079D8A2F1BFFC600986EF8 /* Model.framework */; };
 		EF079D912F1BFFC600986EF8 /* Model.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = EF079D8A2F1BFFC600986EF8 /* Model.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		EF079DFA2F1C304200986EF8 /* KKit in Frameworks */ = {isa = PBXBuildFile; productRef = EF079DF92F1C304200986EF8 /* KKit */; };
-		EF283F752F39450C00982B80 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF2950FA2F38BDF800FEAD32 /* WidgetKit.framework */; };
-		EF283F762F39450C00982B80 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF2950FC2F38BDF800FEAD32 /* SwiftUI.framework */; };
-		EF283F832F39450D00982B80 /* KyuLiveActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EF283F742F39450C00982B80 /* KyuLiveActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EF3225232F1EF04B0054901C /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = EF3225222F1EF04B0054901C /* AsyncAlgorithms */; };
 		EFA0BE6F2F1C3BDF00866D42 /* VanorUI in Frameworks */ = {isa = PBXBuildFile; productRef = EFA0BE6E2F1C3BDF00866D42 /* VanorUI */; };
 		EFD66AA02F3C24F7006E4599 /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = EFD66A9F2F3C24F7006E4599 /* ReceiptParser */; };
@@ -27,20 +24,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = EF079D892F1BFFC600986EF8;
 			remoteInfo = Model;
-		};
-		EF283F812F39450D00982B80 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = EF079D6A2F1BE5EC00986EF8 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = EF283F732F39450C00982B80;
-			remoteInfo = KyuLiveActivityExtension;
-		};
-		EF283F882F39454900982B80 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = EF079D6A2F1BE5EC00986EF8 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = EF283F732F39450C00982B80;
-			remoteInfo = KyuLiveActivityExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -62,7 +45,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				EF283F832F39450D00982B80 /* KyuLiveActivityExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -72,21 +54,11 @@
 /* Begin PBXFileReference section */
 		EF079D722F1BE5EC00986EF8 /* Kyu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kyu.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EF079D8A2F1BFFC600986EF8 /* Model.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Model.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		EF283F742F39450C00982B80 /* KyuLiveActivityExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KyuLiveActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		EF2950F12F38B18300FEAD32 /* Kyu-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Kyu-Info.plist"; sourceTree = "<group>"; };
 		EF2950FA2F38BDF800FEAD32 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		EF2950FC2F38BDF800FEAD32 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		EFD66EC12F3CC197006E4599 /* vanor-ui-library */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vanor-ui-library"; path = "../Shipyard/vanor-ui-library"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		EF283F842F39450D00982B80 /* Exceptions for "KyuLiveActivity" folder in "KyuLiveActivityExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = EF283F732F39450C00982B80 /* KyuLiveActivityExtension */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		EF079D742F1BE5EC00986EF8 /* Cue */ = {
@@ -101,9 +73,6 @@
 		};
 		EF283F772F39450C00982B80 /* KyuLiveActivity */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				EF283F842F39450D00982B80 /* Exceptions for "KyuLiveActivity" folder in "KyuLiveActivityExtension" target */,
-			);
 			path = KyuLiveActivity;
 			sourceTree = "<group>";
 		};
@@ -131,15 +100,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		EF283F712F39450C00982B80 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				EF283F762F39450C00982B80 /* SwiftUI.framework in Frameworks */,
-				EF283F752F39450C00982B80 /* WidgetKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -152,6 +112,7 @@
 				EF283F772F39450C00982B80 /* KyuLiveActivity */,
 				EF32251F2F1EF02B0054901C /* Frameworks */,
 				EF079D732F1BE5EC00986EF8 /* Products */,
+				EFD66EC12F3CC197006E4599 /* vanor-ui-library */,
 			);
 			sourceTree = "<group>";
 		};
@@ -160,7 +121,6 @@
 			children = (
 				EF079D722F1BE5EC00986EF8 /* Kyu.app */,
 				EF079D8A2F1BFFC600986EF8 /* Model.framework */,
-				EF283F742F39450C00982B80 /* KyuLiveActivityExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -201,7 +161,6 @@
 			);
 			dependencies = (
 				EF079D8F2F1BFFC600986EF8 /* PBXTargetDependency */,
-				EF283F822F39450D00982B80 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				EF079D742F1BE5EC00986EF8 /* Cue */,
@@ -230,7 +189,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				EF283F892F39454900982B80 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				EF079D8B2F1BFFC600986EF8 /* Model */,
@@ -242,28 +200,6 @@
 			productName = Model;
 			productReference = EF079D8A2F1BFFC600986EF8 /* Model.framework */;
 			productType = "com.apple.product-type.framework";
-		};
-		EF283F732F39450C00982B80 /* KyuLiveActivityExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = EF283F852F39450D00982B80 /* Build configuration list for PBXNativeTarget "KyuLiveActivityExtension" */;
-			buildPhases = (
-				EF283F702F39450C00982B80 /* Sources */,
-				EF283F712F39450C00982B80 /* Frameworks */,
-				EF283F722F39450C00982B80 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				EF283F772F39450C00982B80 /* KyuLiveActivity */,
-			);
-			name = KyuLiveActivityExtension;
-			packageProductDependencies = (
-			);
-			productName = KyuLiveActivityExtension;
-			productReference = EF283F742F39450C00982B80 /* KyuLiveActivityExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -280,9 +216,6 @@
 					};
 					EF079D892F1BFFC600986EF8 = {
 						CreatedOnToolsVersion = 26.0;
-					};
-					EF283F732F39450C00982B80 = {
-						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -308,7 +241,6 @@
 			targets = (
 				EF079D712F1BE5EC00986EF8 /* Kyu */,
 				EF079D892F1BFFC600986EF8 /* Model */,
-				EF283F732F39450C00982B80 /* KyuLiveActivityExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -322,13 +254,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		EF079D882F1BFFC600986EF8 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		EF283F722F39450C00982B80 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -352,13 +277,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		EF283F702F39450C00982B80 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -366,16 +284,6 @@
 			isa = PBXTargetDependency;
 			target = EF079D892F1BFFC600986EF8 /* Model */;
 			targetProxy = EF079D8E2F1BFFC600986EF8 /* PBXContainerItemProxy */;
-		};
-		EF283F822F39450D00982B80 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = EF283F732F39450C00982B80 /* KyuLiveActivityExtension */;
-			targetProxy = EF283F812F39450D00982B80 /* PBXContainerItemProxy */;
-		};
-		EF283F892F39454900982B80 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = EF283F732F39450C00982B80 /* KyuLiveActivityExtension */;
-			targetProxy = EF283F882F39454900982B80 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -659,70 +567,6 @@
 			};
 			name = Release;
 		};
-		EF283F862F39450D00982B80 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8T963ZW2EJ;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = KyuLiveActivity/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = KyuLiveActivity;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.Krishna.Kyu.KyuLiveActivity;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		EF283F872F39450D00982B80 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8T963ZW2EJ;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = KyuLiveActivity/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = KyuLiveActivity;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.Krishna.Kyu.KyuLiveActivity;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -749,15 +593,6 @@
 			buildConfigurations = (
 				EF079D932F1BFFC600986EF8 /* Debug */,
 				EF079D942F1BFFC600986EF8 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		EF283F852F39450D00982B80 /* Build configuration list for PBXNativeTarget "KyuLiveActivityExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				EF283F862F39450D00982B80 /* Debug */,
-				EF283F872F39450D00982B80 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

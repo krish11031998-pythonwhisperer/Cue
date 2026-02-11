@@ -7,6 +7,7 @@
 
 import SwiftUI
 import VanorUI
+import RevenueCat
 
 struct PeekoverTransform: GeometryEffect {
     
@@ -51,19 +52,21 @@ extension AnyTransition {
 
 struct PayWallProductButton: View {
     
-    let productName: String
-    let price: Double
+    struct Model: Hashable {
+        let productName: String
+        let localizedPrice: String
+        let localizedPricePerMonth: String?
+        let subscriptionPeriod: SubscriptionPeriod
+        let introductoryDiscount: StoreProductDiscount?
+    }
+    
+    let model: Model
     let isSelected: Bool
-    let isYearlyProduct: Bool
-    let hasTrial: Bool
     let action: () -> Void
     
-    init(productName: String, price: Double, isSelected: Bool, isYearlyProduct: Bool, hasTrial: Bool = false, action: @escaping () -> Void) {
-        self.productName = productName
-        self.price = price
+    init(model: Model, isSelected: Bool, action: @escaping () -> Void) {
+        self.model = model
         self.isSelected = isSelected
-        self.isYearlyProduct = isYearlyProduct
-        self.hasTrial = hasTrial
         self.action = action
     }
     
@@ -74,22 +77,39 @@ struct PayWallProductButton: View {
         return numberFormatter
     }()
     
+    var isYearlyProduct: Bool {
+        guard case .year = model.subscriptionPeriod.unit else {
+            return false
+        }
+        
+        return true
+    }
+    
+    var hasTrial: Bool {
+        guard let introductoryDiscount = model.introductoryDiscount else {
+            return false
+        }
+        
+        return introductoryDiscount.paymentMode == .freeTrial
+    }
+    
+    
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
-            Text(productName)
+            Text(model.productName)
                 .font(.body)
                 .fontWeight(isSelected ? .semibold : .medium)
                 .foregroundStyle(isSelected ? Color.proSky.foregroundSecondary : Color.text)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             VStack(alignment: .trailing, spacing: 4) {
-                Text(priceString)
+                Text(model.localizedPrice)
                     .font(.headline)
                     .fontWeight(.semibold)
                     .foregroundStyle(isSelected ? Color.proSky.foregroundSecondary : Color.text)
                 
-                if isYearlyProduct {
-                    Text(monthlySplitPriceString)
+                if isYearlyProduct, let localizedPricePerMonth = model.localizedPricePerMonth {
+                    Text("\(localizedPricePerMonth) / mo")
                         .font(.caption2)
                         .fontWeight(isSelected ? .semibold : .regular)
                         .foregroundStyle(isSelected ? Color.proSky.foregroundTertiary : Color.secondaryText)
@@ -120,8 +140,7 @@ struct PayWallProductButton: View {
                     .padding(.init(top: 8, leading: 16, bottom: 24, trailing: 16))
                     .frame(maxWidth: .infinity, alignment: .center)
                     .background(Color.proSky.baseColor, in: UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 18, style: .continuous))
-//                    .padding(.horizontal, 2)
-                    .transition(.peekover(additionalY: 18).animation(.snappy()))
+                    .transition(.peekover(additionalY: 18).animation(.snappy(duration: 0.25)))
             }
         })
         .onTapGesture {
@@ -129,36 +148,4 @@ struct PayWallProductButton: View {
             action()
         }
     }
-    
-    
-    var priceString: String {
-        return currencyNumberFormatter.string(from: NSNumber(value: price)) ?? "N/A"
-    }
-    
-    var monthlySplitPriceString: String {
-        let monthlySplitPrice = price/12
-        return "\(currencyNumberFormatter.string(from: NSNumber(value: monthlySplitPrice)) ?? "N/A") / mo"
-    }
-}
-
-
-#Preview {
-    @Previewable @State var showYearly: Bool = false
-    PayWallProductButton(productName: "Yearly", price: 39.99, isSelected: showYearly, isYearlyProduct: true, hasTrial: true) {
-        print("(DEBUG) selected Product")
-            showYearly.toggle()
-    }
-    .padding(.horizontal, 20)
-    PayWallProductButton(productName: "Yearly", price: 39.99, isSelected: false, isYearlyProduct: true) {
-        print("(DEBUG) selected Product")
-    }
-    .padding(.horizontal, 20)
-    PayWallProductButton(productName: "Monthly", price: 39.99, isSelected: false, isYearlyProduct: false) {
-        print("(DEBUG) selected Product")
-    }
-    .padding(.horizontal, 20)
-//    PayWallProductButton(productName: "Monthly", price: 39.99, isSelected: true, isYearlyProduct: false) {
-//        print("(DEBUG) selected Product")
-//    }
-//    .padding(.horizontal, 20)
 }

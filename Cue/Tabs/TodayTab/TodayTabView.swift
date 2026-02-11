@@ -32,6 +32,7 @@ struct TodayTabView: View {
     
     @Environment(\.dismiss) var dismiss
     @Environment(Store.self) var store
+    @Environment(SubscriptionManager.self) var subscriptionManager
     private var presentCreateReminder: () -> Void
     @State private var presentation: Presentation? = nil
     @State private var fullScreenSheet: FullScreenSheet? = nil
@@ -82,10 +83,23 @@ struct TodayTabView: View {
                         }
                     } label: {
                         Image(systemSymbol: .calendar)
-                            .font(.body)
+                            .font(.headline)
                     }
-
                 }
+                
+                #if DEBUG
+                if subscriptionManager.userIsPro {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            print("(DEBUG) showTimer")
+                        } label: {
+                            Image(systemSymbol: .timer)
+                                .font(.headline)
+                        }
+                        .tint(Color.proSky.baseColor)
+                    }
+                }
+                #endif
             }
         }
         .onChange(of: viewModel.today, { _, _ in

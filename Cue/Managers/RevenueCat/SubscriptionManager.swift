@@ -31,6 +31,11 @@ import Foundation
         }
     }
     
+    var userIsPro: Bool {
+        guard let customerInfo else { return false }
+        return customerInfo.entitlements["cue:it Pro"]?.isActive == true
+    }
+    
     /* The latest offerings */
     var offerings: Offerings?
 
@@ -52,19 +57,23 @@ import Foundation
         }
     }
 
-    func purchase(_ product: StoreProduct) async {
+    func purchase(_ product: StoreProduct) async -> Bool {
         isPurchasing = true
         defer { isPurchasing = false }
 
         do {
             let (_, customerInfo, userCancelled) = try await Purchases.shared.purchase(product: product)
 
-            guard !userCancelled else { return }
+            guard !userCancelled else { return false }
 
             self.customerInfo = customerInfo
+            
+            return true
         } catch {
             print("Failed to purchase product with error: \(error)")
         }
+        
+        return false
     }
     
     func purchase(_ package: Package) async {
@@ -94,5 +103,23 @@ import Foundation
     
     func fetchStoreProducts(withIdentifiers productIdentifiers: [String]) async -> [StoreProduct] {
         await Purchases.shared.products(productIdentifiers)
+    }
+    
+    func checkIfUserIsEligibleForFreeTrial(_ package: [Package]) async -> [Package : IntroEligibility] {
+        await Purchases.shared.checkTrialOrIntroDiscountEligibility(packages: package)
+    }
+    
+    func checkIfUserIsEligibleForFreeTrial(_ product: StoreProduct) async -> Bool {
+        let result = await Purchases.shared.checkTrialOrIntroDiscountEligibility(product: product)
+        switch result {
+        case .unknown:
+            return false
+        case .ineligible:
+            return false
+        case .eligible:
+            return true
+        case .noIntroOfferExists:
+            return false
+        }
     }
 }
