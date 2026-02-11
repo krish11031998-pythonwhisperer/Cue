@@ -1,5 +1,5 @@
 {
-  "originHash" : "fdb276500a737900bd13493752a70bfb2c77fdbf8bbead878786cb73cddb2b7a",
+  "originHash" : "2b4f9699e88aacda02d8573ed892f15e0af4cd548f53a4213c809d3a07ef9f75",
   "pins" : [
     {
       "identity" : "colortokenskit-swift",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "0803cdb368d31246ffb2af682bd653f8c505eb5f",
         "version" : "2.4.3"
+      }
+    },
+    {
+      "identity" : "purchases-ios-spm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RevenueCat/purchases-ios-spm.git",
+      "state" : {
+        "revision" : "8f5df97653eb361a2097119479332afccf0aa816",
+        "version" : "5.58.0"
       }
     },
     {
@@ -60,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krish11031998-pythonwhisperer/vanor-ui-library",
       "state" : {
-        "revision" : "f794ffcde200e4d786e9927004263e3f5c35c6da",
-        "version" : "0.2.1"
+        "revision" : "84701635a0d31d957690ea9f31da4dff75bafcb8",
+        "version" : "0.2.3"
       }
     }
   ],

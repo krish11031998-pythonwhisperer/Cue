@@ -15,6 +15,9 @@
 		EF283F832F39450D00982B80 /* KyuLiveActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EF283F742F39450C00982B80 /* KyuLiveActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EF3225232F1EF04B0054901C /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = EF3225222F1EF04B0054901C /* AsyncAlgorithms */; };
 		EFA0BE6F2F1C3BDF00866D42 /* VanorUI in Frameworks */ = {isa = PBXBuildFile; productRef = EFA0BE6E2F1C3BDF00866D42 /* VanorUI */; };
+		EFD66AA02F3C24F7006E4599 /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = EFD66A9F2F3C24F7006E4599 /* ReceiptParser */; };
+		EFD66AA22F3C24F7006E4599 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = EFD66AA12F3C24F7006E4599 /* RevenueCat */; };
+		EFD66AA42F3C24F7006E4599 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = EFD66AA32F3C24F7006E4599 /* RevenueCatUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -113,6 +116,9 @@
 			files = (
 				EFA0BE6F2F1C3BDF00866D42 /* VanorUI in Frameworks */,
 				EF079D902F1BFFC600986EF8 /* Model.framework in Frameworks */,
+				EFD66AA42F3C24F7006E4599 /* RevenueCatUI in Frameworks */,
+				EFD66AA22F3C24F7006E4599 /* RevenueCat in Frameworks */,
+				EFD66AA02F3C24F7006E4599 /* ReceiptParser in Frameworks */,
 				EF079DFA2F1C304200986EF8 /* KKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -204,6 +210,9 @@
 			packageProductDependencies = (
 				EF079DF92F1C304200986EF8 /* KKit */,
 				EFA0BE6E2F1C3BDF00866D42 /* VanorUI */,
+				EFD66A9F2F3C24F7006E4599 /* ReceiptParser */,
+				EFD66AA12F3C24F7006E4599 /* RevenueCat */,
+				EFD66AA32F3C24F7006E4599 /* RevenueCatUI */,
 			);
 			productName = Cue;
 			productReference = EF079D722F1BE5EC00986EF8 /* Kyu.app */;
@@ -290,6 +299,7 @@
 				EF079DF82F1C304200986EF8 /* XCRemoteSwiftPackageReference "KKit-Swift-Package" */,
 				EFA0BE6D2F1C3BDF00866D42 /* XCRemoteSwiftPackageReference "vanor-ui-library" */,
 				EF32251C2F1EF0090054901C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
+				EFD66A9E2F3C24F7006E4599 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EF079D732F1BE5EC00986EF8 /* Products */;
@@ -503,8 +513,8 @@
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Kyu-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Kyu;
+				INFOPLIST_KEY_CFBundleDisplayName = "cue:it";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -515,7 +525,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.Krishna.Kyu;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Krishna.cue-it";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -544,8 +554,8 @@
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Kyu-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Kyu;
+				INFOPLIST_KEY_CFBundleDisplayName = "cue:it";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -556,7 +566,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.Krishna.Kyu;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Krishna.cue-it";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -779,6 +789,14 @@
 				minimumVersion = 0.1.3;
 			};
 		};
+		EFD66A9E2F3C24F7006E4599 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.58.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -796,6 +814,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EFA0BE6D2F1C3BDF00866D42 /* XCRemoteSwiftPackageReference "vanor-ui-library" */;
 			productName = VanorUI;
+		};
+		EFD66A9F2F3C24F7006E4599 /* ReceiptParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EFD66A9E2F3C24F7006E4599 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = ReceiptParser;
+		};
+		EFD66AA12F3C24F7006E4599 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EFD66A9E2F3C24F7006E4599 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCat;
+		};
+		EFD66AA32F3C24F7006E4599 /* RevenueCatUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EFD66A9E2F3C24F7006E4599 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCatUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

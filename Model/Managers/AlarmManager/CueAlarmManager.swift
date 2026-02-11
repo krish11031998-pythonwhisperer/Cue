@@ -92,7 +92,6 @@ public class CueAlarmManager {
             dateComponents.hour = hour
             dateComponents.minute = minute
             dateComponents.calendar = .current
-            print("(DEBUG) date: ", dateComponents.date!)
             alarmSchedule = .fixed(dateComponents.date!)
         }
         

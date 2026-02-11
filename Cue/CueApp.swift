@@ -12,10 +12,13 @@ import Model
 @main
 struct CueApp: App {
     @State private var store: Store = .init()
+    @State private var subscriptionManager: SubscriptionManager = .init()
+    
     var body: some Scene {
         WindowGroup {
             MainTab(store: store)
                 .environment(store)
+                .environment(subscriptionManager)
         }
     }
 }
