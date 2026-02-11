@@ -7,8 +7,10 @@
 
 import SwiftUI
 import VanorUI
+import Model
 
 struct WelcomeAlarmAndNotificationView: View {
+    @Environment(Store.self) var store
     
     var body: some View {
         VStack(alignment: .center, spacing: 12) {
@@ -30,7 +32,7 @@ struct WelcomeAlarmAndNotificationView: View {
                     .symbolEffect(.wiggle, options: .repeat(.periodic(3, delay: nil)), isActive: true)
                 
                 Button {
-                    #warning("Add the permission for notifications here")
+                    store.notificationManager.requestForAuthorizationAfterCheckingNotificationSettings()
                 } label: {
                     Text("Enable Notifications")
                         .font(.headline)
