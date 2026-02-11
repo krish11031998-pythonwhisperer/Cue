@@ -101,6 +101,15 @@ import Foundation
         isFetchingOfferings = false
     }
     
+    func restorePurchase() async -> Result<Bool, Error> {
+        do {
+            let _ = try await Purchases.shared.restorePurchases()
+            return .success(true)
+        } catch {
+            return .failure(error)
+        }
+    }
+    
     func fetchStoreProducts(withIdentifiers productIdentifiers: [String]) async -> [StoreProduct] {
         await Purchases.shared.products(productIdentifiers)
     }

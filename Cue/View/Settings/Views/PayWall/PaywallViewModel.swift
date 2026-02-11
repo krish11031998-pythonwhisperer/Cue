@@ -8,6 +8,20 @@
 import SwiftUI
 import RevenueCat
 
+enum PaywallError: LocalizedError {
+    case failedToPurchase
+    case failedToRestore
+    
+    var errorDescription: String? {
+        switch self {
+        case .failedToPurchase:
+            return "Failed to purchase. Please try again."
+        case .failedToRestore:
+            return "Faild to restore."
+        }
+    }
+}
+
 @Observable
 class PaywallViewModel {
     
@@ -25,6 +39,16 @@ class PaywallViewModel {
     var products: [PaywallProduct] = []
     var isCommitingPurchase: Bool = false
     
+    @ObservationIgnored
+    var restorePurchaseTask: Task<Void, Never>?
+    var restoringPurchase: Bool = false
+    
+    @ObservationIgnored
+    var purchaseTask: Task<Void, Never>?
+    
+    var showError: Bool = false
+    var errorToShow: PaywallError? = nil
+    var mustDismiss: Bool = false
     
     func updateProducts(_ offering: Offering?) {
         guard let offering else { return }
@@ -59,4 +83,39 @@ class PaywallViewModel {
         self.products = products
     }
     
+    
+    // MARK: - Purchase
+    
+    func purchase(_ purchaseAction: @escaping (StoreProduct) async -> Bool) {
+        guard let selectedProduct else { return }
+        purchaseTask?.cancel()
+        purchaseTask = Task { @MainActor in
+            let wasSuccess = await purchaseAction(selectedProduct)
+            if wasSuccess {
+                mustDismiss = true
+            }
+        }
+    }
+    
+    
+    // MARK: - Restore Purchase
+    
+    func restorePurchase(_ restorePurchase: @escaping () async -> Result<Bool, Error>) {
+        restoringPurchase = true
+        restorePurchaseTask = Task {
+            let result = await restorePurchase()
+            
+            guard !Task.isCancelled else { return }
+            
+            await MainActor.run {
+                switch result {
+                case .success:
+                    mustDismiss = true
+                case .failure:
+                    showError = true
+                    errorToShow = .failedToRestore
+                }
+            }
+        }
+    }
 }
