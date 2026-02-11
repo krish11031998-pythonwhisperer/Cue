@@ -11,6 +11,7 @@ import VanorUI
 struct WelcomeFocusView: View {
  
     let isCurrentTab: Bool
+    let completed: () -> Void
     
     var body: some View {
         VStack(alignment: .center, spacing: 12) {
@@ -24,7 +25,7 @@ struct WelcomeFocusView: View {
             
             Group {
                 if isCurrentTab {
-                    FocusCountdownView(targetDuration: 3, mode: .forDisplay, theme: Color.proSky)
+                    FocusCountdownView(targetDuration: 3, mode: .forDisplay, theme: Color.proSky, completed: completed)
                         .aspectRatio(1, contentMode: .fit)
                         .padding(.horizontal, 20)
                         .visualEffect({ content, proxy in

@@ -80,4 +80,8 @@ public enum WelcomeItemComponents: CaseIterable, Identifiable {
             fatalError()
         }
     }
+    
+    static var cases: [WelcomeItemComponents] {
+        [.useAI, .alarms, .focus]
+    }
 }

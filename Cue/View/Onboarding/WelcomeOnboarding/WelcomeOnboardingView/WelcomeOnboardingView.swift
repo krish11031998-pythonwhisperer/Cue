@@ -24,7 +24,7 @@ struct WelcomeOnboardingView: View {
                     height * 0.2
                 }
             VStack(alignment: .center, spacing: -6) {
-                ForEach(WelcomeItemComponents.allCases.enumerated(), id: \.element) { itemContent in
+                ForEach(WelcomeItemComponents.cases.enumerated(), id: \.element) { itemContent in
                     WelcomeFeatureItemView(cardCorner: itemContent.offset % 2 == 0 ? .leading : .trailing, component: itemContent.element)
                         .zIndex(Double(itemContent.offset))
                         .dynamicTypeSize(..<DynamicTypeSize.large)

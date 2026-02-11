@@ -19,11 +19,26 @@ struct OnboardingMainView: View {
         case fifth
         
         var id: String { rawValue }
+        
+        func next() -> Tabs? {
+            switch self {
+            case .first:
+                return .second
+            case .second:
+                return .third
+            case .third:
+                return .fifth
+            case .fourth, .fifth:
+                return nil
+            }
+        }
     }
     
     @Environment(\.dismiss) var dismiss
     @State private var tabs: Tabs = .first
+    @State private var hideNextButton: Bool = false
     let store: Store
+    
     
     var themeColor: Color {
         Color.proSky.baseColor
@@ -39,7 +54,9 @@ struct OnboardingMainView: View {
                     case .second:
                         WelcomeAlarmAndNotificationView()
                     case .third:
-                        WelcomeFocusView(isCurrentTab: tabs == tab)
+                        WelcomeFocusView(isCurrentTab: tabs == tab) {
+                            self.hideNextButton = false
+                        }
                     case .fourth:
                         WelcomeHabitView(onAppear: tabs == tab) {
                             print("(DEBUG) longPress")
@@ -59,26 +76,19 @@ struct OnboardingMainView: View {
         .disabled(tabs != .second && tabs != .fourth)
         .safeAreaBar(edge: .bottom, alignment: .trailing, spacing: 8) {
             Button {
-                switch tabs {
-                case .first:
-                    withAnimation(.easeInOut) {
-                        tabs = .second
-                    }
-                case .second:
-                    withAnimation(.easeInOut) {
-                        tabs = .third
-                    }
-                case .third:
-                    withAnimation(.easeInOut) {
-                        tabs = .fourth
-                    }
-                case .fourth:
-                    tabs = .fifth
-                case .fifth:
-                    #if RELEASE
-                    CueUserDefaultsManager.shared[.hasShowOnboarding] = true
-                    #endif
+                if case .third = tabs {
+                    self.tabs = tabs.next()!
+                } else if case .fourth = tabs {
+                    // Nothing to do
+                } else if case .fifth = tabs {
                     dismiss()
+                } else {
+                    if case .second = tabs {
+                        self.hideNextButton = true
+                    }
+                    withAnimation(.easeInOut) {
+                        self.tabs = tabs.next()!
+                    }
                 }
             } label: {
                 HStack(alignment: .center, spacing: 8) {
@@ -93,8 +103,8 @@ struct OnboardingMainView: View {
             .padding(.horizontal, 16)
             .animation(.easeInOut) { content in
                 content
-                    .opacity(tabs == .fourth ? 0 : 1)
-                    .disabled(tabs == .fourth)
+                    .opacity(hideNextButton ? 0 : 1)
+                    .disabled(hideNextButton)
             }
         }
         .background(alignment: .bottom) {
