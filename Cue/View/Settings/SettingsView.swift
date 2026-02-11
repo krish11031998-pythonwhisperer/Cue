@@ -166,12 +166,13 @@ struct SettingView: View {
             self.presentation = .subscription
         case .alarms:
             print("(DEBUG) user: " ,store.user)
+            store.updateAlarmsAccess()
         case .haptics:
             store.updateUser { user in
                 user.hapticsEnabled = !user.hapticsEnabled
             }
         case .notifications:
-            break
+            store.updateNotificationsAccess()
         case .productRoadMap:
             self.presentation = .productRoadMap
         case .feedback:

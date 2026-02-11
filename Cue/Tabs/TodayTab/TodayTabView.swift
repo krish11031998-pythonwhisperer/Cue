@@ -103,7 +103,9 @@ struct TodayTabView: View {
             }
         }
         .onChange(of: viewModel.today, { _, _ in
-            SensoryFeedbackManager.shared.playSelection()
+            if store.user?.hapticsEnabled == true {
+                SensoryFeedbackManager.shared.playSelection()                
+            }
         })
         .task(id: store.reminders) {
             viewModel.setupCalendarForOneMonth(reminders: store.reminders)
@@ -129,7 +131,7 @@ struct TodayTabView: View {
     private func tabView() -> some View {
         TabView(selection: $viewModel.today) {
             ForEach(viewModel.calendarDay, id: \.date) { calendarDay in
-                CalendarDayView(store: store, calendarDay: calendarDay)
+                CalendarDayView(store: store, calendarDay: calendarDay, presentCreateReminder: presentCreateReminder)
                     .tag(calendarDay.date)
                     .environment(\.timeCompactViewTopPadding, topPadding)
             }

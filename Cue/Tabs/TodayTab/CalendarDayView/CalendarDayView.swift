@@ -39,14 +39,17 @@ public struct CalendarDayView: View {
     
     private let store: Store
     private let calendarDay: CalendarDay
+    private var presentCreateReminder: () -> Void
     @State private var presentation: Presentation? = nil
+    @State private var addReminder: Bool = false
     @State private var viewModel: CalendarDayViewModel
     @Environment(\.timeCompactViewTopPadding) var topPadding
     
-    init (store: Store, calendarDay: CalendarDay) {
+    init (store: Store, calendarDay: CalendarDay, presentCreateReminder: @escaping () -> Void) {
         self._viewModel = .init(initialValue: .init(calendarDate: calendarDay.date, store: store))
         self.store = store
         self.calendarDay = calendarDay
+        self.presentCreateReminder = presentCreateReminder
     }
     
     var date: Date {
@@ -91,7 +94,7 @@ public struct CalendarDayView: View {
                     .presentationDetents([.fraction(1)])
             }
         })
-        .background(alignment: .center) {
+        .overlay(alignment: .center) {
             if calendarDay.reminders.isEmpty {
                 ContentUnavailableView {
                     Image(systemSymbol: .squareSlash)
@@ -106,9 +109,9 @@ public struct CalendarDayView: View {
                         .padding(.top, 12)
                 } actions: {
                     Button {
-                        print("(DEBUG) add reminders")
+                        self.presentCreateReminder()
                     } label: {
-                        Text("Add an reminder")
+                        Text("Add a reminder")
                             .font(.headline)
                             .padding(.init(top: 8, leading: 12, bottom: 8, trailing: 12))
                             .font(.headline)

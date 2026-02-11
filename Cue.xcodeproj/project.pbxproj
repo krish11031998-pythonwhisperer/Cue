@@ -419,6 +419,7 @@
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Kyu-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "cue:it";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -460,6 +461,7 @@
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Kyu-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "cue:it";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

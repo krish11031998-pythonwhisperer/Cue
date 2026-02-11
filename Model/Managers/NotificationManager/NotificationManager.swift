@@ -10,6 +10,10 @@ import NotificationCenter
 import CoreData
 import Combine
 
+protocol NotificationManagerDelegate {
+    func updateNotificationSettings(_ authorizationStatus: UNAuthorizationStatus)
+}
+
 public class NotificationManager: NSObject, NotificationSchedulerDelegate {
     
     public typealias NotificationSettingsCompletion = (UNNotificationSettings) -> Void
@@ -18,7 +22,13 @@ public class NotificationManager: NSObject, NotificationSchedulerDelegate {
     private(set) var scheduler: NotificationScheduler
     private  var context: NSManagedObjectContext
     private var subscribers: Set<AnyCancellable> = .init()
-    var notificationSetting: UNNotificationSettings!
+    
+    var delegate: NotificationManagerDelegate?
+    var notificationSetting: UNNotificationSettings! {
+        didSet {
+            delegate?.updateNotificationSettings(notificationSetting.authorizationStatus)
+        }
+    }
     
     var authorizationStatus: UNAuthorizationStatus {
         get { notificationSetting.authorizationStatus }
@@ -130,6 +140,18 @@ public class NotificationManager: NSObject, NotificationSchedulerDelegate {
     private func setupReminders(reminders: [ReminderModel]) {
 //        let reminders = Reminder.fetchAll(context: self.context).map { ReminderModel(from: $0) }
         scheduler.cleanUpHabitsReminders(reminders: reminders)
+    }
+    
+    
+    // MARK: - Updates From Store
+    
+    public func disableNotifications() {
+        removeAllPendingNotificationRequests()
+    }
+    
+    public func enableNotifications() {
+        let reminders = Reminder.fetchRemindersWithNotification(context: self.context).map { ReminderModel(from: $0) }
+        self.setupReminders(reminders: reminders)
     }
     
     

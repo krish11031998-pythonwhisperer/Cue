@@ -3,8 +3,6 @@
 <plist version="1.0">
 <dict>
 	<key>NSAlarmKitUsageDescription</key>
-	<string>Use Alarms for important reminders you don&apos;t want to miss</string>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
+	<string>Cue:it uses alarms to power your Focus Timer and task alerts.</string>
 </dict>
 </plist>

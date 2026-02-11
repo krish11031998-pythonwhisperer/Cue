@@ -35,13 +35,22 @@ fileprivate extension Locale.Weekday {
     }
 }
 
+protocol AlarmManagerDelegate {
+    func updateAlarmSettings(_ authorizationStatus: AlarmManager.AuthorizationState)
+}
+
 public class CueAlarmManager {
     
-    public private(set) var authorizationState: AlarmManager.AuthorizationState = .notDetermined
+    public private(set) var authorizationState: AlarmManager.AuthorizationState = .notDetermined {
+        didSet {
+            delegate?.updateAlarmSettings(authorizationState)
+        }
+    }
     private var context: NSManagedObjectContext
     private var alarmSchedulingTasks: Task<Void, Never>?
     private var subscribers: Set<AnyCancellable> = .init()
     
+    var delegate: AlarmManagerDelegate?
     private var alarmsMap = AlarmsMap()
     private let alarmManager = AlarmManager.shared
     typealias AlarmsMap = [UUID: Alarm]
@@ -71,7 +80,7 @@ public class CueAlarmManager {
             let result = try await alarmManager.requestAuthorization()
             self.authorizationState = result
         } catch {
-            print("(ERROR) there was an error while creating an Alarm")
+            print("(ERROR) alarm request failed: ", error.localizedDescription)
         }
     }
     
@@ -187,6 +196,22 @@ public class CueAlarmManager {
             }
         }
     }
+    
+    
+    // MARK: - Update alarms from Store
+    
+    public func enableAlarms() {
+        let reminders: [ReminderModel] = Reminder.fetchRemindersWithAlarm(context: self.context).map { .init(from: $0) }
+        scheduleAlarmForReminder(reminders)
+    }
+    
+    public func removeAllAlarms() {
+        alarmsMap = [:]
+        cleanUpAlarms()
+    }
+    
+    
+    
     
 //    private func updateAlarmState(with remoteAlarms: [Alarm]) {
 //        Task { @MainActor in

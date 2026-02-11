@@ -8,9 +8,11 @@
 import Foundation
 import CoreData
 import AsyncAlgorithms
+internal import UserNotifications
+import AlarmKit
 
 @Observable
-@MainActor public class Store {
+@MainActor public class Store: NotificationManagerDelegate, AlarmManagerDelegate {
     
     public var user: User? = nil
     public var reminders: [Reminder] = []
@@ -33,6 +35,7 @@ import AsyncAlgorithms
         self.alarmManager = .init(context: CoreDataManager.shared.persistentContainer.viewContext)
         self.retrieveUser()
         self.reminders = Reminder.fetchAll(context: self.viewContext)
+        self.notificationManager.delegate = self
         observingTask()
     }
     
@@ -167,6 +170,83 @@ import AsyncAlgorithms
     
     public func updateUser(transform: @escaping (User) -> Void) {
         user?.update(context: viewContext, transform: transform)
+    }
+    
+    
+    // MARK: - Enable Disable Notifications
+    
+    func enableNotifications() {
+        if notificationManager.authorizationStatus == .notDetermined {
+            notificationManager.requestForAuthorizationAfterCheckingNotificationSettings { [weak self] settings in
+                guard settings.authorizationStatus == .authorized else { return }
+                self?.notificationManager.enableNotifications()
+            }
+        } else if notificationManager.authorizationStatus != .denied {
+            notificationManager.enableNotifications()
+        }
+    }
+    
+    func disableNotifications() {
+        notificationManager.disableNotifications()
+    }
+    
+    public func updateNotificationsAccess() {
+        let currentState = user?.notificationEnabled ?? false
+        if currentState {
+           disableNotifications()
+        } else {
+            enableNotifications()
+        }
+        
+        updateUser { user in
+            user.notificationEnabled = !user.notificationEnabled
+        }
+    }
+    
+    
+    // MARK: - Enable Disable Alarms
+    
+    func enableAlarms() {
+        if alarmManager.authorizationState == .notDetermined {
+            Task { @MainActor [weak self] in
+                await self?.alarmManager.requestForAuthortization()
+                guard self?.alarmManager.authorizationState == .authorized else { return }
+                self?.alarmManager.enableAlarms()
+            }
+        } else {
+            alarmManager.enableAlarms()
+        }
+    }
+    
+    func disableAlarms() {
+        alarmManager.removeAllAlarms()
+    }
+    
+    public func updateAlarmsAccess() {
+        let currentState = user?.alarmEnabled ?? false
+        if currentState {
+            disableAlarms()
+        } else {
+            enableAlarms()
+        }
+        updateUser { user in
+            user.alarmEnabled = !user.alarmEnabled
+        }
+    }
+    
+    
+    // MARK: - NotificationManagerDelegate
+    
+    func updateNotificationSettings(_ authorizationStatus: UNAuthorizationStatus) {
+        updateUser { user in
+            user.notificationEnabled = authorizationStatus == .authorized
+        }
+    }
+    
+    func updateAlarmSettings(_ authorizationStatus: AlarmManager.AuthorizationState) {
+        updateUser { user in
+            user.alarmEnabled = authorizationStatus == .authorized
+        }
     }
 }
 
