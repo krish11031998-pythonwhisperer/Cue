@@ -17,9 +17,10 @@ public struct ReminderModel: Hashable, Sendable {
     public let date: Date
     public let snoozeDuration: TimeInterval
     public let tasks: [ReminderTaskModel]
+    public let tags: [TagModel]
     public let schedule: ReminderSchedule?
     
-    public init(notificationID: UUID = .init(), notificationType: ReminderNotification, title: String, icon: CueIcon, date: Date, snoozeDuration: TimeInterval, tasks: [ReminderTaskModel], schedule: ReminderSchedule?) {
+    public init(notificationID: UUID = .init(), notificationType: ReminderNotification, title: String, icon: CueIcon, date: Date, snoozeDuration: TimeInterval, tasks: [ReminderTaskModel], tags: [TagModel], schedule: ReminderSchedule?) {
         self.title = title
         self.icon = icon
         self.date = date
@@ -29,6 +30,7 @@ public struct ReminderModel: Hashable, Sendable {
         self.notificationID = notificationID
         self.snoozeDuration = snoozeDuration
         self.notificationType = notificationType
+        self.tags = tags
     }
     
     public init(from reminder: Reminder) {
@@ -41,5 +43,6 @@ public struct ReminderModel: Hashable, Sendable {
         self.notificationID = reminder.notificationID
         self.notificationType = reminder.reminderNotification
         self.snoozeDuration = reminder.snoozeDuration
+        self.tags = reminder.tagsArray.map { .from($0) }
     }
 }

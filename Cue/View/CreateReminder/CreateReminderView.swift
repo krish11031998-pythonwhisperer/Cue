@@ -35,7 +35,7 @@ struct CreateReminderView: View {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     CreateReminderImageButton(color: viewModel.color,
                                               icon: viewModel.icon) {
-                        viewModel.presentation = .symbolAndColor
+                        viewModel.calendarPresentation = .symbolAndColor
                     }
                     .aspectRatio(1, contentMode: .fit)
                     .frame(width: 108, alignment: .center)
@@ -56,6 +56,20 @@ struct CreateReminderView: View {
                         self.textFieldIsFocused = false
                     }
                     
+                    if let tagString = viewModel.tagString {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemSymbol: .tagFill)
+                            Text(tagString)
+                                .fontWeight(.semibold)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .multilineTextAlignment(.leading)
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(Color.tertiaryText)
+                        .padding(.top, 12)
+                        .transition(.popIn)
+                    }
+                    
                     OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 10) {
                         ForEach(CreateReminderViewModel.ReminderCalendarPresentation.allCases) { presentation in
                             ReminderButton(presentation: presentation,
@@ -63,7 +77,7 @@ struct CreateReminderView: View {
                                            animation: animation, action: presentReminderButtonTap(_:))
                         }
                     }
-                    .padding(.top, 12)
+                    .padding(.top, 16)
                     
                     CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions, isLoadingSuggestions: viewModel.isLoadingSuggestions,
                                             taskViewModels: viewModel.taskViewModels) { taskName in
@@ -85,6 +99,12 @@ struct CreateReminderView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button("", systemSymbol: .tagFill) {
+                        viewModel.presentation = .tags
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(role: .confirm) {
                         viewModel.createReminder()
                         self.dismiss()
@@ -92,9 +112,10 @@ struct CreateReminderView: View {
                     .tint(Color.proSky.baseColor)
                     .disabled(!viewModel.canCreateReminder)
                 }
+                
             }
         }
-        .sheet(item: $viewModel.presentation, onDismiss: onDismiss) { sheet in
+        .sheet(item: $viewModel.calendarPresentation, onDismiss: onDismiss) { sheet in
             Group {
                 switch sheet {
                 case .alarmAt:
@@ -122,14 +143,12 @@ struct CreateReminderView: View {
             }
             .navigationTransition(.zoom(sourceID: sheet, in: animation))
         }
-        .fullScreenCover(item: $viewModel.fullScreenPresentation) { fullScreenPresentation in
-            switch fullScreenPresentation {
-            case .symbolSheet:
-                SymbolSelectorView(color: viewModel.color, topPadding: 0, searchText: "") { [weak viewModel] symbol in
-                    viewModel?.fullScreenPresentation = nil
-                    viewModel?.icon = symbol
+        .sheet(item: $viewModel.presentation) { presentation in
+            switch presentation {
+            case .tags:
+                TagView(preSelected: viewModel.tags) {
+                    viewModel.tags = $0
                 }
-                .ignoresSafeArea(edges: .vertical)
             }
         }
         .task(id: mode) {
@@ -147,12 +166,12 @@ struct CreateReminderView: View {
         switch presentation {
         case .alarmAt:
             // Check for notification
-            self.viewModel.presentation = presentation
+            self.viewModel.calendarPresentation = presentation
         case .duration:
             // Check for alarm
-            self.viewModel.presentation = presentation
+            self.viewModel.calendarPresentation = presentation
         case .date, .repeat, .symbolAndColor:
-            self.viewModel.presentation = presentation
+            self.viewModel.calendarPresentation = presentation
         }
     }
     

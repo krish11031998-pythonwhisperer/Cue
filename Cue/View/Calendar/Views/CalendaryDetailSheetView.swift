@@ -53,7 +53,8 @@ public struct CalendaryDetailSheetView: View {
                                                   theme: Color.proSky,
                                                   time: loggedReminder.date,
                                                   state: .calendarDetailView(true),
-                                                  logReminder: nil, deleteReminder: nil))
+                                                  tags: loggedReminder.tags.map { .init(name: $0.name, color: $0.color) }, logReminder: nil,
+                                                  deleteReminder: nil))
                         .padding(.bottom, 4)
                         .id("logged-\(loggedReminder.hashValue)")
                     }
@@ -74,7 +75,9 @@ public struct CalendaryDetailSheetView: View {
                                                   theme: Color.proSky,
                                                   time: reminder.date,
                                                   state: .calendarDetailView(false),
-                                                  logReminder: nil, deleteReminder: nil))
+                                                  tags: reminder.tags.map { .init(name: $0.name, color: $0.color) },
+                                                  logReminder: nil,
+                                                  deleteReminder: nil))
                         .padding(.bottom, 4)
                         .id("notLogged-\(reminder.hashValue)")
                     }

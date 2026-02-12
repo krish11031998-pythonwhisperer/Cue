@@ -27,12 +27,11 @@ class CreateReminderViewModel {
         static var allCases: [ReminderCalendarPresentation] { [.alarmAt, .duration, .date, .repeat] }
     }
     
-    enum FullScreenPresentation: String, Identifiable, CaseIterable {
-        case symbolSheet = "symbolSheet"
+    enum Presentation: String, Identifiable {
+        case tags
         
         var id: String { self.rawValue }
     }
-    
     
     // MARK: Time
     
@@ -95,12 +94,13 @@ class CreateReminderViewModel {
     var date: Date = .now
     var timeDate: Date = .now
     var tasks: [CreateReminderTask] = []
+    var tags: [TagModel] = []
     var scheduleBuilder: Reminder.ScheduleBuilder = .init(.now)
     var icon: Icon = .symbol(SFSymbol.allSymbols.randomElement()!)
     var color: Color = (Color.proSky.baseColor)
     var isLoadingSuggestions: Bool = false
-    var presentation: ReminderCalendarPresentation? = nil
-    var fullScreenPresentation: FullScreenPresentation? = nil
+    var calendarPresentation: ReminderCalendarPresentation? = nil
+    var presentation: Presentation? = nil
     
     init(store: Store) {
         print("(DEBUG) init is called!!!")
@@ -178,6 +178,22 @@ class CreateReminderViewModel {
         }
     }
     
+    var tagString: String? {
+        guard !tags.isEmpty else { return nil }
+        let tagName = tags.reduce("", {
+            if $0.isEmpty {
+                return $1.name
+            } else {
+                return "\($0) • \($1.name)"
+            }
+        })
+        
+        return tagName
+    }
+    
+    
+    // MARK: - Data Helpers
+    
     var taskViewModels: [ReminderTaskView.Model] {
         var models: [ReminderTaskView.Model] = []
         
@@ -250,14 +266,16 @@ class CreateReminderViewModel {
                                           scheduleBuilder: scheduleBuilder,
                                           reminderNotification: reminderNotification)
                 if reminder.tasks.count != reminderTaskModels.count {
-                    store.updateTasksInReminder(reminder: reminder, reminderTasks: reminderTaskModels, save: false)                    
+                    store.updateTasksInReminder(reminder: reminder, reminderTasks: reminderTaskModels, save: false)
                 }
+                store.updateTagsInReminder(reminder: reminder, tags: tags, save: true)
             }
         } else {
             let reminderTasks = tasks.map { task in
                 let task = store.createReminderTask(title: task.title, icon: .from(task.icon))
                 return ReminderTaskModel(from: task)
             }
+            
             #warning("Update this when adding tags")
             store.createReminder(title: reminderTitle,
                                  icon: .from(icon),
@@ -266,7 +284,7 @@ class CreateReminderViewModel {
                                  scheduleBuilder: scheduleBuilder,
                                  tasks: reminderTasks,
                                  reminderNotification: reminderNotification,
-                                 tags: [])
+                                 tags: tags)
         }
     }
     
@@ -303,6 +321,7 @@ class CreateReminderViewModel {
         self.icon = .init(reminderModel.icon) ?? .symbol(SFSymbol.allSymbols.randomElement()!)
         self.reminderID = reminderModel.objectId
         self.reminderNotification = reminderModel.notificationType
+        self.tags = reminderModel.tags
         self.edittingMode = true
     }
     

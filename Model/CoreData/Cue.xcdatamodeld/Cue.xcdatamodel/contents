@@ -4,6 +4,11 @@
         <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="reminder" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Reminder" inverseName="reminderLogs" inverseEntity="Reminder"/>
     </entity>
+    <entity name="CueTag" representedClassName=".CueTag" syncable="YES">
+        <attribute name="colorRawValue" attributeType="String"/>
+        <attribute name="name" attributeType="String"/>
+        <relationship name="reminders" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Reminder" inverseName="tags" inverseEntity="Reminder"/>
+    </entity>
     <entity name="Reminder" representedClassName=".Reminder" syncable="YES">
         <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="icon" optional="YES" attributeType="Transformable" valueTransformerName="CueIconTransformer" customClassName="CueIcon"/>
@@ -14,6 +19,7 @@
         <attribute name="title" optional="YES" attributeType="String"/>
         <relationship name="reminderLogs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ReminderLog" inverseName="reminder" inverseEntity="CueLog"/>
         <relationship name="reminderTasks" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="ReminderTask" inverseName="reminder" inverseEntity="ReminderTask"/>
+        <relationship name="tags" optional="YES" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="CueTag" inverseName="reminders" inverseEntity="CueTag"/>
     </entity>
     <entity name="ReminderLog" representedClassName=".ReminderLog" parentEntity="CueLog" syncable="YES"/>
     <entity name="ReminderTask" representedClassName=".ReminderTask" syncable="YES">
