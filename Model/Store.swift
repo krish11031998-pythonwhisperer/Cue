@@ -110,6 +110,17 @@ import AlarmKit
         NotificationCenter.default.post(name: .updatedReminder , object: nil)
     }
     
+    public func updateTasksInReminder(reminder: Reminder, reminderTasks: [ReminderTaskModel], save: Bool) {
+        reminder.removeTasks()
+        for reminderTask in reminderTasks {
+            let task = ReminderTask.fetch(context: viewContext, for: reminderTask.objectId)
+            task.reminder = reminder
+        }
+        if save {
+            viewContext.saveContext()
+        }
+    }
+    
     // MARK: - ReminderLogs
     
     public func fetchReminderLogs(context: NSManagedObjectContext? = nil, from start: Date, to end: Date) -> [ReminderLog] {

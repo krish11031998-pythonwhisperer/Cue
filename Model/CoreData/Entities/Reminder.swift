@@ -16,14 +16,17 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     @NSManaged public private(set) var date: Date!
     @NSManaged public private(set) var schedule: CueReminderSchedule!
     @NSManaged public private(set) var reminderLogs: NSSet!
-    @NSManaged public private(set) var reminderTasks: NSSet!
+    @NSManaged public private(set) var reminderTasks: NSOrderedSet!
     @NSManaged public private(set) var notificationType: NSNumber!
     @NSManaged public private(set) var snoozeDurationRawValue: NSNumber!
 
     public var tasks: [ReminderTask] {
-        reminderTasks.allObjects as! [ReminderTask]
+        reminderTasks.array as! [ReminderTask]
     }
     
+    internal var mutatableTasks: NSMutableOrderedSet {
+        mutableOrderedSetValue(forKey: "reminderTasks")
+    }
     public var reminderNotification: ReminderNotification {
         get {
             if let notificationType = notificationType as? Int {
@@ -90,8 +93,6 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
         return reminder
     }
     
-    
-    
     public func updateProperties(title: String, icon: CueIcon, date: Date, snoozeDuration: TimeInterval, scheduleBuilder: ScheduleBuilder? = nil, reminderNotification: ReminderNotification) {
         self.title = title
         self.icon = icon
@@ -105,6 +106,12 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
                               calendarDates: scheduleBuilder?.dates)
     }
     
+    
+    // MARK: - Update
+    
+    func removeTasks() {
+        self.mutatableTasks.removeAllObjects()
+    }
     
     // MARK: - Delete
     

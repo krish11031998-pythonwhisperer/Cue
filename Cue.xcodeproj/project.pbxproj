@@ -70,11 +70,6 @@
 			path = Model;
 			sourceTree = "<group>";
 		};
-		EF283F772F39450C00982B80 /* KyuLiveActivity */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = KyuLiveActivity;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -108,7 +103,6 @@
 				EF2950F12F38B18300FEAD32 /* Kyu-Info.plist */,
 				EF079D742F1BE5EC00986EF8 /* Cue */,
 				EF079D8B2F1BFFC600986EF8 /* Model */,
-				EF283F772F39450C00982B80 /* KyuLiveActivity */,
 				EF32251F2F1EF02B0054901C /* Frameworks */,
 				EF079D732F1BE5EC00986EF8 /* Products */,
 			);
@@ -415,7 +409,7 @@
 				CODE_SIGN_ENTITLEMENTS = Cue/Cue.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -457,7 +451,7 @@
 				CODE_SIGN_ENTITLEMENTS = Cue/Cue.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

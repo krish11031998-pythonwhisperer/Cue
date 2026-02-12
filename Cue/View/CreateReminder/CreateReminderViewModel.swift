@@ -228,14 +228,20 @@ class CreateReminderViewModel {
         scheduleBuilder.hour = timeDate.hours
         scheduleBuilder.minute = timeDate.minutes
         if edittingMode, let reminderID {
+            var reminderTaskModels: [ReminderTaskModel] = []
             tasks.forEach { task in
                 if let objectID = task.objectID {
                     store.updateReminderTask(for: objectID) { reminderTask in
                         reminderTask.updateProperties(title: task.title, icon: .from(task.icon))
+                        reminderTaskModels.append(.init(from: reminderTask))
                     }
+                } else {
+                    let reminderTask = store.createReminderTask(title: task.title, icon: .from(task.icon))
+                    reminderTaskModels.append(.init(from: reminderTask))
                 }
             }
             
+            #warning("Update this when adding tags")
             store.updateReminder(for: reminderID) { reminder in
                 reminder.updateProperties(title: reminderTitle,
                                           icon: .from(icon),
@@ -243,19 +249,24 @@ class CreateReminderViewModel {
                                           snoozeDuration: snoozeDuration,
                                           scheduleBuilder: scheduleBuilder,
                                           reminderNotification: reminderNotification)
+                if reminder.tasks.count != reminderTaskModels.count {
+                    store.updateTasksInReminder(reminder: reminder, reminderTasks: reminderTaskModels, save: false)                    
+                }
             }
         } else {
             let reminderTasks = tasks.map { task in
                 let task = store.createReminderTask(title: task.title, icon: .from(task.icon))
                 return ReminderTaskModel(from: task)
             }
+            #warning("Update this when adding tags")
             store.createReminder(title: reminderTitle,
                                  icon: .from(icon),
                                  date: date,
                                  snoozeDuration: snoozeDuration,
                                  scheduleBuilder: scheduleBuilder,
                                  tasks: reminderTasks,
-                                 reminderNotification: reminderNotification)
+                                 reminderNotification: reminderNotification,
+                                 tags: [])
         }
     }
     
