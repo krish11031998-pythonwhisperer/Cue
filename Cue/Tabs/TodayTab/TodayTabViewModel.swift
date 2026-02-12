@@ -13,15 +13,49 @@ import CoreData
 @Observable
 class TodayViewModel {
     
+    enum Presentation: String, Identifiable {
+        case timer
+        
+        var id: String { rawValue }
+    }
+    
+    enum FullScreenPresentation: Identifiable {
+        case calendar
+        case focusTimer(ReminderModel?)
+        
+        var id: Int {
+            switch self {
+            case .calendar:
+                return 0
+            case .focusTimer:
+                return 1
+            }
+        }
+    }
+    
     var calendarDay: [CalendarDay] = []
     var loggedReminders: [Reminder] = []
     var today: Date = Date.now.startOfDay
     var todayCalendar: CalendarDay? = nil
+    var presentation: Presentation? = nil
+    var fullPresentation: FullScreenPresentation? = nil
+    var focusTimerDuration: TimeInterval = 20 * 60
+    var focusTimerReminderModel: ReminderModel? = nil
     @ObservationIgnored
     private var calendarParsingTask: Task<Void, Never>?
     
+    
     var todayInCalendar: CalendarDay? {
         calendarDay.first(where: { $0.date == today })
+    }
+    
+    var reminderWithTimer: [ReminderModel] {
+        guard let todayCalendar else { return []}
+        
+        return todayCalendar.reminders
+            .filter({ reminder in
+                return !todayCalendar.loggedReminders.contains(where: { reminder.objectId == $0.objectId })
+            })
     }
     
     func setupCalendarForOneMonth(reminders: [Reminder]) {

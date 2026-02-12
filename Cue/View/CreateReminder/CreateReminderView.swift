@@ -138,7 +138,7 @@ struct CreateReminderView: View {
                     .presentationDetents([.fraction(0.5), .height(.totalHeight - viewModel.imageFrame.maxY)])
                     .presentationDragIndicator(.automatic)
                     .presentationBackground(.clear)
-                    .presentationContentInteraction(.resizes)
+                    .presentationContentInteraction(.scrolls)
                 }
             }
             .navigationTransition(.zoom(sourceID: sheet, in: animation))

@@ -204,15 +204,17 @@ import UIKit
     }
     
     @discardableResult
-    public func logReminderTask(at date: Date, for reminderTaskID: NSManagedObjectID) -> ReminderTaskLog {
+    public func logReminderTask(at date: Date, for reminderTaskID: NSManagedObjectID, completion: ((Bool) -> Void)?) -> ReminderTaskLog {
         let reminderTask = ReminderTask.fetch(context: viewContext, for: reminderTaskID)
         let reminderLog = ReminderTaskLog.createReminderTaskLog(date: date, context: viewContext, reminderTask: reminderTask)
+        viewContext.saveContext(with: completion)
         return reminderLog
     }
     
-    public func deleteTaskLogsFor(at date: Date, for reminderTaskID: NSManagedObjectID) {
+    public func deleteTaskLogsFor(at date: Date, for reminderTaskID: NSManagedObjectID, completion: ((Bool) -> Void)?) {
         let reminderTask = ReminderTask.fetch(context: viewContext, for: reminderTaskID)
         ReminderTaskLog.deleteLog(at: date, reminderTask: reminderTask, context: viewContext)
+        viewContext.saveContext(with: completion)
     }
     
     

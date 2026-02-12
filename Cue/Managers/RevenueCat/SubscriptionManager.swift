@@ -32,8 +32,12 @@ import Foundation
     }
     
     var userIsPro: Bool {
+        #if DEBUG
+        return true
+        #else
         guard let customerInfo else { return false }
         return customerInfo.entitlements["cue:it Pro"]?.isActive == true
+        #endif
     }
     
     /* The latest offerings */

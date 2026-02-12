@@ -57,6 +57,8 @@
 		EF2950F12F38B18300FEAD32 /* Kyu-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Kyu-Info.plist"; sourceTree = "<group>"; };
 		EF2950FA2F38BDF800FEAD32 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		EF2950FC2F38BDF800FEAD32 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		EFB5D6262F3E597D009E1974 /* vanor-ui-library */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vanor-ui-library"; path = "../Shipyard/vanor-ui-library"; sourceTree = SOURCE_ROOT; };
+		EFB5D6302F3E8251009E1974 /* vanor-ui-library */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vanor-ui-library"; path = "../Shipyard/vanor-ui-library"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -105,6 +107,8 @@
 				EF079D8B2F1BFFC600986EF8 /* Model */,
 				EF32251F2F1EF02B0054901C /* Frameworks */,
 				EF079D732F1BE5EC00986EF8 /* Products */,
+				EFB5D6262F3E597D009E1974 /* vanor-ui-library */,
+				EFB5D6302F3E8251009E1974 /* vanor-ui-library */,
 			);
 			sourceTree = "<group>";
 		};

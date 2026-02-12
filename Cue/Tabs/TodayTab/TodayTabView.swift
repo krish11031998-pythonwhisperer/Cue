@@ -18,24 +18,11 @@ extension CalendarDay: @retroactive CalendarDateCarouselDataElement, @retroactiv
 }
 
 struct TodayTabView: View {
-    enum Presentation: Int, Identifiable {
-        case reminderDetail = 0
-        
-        var id: Int { rawValue }
-    }
-    
-    enum FullScreenSheet: Int, Identifiable {
-        case calendar = 0
-        
-        var id: Int { rawValue }
-    }
-    
+
     @Environment(\.dismiss) var dismiss
     @Environment(Store.self) var store
     @Environment(SubscriptionManager.self) var subscriptionManager
     private var presentCreateReminder: () -> Void
-    @State private var presentation: Presentation? = nil
-    @State private var fullScreenSheet: FullScreenSheet? = nil
     @State private var viewModel: TodayViewModel = .init()
     @State private var topPadding: CGFloat = .zero
     
@@ -79,7 +66,7 @@ struct TodayTabView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         withAnimation(.easeInOut) {
-                            self.fullScreenSheet = .calendar
+                            self.viewModel.fullPresentation = .calendar
                         }
                     } label: {
                         Image(systemSymbol: .calendar)
@@ -92,6 +79,7 @@ struct TodayTabView: View {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
                             print("(DEBUG) showTimer")
+                            viewModel.presentation = .timer
                         } label: {
                             Image(systemSymbol: .timer)
                                 .font(.headline)
@@ -115,7 +103,20 @@ struct TodayTabView: View {
                 viewModel.setupCalendarForOneMonth(reminders: store.reminders)
             }
         }
-        .fullScreenCover(item: $fullScreenSheet,
+        .sheet(item: $viewModel.presentation, content: { presentation in
+            switch presentation {
+            case .timer:
+                TimerSheet(reminderModels: viewModel.reminderWithTimer, timeDuration: $viewModel.focusTimerDuration, reminder: $viewModel.focusTimerReminderModel) {
+                    withAnimation {
+                        self.viewModel.presentation = nil
+                    } completion: {
+                        self.viewModel.fullPresentation = .focusTimer(self.viewModel.focusTimerReminderModel)
+                    }
+                }
+                .fittedPresentationDetent()
+            }
+        })
+        .fullScreenCover(item: $viewModel.fullPresentation,
                          content: { sheet in
             switch sheet {
             case .calendar:
@@ -123,6 +124,8 @@ struct TodayTabView: View {
                     self.dismiss()
                     self.presentCreateReminder()
                 }
+            case .focusTimer(let reminderModel):
+                TimerView(reminder: reminderModel, duration: viewModel.focusTimerDuration)
             }
         })
       

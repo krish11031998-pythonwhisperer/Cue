@@ -19,7 +19,7 @@ public final class ReminderTaskLog: CueLog, CoreDataEntity {
         let reminderTaskLog = create(context: context)
         reminderTaskLog.date = date
         reminderTaskLog.reminderTask = reminderTask
-        context.saveContext()
+//        context.saveContext()
         return reminderTaskLog
     }
     
@@ -38,6 +38,5 @@ public final class ReminderTaskLog: CueLog, CoreDataEntity {
                 reminderLog.delete(context: context)
             }
         }
-        context.saveContext()
     }
 }

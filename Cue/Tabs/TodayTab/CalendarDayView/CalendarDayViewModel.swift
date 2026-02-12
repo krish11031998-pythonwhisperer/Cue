@@ -157,9 +157,9 @@ class CalendarDayViewModel {
             let isLogged = calendarDay.loggedReminderTasks.reduce(false, { $0 || $1.objectId == task.objectId })
             return .init(title: task.title, icon: icon, isLogged: isLogged) { [weak self] in
                 if isLogged {
-                    self?.store.deleteTaskLogsFor(at: calendarDay.date, for: task.objectId)
+                    self?.store.deleteTaskLogsFor(at: calendarDay.date, for: task.objectId, completion: nil)
                 } else {
-                    self?.store.logReminderTask(at: calendarDay.date, for: task.objectId)
+                    self?.store.logReminderTask(at: calendarDay.date, for: task.objectId, completion: nil)
                 }
             }
         }
