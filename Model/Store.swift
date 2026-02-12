@@ -7,15 +7,16 @@
 
 import Foundation
 import CoreData
-import AsyncAlgorithms
 internal import UserNotifications
 import AlarmKit
+import UIKit
 
 @Observable
 @MainActor public class Store: NotificationManagerDelegate, AlarmManagerDelegate {
     
     public var user: User? = nil
     public var reminders: [Reminder] = []
+    public var tags: [CueTag] = []
     public var presentCreateReminder: Bool = false
     @ObservationIgnored
     public private(set) var notificationManager: NotificationManager
@@ -35,6 +36,7 @@ import AlarmKit
         self.alarmManager = .init(context: CoreDataManager.shared.persistentContainer.viewContext)
         self.retrieveUser()
         self.reminders = Reminder.fetchAll(context: self.viewContext)
+        self.tags = CueTag.fetchAll(context: self.viewContext)
         self.notificationManager.delegate = self
         observingTask()
     }
@@ -45,6 +47,8 @@ import AlarmKit
     private func observingTask() {
         let remindersChangeStream: AsyncStream<()> = self.viewContext.changesStream(for: Reminder.self, changeTypes: [.inserted, .deleted, .updated])
         let reminderTasksChangeStream: AsyncStream<()> = self.viewContext.changesStream(for: ReminderTask.self, changeTypes: [.inserted, .deleted, .updated])
+        let tagsChangeStream: AsyncStream<()> = self.viewContext.changesStream(for: CueTag.self, changeTypes: [.inserted, .deleted, .updated])
+        
         Task { @MainActor [weak self] in
             for await _ in remindersChangeStream {
                 if let context = self?.viewContext {
@@ -52,11 +56,21 @@ import AlarmKit
                     self?.reminders = reminders
                 }
             }
-            
+        }
+        
+        Task { @MainActor [weak self] in
             for await _ in reminderTasksChangeStream {
                 if let context = self?.viewContext {
                     let reminderTask = ReminderTask.fetchAll(context: context)
-                    print("(DEBUG) reminderTasks: ", reminderTask)
+                }
+            }
+        }
+        
+        Task { @MainActor [weak self] in
+            for await _ in tagsChangeStream {
+                if let context = self?.viewContext {
+                    let tags = CueTag.fetchAll(context: context)
+                    self?.tags = tags
                 }
             }
         }
@@ -80,6 +94,7 @@ import AlarmKit
             self.user = firstUser
         } else {
             let user = User.createUser(context: viewContext)
+            viewContext.saveContext()
             self.user = user
         }
     }
@@ -87,12 +102,22 @@ import AlarmKit
     // MARK: - Reminders
     
     @discardableResult
-    public func createReminder(title: String, icon: CueIcon, date: Date, snoozeDuration: TimeInterval, scheduleBuilder: Reminder.ScheduleBuilder?, tasks: [ReminderTaskModel] = [], reminderNotification: ReminderNotification) -> Reminder {
+    public func createReminder(title: String, icon: CueIcon, date: Date, snoozeDuration: TimeInterval, scheduleBuilder: Reminder.ScheduleBuilder?, tasks: [ReminderTaskModel] = [], reminderNotification: ReminderNotification, tags tagModels: [TagModel]) -> Reminder {
         let reminder = Reminder.createReminder(context: viewContext, title: title, icon: icon, date: date, snoozeDuration: snoozeDuration, schedule: scheduleBuilder, reminderNotification: reminderNotification)
+        
         tasks.forEach { task in
             let reminderTask = fetchReminderTask(task.objectId)
             reminderTask.reminder = reminder
         }
+        
+        var tags: [CueTag] = []
+        for tagModel in tagModels {
+            let tag = fetchTag(tagModel.objectId)
+            tags.append(tag)
+        }
+        
+        reminder.updateTags(tags)
+        
         viewContext.saveContext()
         NotificationCenter.default.post(name: .addedReminder, object: nil)
         return reminder
@@ -120,6 +145,20 @@ import AlarmKit
             viewContext.saveContext()
         }
     }
+    
+    public func updateTagsInReminder(reminder: Reminder, tags: [TagModel], save: Bool) {
+        reminder.removeTags()
+        var cueTags: [CueTag] = []
+        for tagModel in tags {
+            let tag = CueTag.fetch(context: viewContext, for: tagModel.objectId)
+            cueTags.append(tag)
+        }
+        reminder.updateTags(cueTags)
+        if save {
+            viewContext.saveContext()
+        }
+    }
+   
     
     // MARK: - ReminderLogs
     
@@ -177,6 +216,26 @@ import AlarmKit
     }
     
     
+    // MARK: - Tag
+    
+    @discardableResult
+    public func createTag(name: String, color: UIColor) -> CueTag {
+        let tag = CueTag.createTag(context: viewContext, name: name, color: color)
+        viewContext.saveContext()
+        return tag
+    }
+    
+    public func deleteTag(for id: NSManagedObjectID) {
+        let tag = CueTag.fetch(context: viewContext, for: id)
+        tag.delete(context: viewContext)
+        viewContext.saveContext()
+    }
+    
+    public func fetchTag(_ id: NSManagedObjectID) -> CueTag {
+        CueTag.fetch(context: viewContext, for: id)
+    }
+    
+    
     // MARK: - User
     
     public func updateUser(transform: @escaping (User) -> Void) {
@@ -204,7 +263,7 @@ import AlarmKit
     public func updateNotificationsAccess() {
         let currentState = user?.notificationEnabled ?? false
         if currentState {
-           disableNotifications()
+            disableNotifications()
         } else {
             enableNotifications()
         }
@@ -264,7 +323,7 @@ import AlarmKit
 
 //
 //struct AlarmLiveActivity: Widget {
-//    
+//
 //    var body: some WidgetConfiguration {
 //        ActivityConfiguration(for: AlarmAttributes<CueAlarmAttributes>.self) { context in
 //            VStack(alignment: .leading) {
@@ -278,15 +337,15 @@ import AlarmKit
 //        } dynamicIsland: { context in
 //            DynamicIsland {
 //                //Exapanded
-//                
+//
 //                DynamicIslandExpandedRegion(.leading) {
 //                    alarmTitle(attributes: context.attributes, state: context.state)
 //                }
-//                
+//
 //                DynamicIslandExpandedRegion(.trailing) {
 //                    reminderView(metadata: context.attributes.metadata)
 //                }
-//                
+//
 //                DynamicIslandExpandedRegion(.bottom) {
 //                    countdown(state: context.state)
 //                }
@@ -301,10 +360,10 @@ import AlarmKit
 //        }
 //
 //    }
-//    
-//    
+//
+//
 //    // MARK: - AlarmTitle
-//    
+//
 //    @ViewBuilder func alarmTitle(attributes: AlarmAttributes<CueAlarmAttributes>, state: AlarmPresentationState) -> some View {
 //        let title: LocalizedStringResource? = switch state.mode {
 //        case .countdown:
@@ -314,17 +373,17 @@ import AlarmKit
 //        default:
 //            nil
 //        }
-//        
+//
 //        Text(title ?? "")
 //            .font(.title3)
 //            .fontWeight(.semibold)
 //            .lineLimit(1)
 //            .padding(.leading, 6)
 //    }
-//    
-//    
+//
+//
 //    // MARK: - ReminderAttibute
-//    
+//
 //    @ViewBuilder
 //    func reminderView(metadata: CueAlarmAttributes?) -> some View {
 //        if let metadata {
@@ -340,10 +399,10 @@ import AlarmKit
 //            EmptyView()
 //        }
 //    }
-//    
-//    
+//
+//
 //    // MARK: - Countdown View
-//    
+//
 //    func countdown(state: AlarmPresentationState, maxWidth: CGFloat = .infinity) -> some View {
 //        Group {
 //            switch state.mode {
@@ -362,14 +421,14 @@ import AlarmKit
 //        .minimumScaleFactor(0.6)
 //        .frame(maxWidth: maxWidth, alignment: .leading)
 //    }
-//    
+//
 //}
 //
 //struct AlarmProgressView: View {
 //    var icon: CueAlarmAttributes
 //    var mode: AlarmPresentationState.Mode
 //    var tint: Color
-//    
+//
 //    var body: some View {
 //        Group {
 //            switch mode {

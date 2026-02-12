@@ -13,6 +13,7 @@ struct MainTab: View {
     
     enum Tabs: Hashable {
         case home
+        case organize
         case settings
         case create
     }
@@ -23,14 +24,13 @@ struct MainTab: View {
         var id: String { rawValue }
     }
     
-    private let store: Store
+    @Environment(Store.self) var store
     private let hasShowOnboarding: Bool
     @State private var selectedTab: Tabs = .home
     @State private var presentCreateReminder: Bool = false
     @State private var fullScreenPresentation: FullScreenPresentation? = nil
     
-    init(store: Store) {
-        self.store = store
+    init() {
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
     }
     
@@ -40,12 +40,24 @@ struct MainTab: View {
                 TodayTabView {
                     self.presentCreateReminder = true
                 }
+                .ignoresSafeArea(edges: .bottom)
             } label: {
                 Label {
                     Text("Reminders")
                 } icon: {
                     Image(systemName: "calendar")
                 }
+            }
+            
+            Tab(value: .organize) {
+                OrangizeTabView()
+            } label: {
+                Label {
+                    Text("Organize")
+                } icon: {
+                    Image(systemSymbol: .clipboardFill)
+                }
+
             }
             
             Tab(value: Tabs.settings) {
@@ -63,6 +75,7 @@ struct MainTab: View {
                 Color.clear
             }
         }
+        .ignoresSafeArea(edges: .bottom)
         .onChange(of: selectedTab) { oldValue, newValue in
             if newValue == .create {
                 self.presentCreateReminder = true

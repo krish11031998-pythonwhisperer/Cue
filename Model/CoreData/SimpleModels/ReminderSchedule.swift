@@ -29,4 +29,11 @@ public struct ReminderSchedule: Hashable, Sendable {
         self.weekdays = schedule.weekdays
         self.calendarDates = schedule.calendarDates
     }
+    
+    public var timeScheduled: Date {
+        var dateComponents = Calendar.current.dateComponents([.minute, .hour, .calendar], from: .now)
+        dateComponents.hour = hour
+        dateComponents.minute = minute
+        return dateComponents.date ?? .now
+    }
 }

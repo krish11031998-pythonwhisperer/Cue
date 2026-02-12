@@ -100,6 +100,15 @@ public class CalendarManager {
     }
     
     nonisolated
+    private func fetchReminderWithTags(backgroundContext: NSManagedObjectContext, names: [String]) async -> [ReminderModel] {
+        let reminders: [Reminder] = await backgroundContext.perform {
+            Reminder.fetchRemindersWithTags(context: backgroundContext, names: names)
+        }
+        
+        return reminders.map { .init(from: $0) }
+    }
+    
+    nonisolated
     private func fetchCalendarDay(backgroundContext: NSManagedObjectContext, dates: [Date], reminderModels: [ReminderModel]) async -> [Date: CalendarDay] {
         let calendarValues: [Date: CalendarDay] = await withTaskGroup(of: CalendarDay?.self) { group in
             for date in dates {

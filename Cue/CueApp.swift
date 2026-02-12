@@ -16,7 +16,7 @@ struct CueApp: App {
     
     var body: some Scene {
         WindowGroup {
-            MainTab(store: store)
+            MainTab()
                 .environment(store)
                 .environment(subscriptionManager)
         }

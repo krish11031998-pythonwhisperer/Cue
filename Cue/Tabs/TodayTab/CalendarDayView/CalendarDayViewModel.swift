@@ -178,9 +178,10 @@ class CalendarDayViewModel {
         let model: ReminderView.Model = .init(title: reminder.title,
                                               icon: icon,
                                               theme: Color.proSky,
-                                              time: reminder.date,
+                                              time: reminder.schedule?.timeScheduled,
                                               state: .hasLogged(isLogged),
-                                              tasks: tasks) { [weak self] in
+                                              tasks: tasks,
+                                              tags: reminder.tags.map { .init(name: $0.name, color: $0.color) }) { [weak self] in
             self?.logReminder(isLoggedBefore: isLogged, date: calendarDay.date, reminder: reminder)
         } deleteReminder: { [weak self] in
             withAnimation(.snappy) {

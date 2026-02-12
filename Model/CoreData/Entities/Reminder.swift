@@ -19,7 +19,8 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     @NSManaged public private(set) var reminderTasks: NSOrderedSet!
     @NSManaged public private(set) var notificationType: NSNumber!
     @NSManaged public private(set) var snoozeDurationRawValue: NSNumber!
-
+    @NSManaged public private(set) var tags: NSSet!
+    
     public var tasks: [ReminderTask] {
         reminderTasks.array as! [ReminderTask]
     }
@@ -27,6 +28,19 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     internal var mutatableTasks: NSMutableOrderedSet {
         mutableOrderedSetValue(forKey: "reminderTasks")
     }
+    
+    internal var mutatableTags: NSMutableOrderedSet {
+        mutableOrderedSetValue(forKey: "tags")
+    }
+    
+    public var tagsArray: [CueTag] {
+        tags.allObjects as! [CueTag]
+    }
+    
+    internal var mutableTagSet: NSMutableOrderedSet {
+        mutableOrderedSetValue(forKey: "tags")
+    }
+    
     public var reminderNotification: ReminderNotification {
         get {
             if let notificationType = notificationType as? Int {
@@ -47,7 +61,7 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
         }
         
         set {
-             snoozeDurationRawValue = newValue as NSNumber
+            snoozeDurationRawValue = newValue as NSNumber
         }
     }
     
@@ -113,6 +127,11 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
         self.mutatableTasks.removeAllObjects()
     }
     
+    func removeTags() {
+        self.mutatableTags.removeAllObjects()
+    }
+    
+    
     // MARK: - Delete
     
     public func delete(context: NSManagedObjectContext) {
@@ -131,6 +150,26 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     internal static func fetchRemindersWithAlarm(context: NSManagedObjectContext) -> [Reminder] {
         let predicate = NSPredicate(format: "notificationType == %d", ReminderNotification.alarm.rawValue)
         return Self.fetch(context: context, predicate: predicate) ?? []
+    }
+    
+    internal static func fetchRemindersWithTags(context: NSManagedObjectContext, names: [String]) -> [Reminder] {
+        let predicate = {
+            var orPredicates: [NSPredicate] = []
+            for name in names {
+                let predicate = NSPredicate(format: "ANY tags.name == %@", name)
+                orPredicates.append(predicate)
+            }
+            return NSCompoundPredicate(orPredicateWithSubpredicates: orPredicates)
+        }()
+        
+        return Self.fetch(context: context, predicate: predicate, sortDescriptors: []) ?? []
+    }
+    
+    // MARK: - Add Tag
+    
+    func updateTags(_ tags:[CueTag]) {
+        mutableTagSet.removeAllObjects()
+        mutableTagSet.addObjects(from: tags)
     }
     
     

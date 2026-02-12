@@ -29,7 +29,7 @@ extension NSManagedObjectContext {
         case inserted
         case deleted
         case updated
-
+        
         var userInfoIDsKey: String {
             switch self {
             case .inserted: return NSInsertedObjectIDsKey
@@ -37,7 +37,7 @@ extension NSManagedObjectContext {
             case .updated: return NSUpdatedObjectIDsKey
             }
         }
-
+        
         var userInfoObjectsKey: String {
             switch self {
             case .inserted: return NSInsertedObjectsKey
@@ -51,7 +51,7 @@ extension NSManagedObjectContext {
         case changed
         case willSave
         case didSave
-
+        
         var notificationName: Notification.Name {
             switch self {
             case .changed:
@@ -74,7 +74,7 @@ extension NSManagedObjectContext {
         let notification = NSManagedObjectContext.didSaveObjectIDsNotification
         let context = self
         let objectID = managedObject.objectID
-//        let relationshipsToObserve = managedObject.relationshipsToObserve
+        //        let relationshipsToObserve = managedObject.relationshipsToObserve
         
         return NotificationCenter.default.publisher(for: notification, object: context)
             .compactMap({ (notification) in
@@ -187,30 +187,30 @@ extension NSManagedObjectContext {
         // Since the saves are on this context we can use the objects as is.
         let savePublisher = NotificationCenter.default.publisher(for: didSaveNotification, object: self)
             .compactMap({ notification in
-            return changeTypes.reduce(true, { partialResult, changeType in
-                guard let changes = notification.userInfo?[changeType.userInfoIDsKey] as? Set<NSManagedObjectID> else {
-                    return partialResult || false
-                }
-                
-                let objects = changes
-                    .filter({ objectID in objectID.entity == T.entity() })
-                    .compactMap({ objectID in self.object(with: objectID) as? T })
-                
-                if objects.isEmpty {
-                    return partialResult || false
-                } else {
-                    return partialResult || true
-                }
+                return changeTypes.reduce(true, { partialResult, changeType in
+                    guard let changes = notification.userInfo?[changeType.userInfoIDsKey] as? Set<NSManagedObjectID> else {
+                        return partialResult || false
+                    }
+                    
+                    let objects = changes
+                        .filter({ objectID in objectID.entity == T.entity() })
+                        .compactMap({ objectID in self.object(with: objectID) as? T })
+                    
+                    if objects.isEmpty {
+                        return partialResult || false
+                    } else {
+                        return partialResult || true
+                    }
+                })
             })
-        })
-        .map({ _ in () })
-        .eraseToAnyPublisher()
-        .values
+            .map({ _ in () })
+            .eraseToAnyPublisher()
+            .values
         
-//        let mergedPublisher = Publishers.Merge(mergePublisher, savePublisher)
+        //        let mergedPublisher = Publishers.Merge(mergePublisher, savePublisher)
         return AsyncStream { continuation in
             Task {
-                for await result in merge(mergePublisher, savePublisher) {
+                for await _ in merge(mergePublisher, savePublisher) {
                     continuation.yield(())
                 }
             }
