@@ -12,14 +12,12 @@ import VanorUI
 public struct TimerSheet: View {
     
     let reminderModels: [ReminderModel]
-    @Binding var timeDuration: TimeInterval
-    @Binding private var selectedReminder: ReminderModel?
-    private let startTimer: () -> Void
+    @State var timeDuration: TimeInterval = 20 * 60
+    @State private var selectedReminder: ReminderModel? = nil
+    private let startTimer: (ReminderModel?, TimeInterval) -> Void
     
-    init(reminderModels: [ReminderModel], timeDuration: Binding<TimeInterval>, reminder: Binding<ReminderModel?>, startTimer: @escaping () -> Void) {
+    init(reminderModels: [ReminderModel], startTimer: @escaping (ReminderModel?, TimeInterval) -> Void) {
         self.reminderModels = reminderModels
-        self._timeDuration = timeDuration
-        self._selectedReminder = reminder
         self.startTimer = startTimer
     }
     
@@ -67,7 +65,9 @@ public struct TimerSheet: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 24)
             
-            CueLargeButton(action: startTimer) {
+            CueLargeButton {
+                startTimer(selectedReminder, timeDuration)
+            } content:  {
                 Text("Start Timer")
                     .font(.headline)
             }

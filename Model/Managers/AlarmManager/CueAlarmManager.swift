@@ -121,7 +121,7 @@ public class CueAlarmManager {
                                                              metadata: .init(icon: reminder.icon, title: reminder.title),
                                                              tintColor: Color.blue)
         
-        let configuration = AlarmManager.AlarmConfiguration.init(countdownDuration: .init(preAlert: nil, postAlert: reminder.snoozeDuration * 60),
+        let configuration = AlarmManager.AlarmConfiguration.init(countdownDuration: .init(preAlert: nil, postAlert: reminder.snoozeDuration),
                                                                  schedule: alarmSchedule,
                                                                  attributes: attributes, stopIntent: nil, secondaryIntent: nil, sound: .default)
         

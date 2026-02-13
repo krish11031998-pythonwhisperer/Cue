@@ -106,11 +106,11 @@ struct TodayTabView: View {
         .sheet(item: $viewModel.presentation, content: { presentation in
             switch presentation {
             case .timer:
-                TimerSheet(reminderModels: viewModel.reminderWithTimer, timeDuration: $viewModel.focusTimerDuration, reminder: $viewModel.focusTimerReminderModel) {
+                TimerSheet(reminderModels: viewModel.reminderWithTimer) { selectedReminder, timeDuration in
                     withAnimation {
                         self.viewModel.presentation = nil
                     } completion: {
-                        self.viewModel.fullPresentation = .focusTimer(self.viewModel.focusTimerReminderModel)
+                        self.viewModel.fullPresentation = .focusTimer(selectedReminder, timeDuration)
                     }
                 }
                 .fittedPresentationDetent()
@@ -124,8 +124,8 @@ struct TodayTabView: View {
                     self.dismiss()
                     self.presentCreateReminder()
                 }
-            case .focusTimer(let reminderModel):
-                TimerView(reminder: reminderModel, duration: viewModel.focusTimerDuration)
+            case .focusTimer(let reminderModel, let duration):
+                TimerView(reminder: reminderModel, duration: duration)
             }
         })
       

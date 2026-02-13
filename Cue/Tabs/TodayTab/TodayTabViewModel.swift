@@ -21,7 +21,7 @@ class TodayViewModel {
     
     enum FullScreenPresentation: Identifiable {
         case calendar
-        case focusTimer(ReminderModel?)
+        case focusTimer(ReminderModel?, TimeInterval)
         
         var id: Int {
             switch self {
@@ -39,8 +39,6 @@ class TodayViewModel {
     var todayCalendar: CalendarDay? = nil
     var presentation: Presentation? = nil
     var fullPresentation: FullScreenPresentation? = nil
-    var focusTimerDuration: TimeInterval = 20 * 60
-    var focusTimerReminderModel: ReminderModel? = nil
     @ObservationIgnored
     private var calendarParsingTask: Task<Void, Never>?
     
