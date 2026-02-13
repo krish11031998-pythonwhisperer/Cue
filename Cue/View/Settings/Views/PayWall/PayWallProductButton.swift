@@ -60,6 +60,7 @@ struct PayWallProductButton: View {
         let introductoryDiscount: StoreProductDiscount?
     }
     
+    @Environment(\.colorScheme) var colorScheme
     let model: Model
     let isSelected: Bool
     let action: () -> Void
@@ -122,7 +123,7 @@ struct PayWallProductButton: View {
         .containerShape(RoundedRectangle(cornerRadius: 18))
         .frame(minHeight: 70)
         .padding(.all, 1)
-        .background(isSelected ? Color.proSky.backgroundPrimary : Color.secondarySystemGroupedBackground, in: .roundedRect(cornerRadius: 18))
+        .background(isSelected ? Color.proSky.backgroundPrimary : colorScheme == .light ? Color.tertiarySystemGroupedBackground : Color.secondarySystemGroupedBackground, in: .roundedRect(cornerRadius: 18))
         .overlay(alignment: .center) {
             if isSelected {
                 RoundedRectangle(cornerRadius: 18)

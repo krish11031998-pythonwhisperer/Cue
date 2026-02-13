@@ -149,6 +149,7 @@ struct TodayTabView: View {
                 .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
                     self.topPadding = newValue.height
                 }
+                .disabled(true)
         })
     }
     

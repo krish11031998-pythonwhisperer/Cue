@@ -13,6 +13,7 @@ struct CuePaywallView: View {
     
     @Environment(SubscriptionManager.self) var subscriptionManager
     @Environment(\.dismiss) var dismiss
+    @Environment(\.colorScheme) var colorScheme
     @State private var viewModel: PaywallViewModel = .init()
     var showButtonLoading: Bool {
         subscriptionManager.isPurchasing || subscriptionManager.isFetchingOfferings
@@ -34,7 +35,7 @@ struct CuePaywallView: View {
                                 .font(.largeTitle)
                         }
                         .fontWeight(.semibold)
-                        .foregroundStyle(Color.white)
+                        .foregroundStyle(colorScheme == .light ? Color.proSky.foregroundSecondary : Color.white)
                     }
                     .containerRelativeFrame(.vertical) { height, _ in
                         height * 0.25

@@ -18,6 +18,7 @@ struct CreateReminderView: View {
         case edit(ReminderModel)
     }
 
+    @Environment(SubscriptionManager.self) var subscriptionManager
     @State private var viewModel: CreateReminderViewModel
     @Namespace private var animation
     @Environment(\.dismiss) var dismiss
@@ -98,9 +99,11 @@ struct CreateReminderView: View {
                 .padding(.horizontal, 20)
             }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("", systemSymbol: .tagFill) {
-                        viewModel.presentation = .tags
+                if subscriptionManager.userIsPro {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("", systemSymbol: .tagFill) {
+                            viewModel.presentation = .tags
+                        }
                     }
                 }
 

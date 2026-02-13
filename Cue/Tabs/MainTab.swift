@@ -18,6 +18,13 @@ struct MainTab: View {
         case create
     }
     
+    enum Presentation: Int, Identifiable {
+        case createReminder = 0
+        case paywall
+        
+        var id: Int { rawValue }
+    }
+    
     enum FullScreenPresentation: String, Identifiable {
         case onboarding
         
@@ -25,13 +32,21 @@ struct MainTab: View {
     }
     
     @Environment(Store.self) var store
+    @Environment(SubscriptionManager.self) var subscriptionManager
     private let hasShowOnboarding: Bool
     @State private var selectedTab: Tabs = .home
     @State private var presentCreateReminder: Bool = false
     @State private var fullScreenPresentation: FullScreenPresentation? = nil
+    @State private var presentPayWall: Bool = false
+    private let presentPayWallAfterFirstOnboarding: Bool
     
     init() {
+        #if DEBUG
+        self.hasShowOnboarding = false
+        #else
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
+        #endif
+        presentPayWallAfterFirstOnboarding = !hasShowOnboarding
     }
     
     var body: some View {
@@ -49,15 +64,17 @@ struct MainTab: View {
                 }
             }
             
-            Tab(value: .organize) {
-                OrangizeTabView()
-            } label: {
-                Label {
-                    Text("Organize")
-                } icon: {
-                    Image(systemSymbol: .clipboardFill)
+            if subscriptionManager.userIsPro {
+                Tab(value: .organize) {
+                    OrangizeTabView()
+                } label: {
+                    Label {
+                        Text("Organize")
+                    } icon: {
+                        Image(systemSymbol: .clipboardFill)
+                    }
+                    
                 }
-
             }
             
             Tab(value: Tabs.settings) {
@@ -82,18 +99,28 @@ struct MainTab: View {
                 self.selectedTab = oldValue
             }
         }
-        .sheet(isPresented: $presentCreateReminder) {
+        .onChange(of: fullScreenPresentation, initial: false, { oldValue, newValue in
+            if oldValue == .onboarding {
+                self.presentCreateReminder = true
+            }
+        })
+        .sheet(isPresented: $presentCreateReminder, onDismiss: {
+            if presentPayWallAfterFirstOnboarding {
+                presentPayWall = true
+            }
+        }) {
             CreateReminderView(mode: .create, store: store)
+                .presentationDetents([.fraction(1)])
+        }
+        .sheet(isPresented: $presentPayWall) {
+            CuePaywallView()
                 .presentationDetents([.fraction(1)])
         }
         .task {
             guard !hasShowOnboarding else { return }
             self.fullScreenPresentation = .onboarding
         }
-        .fullScreenCover(item: $fullScreenPresentation,
-                         onDismiss: {
-            self.presentCreateReminder = true
-        }) { fullScreenPresentation in
+        .fullScreenCover(item: $fullScreenPresentation) { fullScreenPresentation in
             switch fullScreenPresentation {
             case .onboarding:
                 OnboardingMainView(store: store)

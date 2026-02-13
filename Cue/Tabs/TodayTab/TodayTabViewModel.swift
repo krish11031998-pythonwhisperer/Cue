@@ -63,15 +63,15 @@ class TodayViewModel {
         calendarParsingTask = Task { [weak self] in
             let calendarValues = await CalendarManager.shared.setupCalendarForOneMonthFromToday()
             
+            guard !Task.isCancelled else { return }
+            
             await MainActor.run { [weak self] in
                 guard calendarValues.isEmpty == false else { return }
                 let today = calendarValues.first {
                     return $0.date == Date.now.startOfDay
                 }
                 
-                if self?.todayCalendar == nil {
-                    self?.todayCalendar = today
-                }
+                self?.todayCalendar = today
                 
                 self?.calendarDay = calendarValues
             }

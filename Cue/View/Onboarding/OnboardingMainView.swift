@@ -67,6 +67,9 @@ struct OnboardingMainView: View {
                         }
                     case .fifth:
                         WelcomeCreateReminderView(onAppear: tabs == tab)
+                            .task {
+                                CueUserDefaultsManager.shared[.hasShowOnboarding] = true
+                            }
                     }
                 }
                 .tag(tab)
@@ -123,9 +126,6 @@ struct OnboardingMainView: View {
             }
             .ignoresSafeArea(edges: .vertical)
             .animation(.easeInOut, value: tabs)
-        }
-        .task {
-            CueUserDefaultsManager.shared[.hasShowOnboarding] = true
         }
     }
     
