@@ -9,16 +9,20 @@ import Model
 import Foundation
 import VanorUI
 import SwiftUI
+import CoreData
 
 @Observable
 class OrganizeTabViewModel {
     enum Presentation: Identifiable {
         case tags
+        case reminder(ReminderModel)
         
         var id: Int {
             switch self {
             case .tags:
                 return 0
+            case .reminder:
+                return 1
             }
         }
     }
@@ -50,32 +54,35 @@ class OrganizeTabViewModel {
     
     @ObservationIgnored
     var selectedTag: Set<TagModel> = .init()
+    var reminders: [ReminderModel] = []
     var mode: Mode = .all
     var selectedPresentation: Presentation? = nil
-    var reminders: [ReminderView.Model] = []
     var tags: [TagModel] = []
     
+    @MainActor
     func populateReminderViewModel(_ reminders: [ReminderModel]) {
-        let reminderViewModels = reminders.map { reminder in
-            let icon: VanorUI.Icon
-            if let symbol = reminder.icon.symbol {
-                icon = .symbol(.init(rawValue: symbol))
-            } else if let emoji = reminder.icon.emoji {
-                icon = .emoji(.init(emoji))
-            } else {
-                icon = .symbol(.circle)
-            }
-            
-            return ReminderView.Model(title: reminder.title,
-                                      icon: icon,
-                                      theme: Color.proSky,
-                                      time: reminder.date,
-                                      state: .display,
-                                      tags: reminder.tags.map{ .init(name: $0.name, color: $0.color) },
-                                      logReminder: nil, deleteReminder: nil)
-        }
-        
-        self.reminders = reminderViewModels
+//        self.viewModelsToReminder.removeAll()
+//        let reminderViewModels = reminders.map { reminder in
+//            let icon: VanorUI.Icon
+//            if let symbol = reminder.icon.symbol {
+//                icon = .symbol(.init(rawValue: symbol))
+//            } else if let emoji = reminder.icon.emoji {
+//                icon = .emoji(.init(emoji))
+//            } else {
+//                icon = .symbol(.circle)
+//            }
+//            let cellViewModel = ReminderView.Model(title: reminder.title,
+//                                      icon: icon,
+//                                      theme: Color.proSky,
+//                                      time: reminder.date,
+//                                      state: .display,
+//                                      tags: reminder.tags.map{ .init(name: $0.name, color: $0.color) },
+//                                      logReminder: nil, deleteReminder: nil)
+//            self.viewModelsToReminder[cellViewModel] = reminder
+//            
+//            return cellViewModel
+//        }
+        self.reminders = reminders
     }
     
     var tagChipView: [TagChipView.Model] {
@@ -103,4 +110,10 @@ class OrganizeTabViewModel {
     func tagModel(_ tags: [CueTag]) {
         self.tags = tags.map { .from($0) }
     }
+    
+//    func presentReminder(for cellViewModel: ReminderView.Model) {
+//        let reminder = viewModelsToReminder[cellViewModel]
+//        guard let reminder else { return }
+//        self.selectedPresentation = .reminder(reminder)
+//    }
 }

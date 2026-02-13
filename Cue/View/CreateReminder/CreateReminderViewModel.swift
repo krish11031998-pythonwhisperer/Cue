@@ -89,7 +89,7 @@ class CreateReminderViewModel {
     
     var imageFrame: CGRect = .zero
     var reminderTitle: String = ""
-    var snoozeDuration: Double = 15
+    var snoozeDuration: Double = 15 * 60
     var reminderNotification: ReminderNotification = .notification
     var date: Date = .now
     var timeDate: Date = .now

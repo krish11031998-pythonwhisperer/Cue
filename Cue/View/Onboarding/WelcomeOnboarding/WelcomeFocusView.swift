@@ -25,14 +25,17 @@ struct WelcomeFocusView: View {
             
             Group {
                 if isCurrentTab {
-                    FocusCountdownView(targetDuration: 3, mode: .forDisplay, theme: Color.proSky, completed: completed)
-                        .aspectRatio(1, contentMode: .fit)
-                        .padding(.horizontal, 20)
-                        .visualEffect({ content, proxy in
-                            content
-                                .offset(x: 0, y: -proxy.size.height * 0.2)
-                        })
-                        .transition(.blurReplace)
+                    FocusCountdownView(targetDuration: 3, mode: .forDisplay, theme: Color.proSky) {
+                        guard case .completed = $0 else { return }
+                        self.completed()
+                    }
+                    .aspectRatio(1, contentMode: .fit)
+                    .padding(.horizontal, 20)
+                    .visualEffect({ content, proxy in
+                        content
+                            .offset(x: 0, y: -proxy.size.height * 0.2)
+                    })
+                    .transition(.blurReplace)
                 } else {
                     Color.clear
                 }
