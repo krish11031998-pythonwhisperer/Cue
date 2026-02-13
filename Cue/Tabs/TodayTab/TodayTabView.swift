@@ -74,7 +74,6 @@ struct TodayTabView: View {
                     }
                 }
                 
-                #if DEBUG
                 if subscriptionManager.userIsPro {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
@@ -87,7 +86,6 @@ struct TodayTabView: View {
                         .tint(Color.proSky.baseColor)
                     }
                 }
-                #endif
             }
         }
         .onChange(of: viewModel.today, { _, _ in
