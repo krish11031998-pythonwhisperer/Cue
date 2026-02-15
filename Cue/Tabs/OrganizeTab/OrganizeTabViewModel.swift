@@ -52,36 +52,50 @@ class OrganizeTabViewModel {
         }
     }
     
+    struct CellViewModel: Hashable, Identifiable {
+        let reminder: ReminderModel
+        let cellViewModel: ReminderView.Model
+        
+        var id: Int { reminder.hashValue }
+    }
+    
     @ObservationIgnored
     var selectedTag: Set<TagModel> = .init()
-    var reminders: [ReminderModel] = []
+    var reminders: [CellViewModel] = []
     var mode: Mode = .all
     var selectedPresentation: Presentation? = nil
     var tags: [TagModel] = []
     
     @MainActor
-    func populateReminderViewModel(_ reminders: [ReminderModel]) {
-//        self.viewModelsToReminder.removeAll()
-//        let reminderViewModels = reminders.map { reminder in
-//            let icon: VanorUI.Icon
-//            if let symbol = reminder.icon.symbol {
-//                icon = .symbol(.init(rawValue: symbol))
-//            } else if let emoji = reminder.icon.emoji {
-//                icon = .emoji(.init(emoji))
-//            } else {
-//                icon = .symbol(.circle)
-//            }
-//            let cellViewModel = ReminderView.Model(title: reminder.title,
-//                                      icon: icon,
-//                                      theme: Color.proSky,
-//                                      time: reminder.date,
-//                                      state: .display,
-//                                      tags: reminder.tags.map{ .init(name: $0.name, color: $0.color) },
-//                                      logReminder: nil, deleteReminder: nil)
-//            self.viewModelsToReminder[cellViewModel] = reminder
-//            
-//            return cellViewModel
-//        }
+    func updateReminder(with backgroundContext: NSManagedObjectContext) async {
+        let tags = Array(selectedTag)
+        let reminders: [CellViewModel]
+        let type: OrganizeFilterController.FetchType
+        if tags.isEmpty {
+            type = .all
+        } else {
+            type = .tags(tags.map(\.name))
+        }
+        reminders = await OrganizeFilterController.shared.fetchReminders(with: backgroundContext, type: type) { reminder in
+            let icon: VanorUI.Icon
+            if let symbol = reminder.icon.symbol {
+                icon = .symbol(.init(rawValue: symbol))
+            } else if let emoji = reminder.icon.emoji {
+                icon = .emoji(.init(emoji))
+            } else {
+                icon = .symbol(.circle)
+            }
+            let cellViewModel = ReminderView.Model(title: reminder.title,
+                                                   icon: icon,
+                                                   theme: Color.proSky,
+                                                   time: reminder.date,
+                                                   state: .display,
+                                                   tags: reminder.tags.map{ .init(name: $0.name, color: $0.color) },
+                                                   logReminder: nil, deleteReminder: nil)
+            return .init(reminder: reminder, cellViewModel: cellViewModel)
+        }
+        
+        guard !Task.isCancelled else { return }
         self.reminders = reminders
     }
     

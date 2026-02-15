@@ -41,11 +41,7 @@ struct MainTab: View {
     private let presentPayWallAfterFirstOnboarding: Bool
     
     init() {
-        #if DEBUG
-        self.hasShowOnboarding = false
-        #else
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
-        #endif
         presentPayWallAfterFirstOnboarding = !hasShowOnboarding
     }
     
