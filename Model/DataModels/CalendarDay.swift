@@ -10,14 +10,19 @@ import Foundation
 
 public class CalendarDay: Hashable, @unchecked Sendable {
     
+    public struct LoggedReminder: Hashable, Sendable {
+        public let date: Date
+        public let reminder: ReminderModel
+    }
+    
     public var date: Date
     public var reminders: [ReminderModel] = []
-    public var loggedReminders: [ReminderModel] = []
+    public var loggedReminders: [LoggedReminder] = []
     public var loggedReminderTasks: [ReminderTaskModel] = []
     
     public init(date: Date,
                 reminders: [ReminderModel],
-                loggedReminders: [ReminderModel],
+                loggedReminders: [LoggedReminder],
                 loggedReminderTasks: [ReminderTaskModel]) {
         self.date = date
         self.loggedReminders = loggedReminders

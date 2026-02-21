@@ -156,7 +156,7 @@ public class NotificationScheduler: NSObject, UNUserNotificationCenterDelegate {
             
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: repeats)
         
-        let id = "\(prefixID)_\(Calendar.current.shortWeekdaySymbols[weekday])"
+        let id = "\(prefixID)_\(Calendar.current.shortWeekdaySymbols[weekday - 1])"
         
         return (id, trigger)
     }

@@ -15,6 +15,8 @@ import CoreData
 @Observable
 class CalendarDayViewModel {
     
+    typealias TimelineElement = TimeCompactSwiftUIView.Element
+    
     enum TimeOfDay: String, CaseIterable {
         case morning
         case afternoon
@@ -117,12 +119,15 @@ class CalendarDayViewModel {
     @ObservationIgnored
     var store: Store
     
+    var sections: [Section] = []
+    var timelineElements: [TimeCompactSwiftUIView.ElementType] = []
+    
     init(calendarDate: Date, store: Store) {
         self.store = store
         self.calendarDate = calendarDate
     }
     
-    func sections(calendarDay: CalendarDay) -> [Section] {
+    func sections(calendarDay: CalendarDay) {
         var remindersInDay: [TimeOfDay: [Section.RowModel]] = [:]
         for reminder in calendarDay.reminders {
             if let schedule = reminder.schedule,
@@ -148,7 +153,25 @@ class CalendarDayViewModel {
         }
         
         let sections: [Section] = TimeOfDay.allCases.map { .init(timeOfDay: $0, reminders: remindersInDay[$0] ?? []) }
-        return sections
+        self.sections = sections
+    }
+    
+    func loggedReminders(_ loggedReminders: [CalendarDay.LoggedReminder]) {
+        var factors: [CGFloat: [TimelineElement]] = [:]
+        loggedReminders.forEach { reminder in
+            let hour = reminder.date.hours
+            let stepIndex: CGFloat = (2/24) * CGFloat(hour / 2)
+            let arcElements = TimelineElement(icon: .init(reminder.reminder.icon)!, color: .proSky.backgroundSecondary)
+            factors[stepIndex, default: []].append(arcElements)
+        }
+        
+        timelineElements = factors.map { (key, values) in
+            if values.count > 1 {
+                return .group(values, key)
+            } else {
+                return .single(values.first!, key)
+            }
+        }
     }
     
     func reminderModels(_ reminder: ReminderModel, calendarDay: CalendarDay) -> ReminderView.Model {
@@ -173,7 +196,7 @@ class CalendarDayViewModel {
             icon = .symbol(.circle)
         }
         
-        let isLogged = calendarDay.loggedReminders.contains(where: { $0 == reminder })
+        let isLogged = calendarDay.loggedReminders.contains(where: { $0.reminder == reminder })
         
         let model: ReminderView.Model = .init(title: reminder.title,
                                               icon: icon,

@@ -21,7 +21,7 @@ public struct CalendaryDetailSheetView: View {
     
     public var body: some View {
         VStack(alignment: .center, spacing: 16) {
-            DateView(todayModel: .init(date: calendarDay.date, showArc: false))
+            DateView(todayModel: .init(date: calendarDay.date, mode: .noArc))
                 .padding(.bottom, 8)
             if calendarDay.reminders.isEmpty {
                 VStack(alignment: .center, spacing: 8) {
@@ -48,12 +48,12 @@ public struct CalendaryDetailSheetView: View {
             if !calendarDay.loggedReminders.isEmpty {
                 Section {
                     ForEach(calendarDay.loggedReminders, id: \.hashValue) { loggedReminder in
-                        ReminderView(model: .init(title: loggedReminder.title,
-                                                  icon: iconForCueIcon(loggedReminder.icon),
+                        ReminderView(model: .init(title: loggedReminder.reminder.title,
+                                                  icon: iconForCueIcon(loggedReminder.reminder.icon),
                                                   theme: Color.proSky,
-                                                  time: loggedReminder.date,
+                                                  time: loggedReminder.reminder.date,
                                                   state: .calendarDetailView(true),
-                                                  tags: loggedReminder.tags.map { .init(name: $0.name, color: $0.color) }, logReminder: nil,
+                                                  tags: loggedReminder.reminder.tags.map { .init(name: $0.name, color: $0.color) }, logReminder: nil,
                                                   deleteReminder: nil))
                         .padding(.bottom, 4)
                         .id("logged-\(loggedReminder.hashValue)")
@@ -109,7 +109,7 @@ public struct CalendaryDetailSheetView: View {
     
     var notLoggedReminder: [ReminderModel] {
         return calendarDay.reminders.filter { reminder in
-           !calendarDay.loggedReminders.contains { $0 == reminder }
+           !calendarDay.loggedReminders.contains { $0.reminder == reminder }
         }
     }
 

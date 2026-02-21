@@ -59,10 +59,11 @@ public struct CalendarDayView: View {
     public var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                DateView(todayModel: .init(date: date, showArc: true))
+                DateView(todayModel: .init(date: date,
+                                           mode: date.isToday ? .arc(viewModel.timelineElements) : .noArc))
                     .padding(.bottom, 32)
                 if !calendarDay.reminders.isEmpty {
-                    ForEach(viewModel.sections(calendarDay: calendarDay)) { section in
+                    ForEach(viewModel.sections) { section in
                         Section {
                             ForEach(section.reminders) { model in
                                 Button {
@@ -84,6 +85,10 @@ public struct CalendarDayView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
+        }
+        .task(id: calendarDay) {
+            self.viewModel.sections(calendarDay: calendarDay)
+            self.viewModel.loggedReminders(calendarDay.loggedReminders)
         }
         .ignoresSafeArea(edges: .bottom)
         .scrollEdgeEffectStyle(.soft, for: .bottom)

@@ -102,16 +102,6 @@ struct OrangizeTabView: View {
     
     private func updateReminders() async {
         let backgroundContext = store.backgroundContext()
-//        let tags = Array(viewModel.selectedTag)
-//        let reminders: [ReminderModel]
-//        if tags.isEmpty {
-//            reminders = await OrganizeFilterController.shared.fetchReminders(with: backgroundContext, type: .all)
-//        } else {
-//            reminders = await OrganizeFilterController.shared.fetchReminders(with: backgroundContext, type: .tags(tags.map(\.name)))
-//        }
-//        
-//        guard !Task.isCancelled else { return }
-//        viewModel.populateReminderViewModel(reminders)
         await viewModel.updateReminder(with: backgroundContext)
     }
 }

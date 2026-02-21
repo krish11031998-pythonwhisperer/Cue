@@ -49,6 +49,8 @@ struct TimerView: View {
                         self.viewModel.frameOfCountdown = newValue
                     })
                     
+                    
+                    
                 }
                 .sheet(isPresented: $viewModel.presentSheet, content: {
                     if !viewModel.tasks.isEmpty {

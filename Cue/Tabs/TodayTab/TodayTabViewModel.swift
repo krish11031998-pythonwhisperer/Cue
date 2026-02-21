@@ -52,7 +52,7 @@ class TodayViewModel {
         
         return todayCalendar.reminders
             .filter({ reminder in
-                return !todayCalendar.loggedReminders.contains(where: { reminder.objectId == $0.objectId })
+                return !todayCalendar.loggedReminders.contains(where: { reminder.objectId == $0.reminder.objectId })
             })
     }
     

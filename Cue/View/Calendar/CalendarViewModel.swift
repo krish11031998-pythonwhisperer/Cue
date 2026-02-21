@@ -81,9 +81,9 @@ class CalendarViewModel {
         
         switch firstThreeLoggedReminders.count {
         case 2, 3:
-            return .group(firstThreeLoggedReminders.map({ .init(icon: getIcon($0.icon), color: Color.proSky.baseColor)}))
+            return .group(firstThreeLoggedReminders.map({ .init(icon: getIcon($0.reminder.icon), color: Color.proSky.baseColor)}))
         case 1:
-            return .single(.init(icon: getIcon(firstThreeLoggedReminders.first!.icon), color: Color.proSky.baseColor))
+            return .single(.init(icon: getIcon(firstThreeLoggedReminders.first!.reminder.icon), color: Color.proSky.baseColor))
         default:
             fatalError("Shouldn't end up here!")
             

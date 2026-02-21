@@ -141,11 +141,11 @@ public class CalendarManager {
             CueLog.fetchLogsWithinTimeRange(context: backgroundContext, startTime: date.startOfDay, endTime: date.endOfDay)
         }
         
-        var loggedReminders: [ReminderModel] = []
+        var loggedReminders: [CalendarDay.LoggedReminder] = []
         var loggedReminderTasks: [ReminderTaskModel] = []
         reminderLogs.forEach { cueLog in
             if let reminderLog = cueLog as? ReminderLog {
-                loggedReminders.append(.init(from: reminderLog.reminder))
+                loggedReminders.append(.init(date: reminderLog.date, reminder: .init(from: reminderLog.reminder)))
             } else if let reminderTasks = cueLog as? ReminderTaskLog {
                 loggedReminderTasks.append(.init(from: reminderTasks.reminderTask))
             }

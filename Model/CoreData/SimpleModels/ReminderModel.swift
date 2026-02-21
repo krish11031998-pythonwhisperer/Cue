@@ -22,7 +22,7 @@ public struct ReminderModel: Hashable, Sendable {
     
     public init(notificationID: UUID = .init(), notificationType: ReminderNotification, title: String, icon: CueIcon, date: Date, snoozeDuration: TimeInterval, tasks: [ReminderTaskModel], tags: [TagModel], schedule: ReminderSchedule?) {
         self.title = title
-        self.icon = icon
+        self.icon = icon 
         self.date = date
         self.tasks = tasks
         self.schedule = schedule
