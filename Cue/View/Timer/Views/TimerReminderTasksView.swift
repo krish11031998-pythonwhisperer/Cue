@@ -11,7 +11,9 @@ import Model
 
 struct TimerReminderTasksView: View {
     
+    @Environment(Store.self) var store
     let reminderTaskModels: [ReminderTaskModel]
+    let loggedReminders: Set<ReminderTaskModel>
     let selectedPresentedDetent: PresentationDetent?
     
     var body: some View {
@@ -19,13 +21,28 @@ struct TimerReminderTasksView: View {
             ScrollView {
                 LazyVStack(alignment: .center, spacing: 16) {
                     ForEach(reminderTaskModels.indices, id: \.self) { index in
-                        ReminderTaskRowView(reminderTaskModel: reminderTaskModels[index]) {
-                            print("(DEBUG) fixing this task")
-                        }
+                        reminderTaskRowBuilder(index)
                         .id(index)
                     }
                 }
                 .padding(.top, 20)
+            }
+        }
+    }
+    
+    
+    // MARK: - ReminderTaskRowBuilder
+    
+    @ViewBuilder
+    private func reminderTaskRowBuilder(_ index: Int) -> some View {
+        let task = reminderTaskModels[index]
+        let reminderIsLogged = loggedReminders.contains(reminderTaskModels[index])
+        ReminderTaskRowView(reminderTaskModel: reminderTaskModels[index],
+                            isLogged: reminderIsLogged) {
+            if reminderIsLogged {
+                self.store.deleteTaskLogsFor(at: Date.now, for: task.objectId, completion: nil)
+            } else {
+                self.store.logReminderTask(at: Date.now, for: task.objectId, completion: nil)
             }
         }
     }
@@ -41,6 +58,12 @@ fileprivate struct ReminderTaskRowView: View {
     
     let reminderTaskModel: ReminderTaskModel
     let action: Callback
+    
+    init(reminderTaskModel: ReminderTaskModel, isLogged: Bool, action: @escaping Callback) {
+        self.reminderTaskModel = reminderTaskModel
+        self._logged = .init(initialValue: isLogged)
+        self.action = action
+    }
     
     var body: some View {
         Button {
@@ -68,7 +91,7 @@ fileprivate struct ReminderTaskRowView: View {
                         Image(systemSymbol: .checkmark)
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 20, height: 20, alignment: .center)
+                            .padding(.all, 6)
                             .transition(.symbolEffect(.drawOn, options: .default).animation(.default.delay(0.1)))
                     } else {
                         Circle()
@@ -76,7 +99,7 @@ fileprivate struct ReminderTaskRowView: View {
                             .stroke(Color.gray, style: .init(lineWidth: 1))
                     }
                 }
-                .frame(width: 32, height: 32, alignment: .center)
+                .frame(width: 24, height: 24, alignment: .center)
             }
             .padding(.horizontal, 20)
             .contentShape(Rectangle())

@@ -66,7 +66,7 @@ public struct TimerSheet: View {
             .padding(.vertical, 24)
             
             CueLargeButton {
-                startTimer(selectedReminder, timeDuration)
+                startTimer(selectedReminder, timeDuration - (timeDuration.truncatingRemainder(dividingBy: 60)))
             } content:  {
                 Text("Start Timer")
                     .font(.headline)

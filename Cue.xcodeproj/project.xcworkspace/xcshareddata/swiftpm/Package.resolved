@@ -1,5 +1,5 @@
 {
-  "originHash" : "2fbf3cbbaf89db4f336f1cb08a0bddc4a0800a724fb9d6a3ab201aea8895f5ca",
+  "originHash" : "2b4f9699e88aacda02d8573ed892f15e0af4cd548f53a4213c809d3a07ef9f75",
   "pins" : [
     {
       "identity" : "colortokenskit-swift",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/danielsaidi/EmojiKit.git",
       "state" : {
-        "revision" : "463a8f27b340eb5b4e22c3344f406bbd94c28663",
-        "version" : "2.3.1"
+        "revision" : "623102eea94cabb59c26cb10295dda044790b76c",
+        "version" : "2.3.4"
       }
     },
     {
@@ -62,6 +62,15 @@
       "state" : {
         "revision" : "7b847a3b7008b2dc2f47ca3110d8c782fb2e5c7e",
         "version" : "1.3.0"
+      }
+    },
+    {
+      "identity" : "vanor-ui-library",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/krish11031998-pythonwhisperer/vanor-ui-library",
+      "state" : {
+        "revision" : "f3cbe85e9e971fbbcff45d4a3beb0e12344f1c7b",
+        "version" : "0.2.8"
       }
     }
   ],

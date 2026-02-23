@@ -88,11 +88,9 @@ public class CalendarDay: Hashable, @unchecked Sendable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(date)
         hasher.combine(reminders)
-        hasher.combine(loggedReminders)
-        hasher.combine(loggedReminderTasks)
     }
     
     public static func == (lhs: CalendarDay, rhs: CalendarDay) -> Bool {
-        return lhs.date == rhs.date && lhs.reminders == rhs.reminders && lhs.loggedReminders == rhs.loggedReminders && lhs.loggedReminderTasks == rhs.loggedReminderTasks
+        return lhs.date == rhs.date && lhs.reminders == rhs.reminders
     }
 }

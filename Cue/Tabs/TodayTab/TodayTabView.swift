@@ -101,32 +101,40 @@ struct TodayTabView: View {
                 viewModel.setupCalendarForOneMonth(reminders: store.reminders)
             }
         }
-        .sheet(item: $viewModel.presentation, content: { presentation in
-            switch presentation {
-            case .timer:
-                TimerSheet(reminderModels: viewModel.reminderWithTimer) { selectedReminder, timeDuration in
-                    withAnimation {
-                        self.viewModel.presentation = nil
-                    } completion: {
-                        self.viewModel.fullPresentation = .focusTimer(selectedReminder, timeDuration)
-                    }
-                }
-                .fittedPresentationDetent()
-            }
-        })
-        .fullScreenCover(item: $viewModel.fullPresentation,
-                         content: { sheet in
-            switch sheet {
-            case .calendar:
-                CalendarView {
-                    self.dismiss()
-                    self.presentCreateReminder()
-                }
-            case .focusTimer(let reminderModel, let duration):
-                TimerView(reminder: reminderModel, duration: duration)
-            }
-        })
+        .sheet(item: $viewModel.presentation, content: presentationContent(_:))
+        .fullScreenCover(item: $viewModel.fullPresentation, content: fullScreenPresentationContent(_:))
       
+    }
+    
+    
+    // MARK: - Presentation
+    
+    @ViewBuilder
+    private func presentationContent(_ presentation: TodayViewModel.Presentation) -> some View {
+        switch presentation {
+        case .timer:
+            TimerSheet(reminderModels: viewModel.reminderWithTimer) { selectedReminder, timeDuration in
+                withAnimation {
+                    self.viewModel.presentation = nil
+                } completion: {
+                    self.viewModel.fullPresentation = .focusTimer(selectedReminder, viewModel.reminderForTimerWithTasks(selectedReminder), timeDuration)
+                }
+            }
+            .fittedPresentationDetent()
+        }
+    }
+    
+    @ViewBuilder
+    private func fullScreenPresentationContent(_ presentation: TodayViewModel.FullScreenPresentation) -> some View {
+        switch presentation {
+        case .calendar:
+            CalendarView {
+                self.dismiss()
+                self.presentCreateReminder()
+            }
+        case .focusTimer(let reminderModel, let loggedReminderTasks, let duration):
+            TimerView(reminder: reminderModel, loggedTasks: loggedReminderTasks, duration: duration)
+        }
     }
     
     private func tabView() -> some View {

@@ -12,11 +12,13 @@ import VanorUI
 struct TimerView: View {
     
     let duration: TimeInterval
+    let loggedTasks: Set<ReminderTaskModel>
     @State private var viewModel: TimerViewModel
     @Environment(\.dismiss) var dismiss
     
-    init(reminder: ReminderModel?, duration: TimeInterval) {
+    init(reminder: ReminderModel?, loggedTasks: Set<ReminderTaskModel>, duration: TimeInterval) {
         self.duration = duration
+        self.loggedTasks = loggedTasks
         self._viewModel = .init(initialValue: .init(reminderModel: reminder))
     }
     
@@ -48,13 +50,11 @@ struct TimerView: View {
                     .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }, action: { newValue in
                         self.viewModel.frameOfCountdown = newValue
                     })
-                    
-                    
-                    
                 }
                 .sheet(isPresented: $viewModel.presentSheet, content: {
                     if !viewModel.tasks.isEmpty {
                         TimerReminderTasksView(reminderTaskModels: viewModel.tasks,
+                                               loggedReminders: loggedTasks,
                                                selectedPresentedDetent: nil)
                         .presentationDetents([.height(detentHeight(proxy)), .fraction(0.7)])
                         .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.7)))

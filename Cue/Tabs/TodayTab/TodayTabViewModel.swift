@@ -21,7 +21,7 @@ class TodayViewModel {
     
     enum FullScreenPresentation: Identifiable {
         case calendar
-        case focusTimer(ReminderModel?, TimeInterval)
+        case focusTimer(ReminderModel?, Set<ReminderTaskModel>, TimeInterval)
         
         var id: Int {
             switch self {
@@ -78,5 +78,10 @@ class TodayViewModel {
             
         }
     }
-
+    
+    func reminderForTimerWithTasks(_ reminder: ReminderModel?) -> Set<ReminderTaskModel> {
+        guard let reminder, let todayInCalendar else { return [] }
+        let loggedTasks = todayInCalendar.loggedReminderTasks
+        return Set(reminder.tasks).intersection(Set(loggedTasks))
+    }
 }
