@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krish11031998-pythonwhisperer/vanor-ui-library",
       "state" : {
-        "revision" : "f3cbe85e9e971fbbcff45d4a3beb0e12344f1c7b",
-        "version" : "0.2.8"
+        "revision" : "a459af086af8c5d4ea24033bd03788e5920c413f",
+        "version" : "0.2.9"
       }
     }
   ],

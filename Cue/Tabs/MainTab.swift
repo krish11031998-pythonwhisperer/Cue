@@ -58,6 +58,7 @@ struct MainTab: View {
                 } icon: {
                     Image(systemName: "calendar")
                 }
+                .tint(Color.proSky.baseColor)
             }
             
             if subscriptionManager.userIsPro {
@@ -69,6 +70,7 @@ struct MainTab: View {
                     } icon: {
                         Image(systemSymbol: .clipboardFill)
                     }
+                    .tint(Color.proSky.baseColor)
                     
                 }
             }
@@ -81,6 +83,7 @@ struct MainTab: View {
                 } icon: {
                     Image(systemSymbol: .gearshapeFill)
                 }
+                .tint(Color.proSky.baseColor)
             }
 
             

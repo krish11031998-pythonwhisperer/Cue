@@ -47,7 +47,7 @@ struct ReminderButton: View {
             return .calendar
         case .repeat:
             return .arrow2Squarepath
-        case .symbolAndColor:
+        case .iconSelector:
             fatalError("\(presentation.rawValue) has no symbol")
         }
     }

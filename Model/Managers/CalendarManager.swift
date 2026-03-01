@@ -92,20 +92,22 @@ public class CalendarManager {
     
     nonisolated
     private func fetchReminders(backgroundContext: NSManagedObjectContext) async -> [ReminderModel] {
-        let reminders: [Reminder] = await backgroundContext.perform {
-            Reminder.fetchAll(context: backgroundContext)
+        let reminderModels: [ReminderModel] = await backgroundContext.perform {
+            let reminders = Reminder.fetchAll(context: backgroundContext)
+            return reminders.map { .init(from: $0) }
         }
         
-        return reminders.map { .init(from: $0) }
+        return reminderModels
     }
     
     nonisolated
     private func fetchReminderWithTags(backgroundContext: NSManagedObjectContext, names: [String]) async -> [ReminderModel] {
-        let reminders: [Reminder] = await backgroundContext.perform {
-            Reminder.fetchRemindersWithTags(context: backgroundContext, names: names)
+        let reminderModels: [ReminderModel] = await backgroundContext.perform {
+            let reminders = Reminder.fetchRemindersWithTags(context: backgroundContext, names: names)
+            return reminders.map { .init(from: $0) }
         }
         
-        return reminders.map { .init(from: $0) }
+        return reminderModels
     }
     
     nonisolated
@@ -137,18 +139,18 @@ public class CalendarManager {
     
     nonisolated
     private func retrieveCalendayDay(backgroundContext: NSManagedObjectContext, date: Date, reminders: [ReminderModel]) async -> CalendarDay {
-        let reminderLogs = await backgroundContext.perform {
-            CueLog.fetchLogsWithinTimeRange(context: backgroundContext, startTime: date.startOfDay, endTime: date.endOfDay)
-        }
-        
-        var loggedReminders: [CalendarDay.LoggedReminder] = []
-        var loggedReminderTasks: [ReminderTaskModel] = []
-        reminderLogs.forEach { cueLog in
-            if let reminderLog = cueLog as? ReminderLog {
-                loggedReminders.append(.init(date: reminderLog.date, reminder: .init(from: reminderLog.reminder)))
-            } else if let reminderTasks = cueLog as? ReminderTaskLog {
-                loggedReminderTasks.append(.init(from: reminderTasks.reminderTask))
+        let (loggedReminders, loggedReminderTasks): ([CalendarDay.LoggedReminder], [ReminderTaskModel]) = await backgroundContext.perform {
+            let reminderLogs = CueLog.fetchLogsWithinTimeRange(context: backgroundContext, startTime: date.startOfDay, endTime: date.endOfDay)
+            var loggedReminders: [CalendarDay.LoggedReminder] = []
+            var loggedReminderTasks: [ReminderTaskModel] = []
+            reminderLogs.forEach { cueLog in
+                if let reminderLog = cueLog as? ReminderLog {
+                    loggedReminders.append(.init(date: reminderLog.date, reminder: .init(from: reminderLog.reminder)))
+                } else if let reminderTasks = cueLog as? ReminderTaskLog {
+                    loggedReminderTasks.append(.init(from: reminderTasks.reminderTask))
+                }
             }
+            return (loggedReminders, loggedReminderTasks)
         }
         
         return CalendarDay(date: date, reminders: reminders, loggedReminders: loggedReminders, loggedReminderTasks: loggedReminderTasks)

@@ -36,7 +36,7 @@ struct CreateReminderView: View {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     CreateReminderImageButton(color: viewModel.color,
                                               icon: viewModel.icon) {
-                        viewModel.calendarPresentation = .symbolAndColor
+                        viewModel.calendarPresentation = .iconSelector
                     }
                     .aspectRatio(1, contentMode: .fit)
                     .frame(width: 108, alignment: .center)
@@ -135,13 +135,14 @@ struct CreateReminderView: View {
                         viewModel.scheduleBuilder = $0
                     }
                         .fittedPresentationDetent()
-                case .symbolAndColor:
+                case .iconSelector:
                     SymbolSheet(selectedIcon: $viewModel.icon,
                                 color: $viewModel.color)
                     .presentationDetents([.fraction(0.5), .height(.totalHeight - viewModel.imageFrame.maxY)])
                     .presentationDragIndicator(.automatic)
                     .presentationBackground(.clear)
-                    .presentationContentInteraction(.scrolls)
+                    .presentationBackgroundInteraction(.enabled(upThrough: .height(.totalHeight - viewModel.imageFrame.maxY)))
+                    .presentationContentInteraction(.resizes)
                 }
             }
             .navigationTransition(.zoom(sourceID: sheet, in: animation))
@@ -173,7 +174,7 @@ struct CreateReminderView: View {
         case .duration:
             // Check for alarm
             self.viewModel.calendarPresentation = presentation
-        case .date, .repeat, .symbolAndColor:
+        case .date, .repeat, .iconSelector:
             self.viewModel.calendarPresentation = presentation
         }
     }

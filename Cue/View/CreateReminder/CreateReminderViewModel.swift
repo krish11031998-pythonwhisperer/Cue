@@ -20,7 +20,7 @@ class CreateReminderViewModel {
         case duration = "Duration"
         case date = "Date"
         case `repeat` = "Repeat"
-        case symbolAndColor = "Symbol And Color"
+        case iconSelector = "Symbol And Color"
         
         var id: String { self.rawValue }
         
@@ -173,7 +173,7 @@ class CreateReminderViewModel {
             dateString
         case .repeat:
             scheduleString
-        case .symbolAndColor:
+        case .iconSelector:
             fatalError("No Button with title for \(presentation.rawValue)")
         }
     }
@@ -216,7 +216,10 @@ class CreateReminderViewModel {
         }
 
         for(index, task) in tasks.enumerated() {
-            let viewType = ReminderTaskView.ViewType.displayOnly(edit(index), delete(index))
+            let viewType = ReminderTaskView.ViewType.displayOnly(edit(index), delete(index)) { [weak self] in
+                print("(DEBUG) tapped on icon!")
+                self?.calendarPresentation = .iconSelector
+            }
         
             let model = ReminderTaskView.Model(taskTitle: task.title,
                                                icon: task.icon,

@@ -110,11 +110,11 @@ fileprivate struct ReminderTaskRowView: View {
             guard taskToSelected else { return }
             if logged {
                 self.store.deleteTaskLogsFor(at: .now, for: reminderTaskModel.objectId) { wasSuccess in
-                    self.logged = wasSuccess
+                    self.logged = false
                 }
             } else {
                 self.store.logReminderTask(at: .now, for: reminderTaskModel.objectId) { wasSuccess in
-                    self.logged = wasSuccess
+                    self.logged = true
                 }
             }
         }
