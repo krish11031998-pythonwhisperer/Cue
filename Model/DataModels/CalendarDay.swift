@@ -50,7 +50,10 @@ public class CalendarDay: Hashable, @unchecked Sendable {
             }
             
             return false
-        }
+        }.sorted(by: {
+            guard let lhsSchedule = $0.schedule, let rhsSchedule = $1.schedule else { return false }
+            return lhsSchedule < rhsSchedule
+        })
     }
     
     private func checkIfDateIsInWeekInterval(startDate: Date, intervalWeeks: Int) -> Bool {

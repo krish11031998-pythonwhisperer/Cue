@@ -17,106 +17,111 @@ struct CreateReminderView: View {
         case create
         case edit(ReminderModel)
     }
-
+    
     @Environment(SubscriptionManager.self) var subscriptionManager
     @State private var viewModel: CreateReminderViewModel
     @Namespace private var animation
     @Environment(\.dismiss) var dismiss
     @FocusState var textFieldIsFocused: Bool
+    private var dismissActionFromParent: Callback?
     private let mode: Mode
     
-    init(mode: Mode, store: Store) {
+    init(mode: Mode, store: Store, dismissActionFromParent: Callback? = nil) {
         self.mode = mode
-        self._viewModel = .init(initialValue: .init(store: store))
+        self.viewModel = .init(store: store)
+        self.dismissActionFromParent = dismissActionFromParent
     }
     
     var body: some View {
-        NavigationView {
-            ScrollView(.vertical) {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    CreateReminderImageButton(color: viewModel.color,
-                                              icon: viewModel.icon) {
-                        viewModel.calendarPresentation = .iconSelector
-                    }
-                    .aspectRatio(1, contentMode: .fit)
-                    .frame(width: 108, alignment: .center)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.bottom, 32)
-                    .onGeometryChange(for: CGRect.self,
-                                      of: { $0.frame(in: .global) },
-                                      action: { viewModel.imageFrame = $0 })
-                    
-                    TextField("What would you like to be reminded of?",
-                              text: $viewModel.reminderTitle,
-                              axis: .vertical)
-                    .font(.title3)
-                    .fontWeight(.medium)
-                    .submitLabel(.go)
-                    .focused($textFieldIsFocused)
-                    .autoDismissOnReturn(text: $viewModel.reminderTitle) {
-                        self.textFieldIsFocused = false
-                    }
-                    
-                    if let tagString = viewModel.tagString {
-                        HStack(alignment: .top, spacing: 8) {
-                            Image(systemSymbol: .tagFill)
-                            Text(tagString)
-                                .fontWeight(.semibold)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .multilineTextAlignment(.leading)
-                        }
-                        .font(.footnote)
-                        .foregroundStyle(Color.tertiaryText)
-                        .padding(.top, 12)
-                        .transition(.popIn)
-                    }
-                    
-                    OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 10) {
-                        ForEach(CreateReminderViewModel.ReminderCalendarPresentation.allCases) { presentation in
-                            ReminderButton(presentation: presentation,
-                                           buttonTitle: viewModel.buttonTitleForElement(presentation),
-                                           animation: animation, action: presentReminderButtonTap(_:))
-                        }
-                    }
-                    .padding(.top, 16)
-                    
-                    CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions, isLoadingSuggestions: viewModel.isLoadingSuggestions,
-                                            taskViewModels: viewModel.taskViewModels) { taskName in
-                        withAnimation(.easeInOut) {
-                            textFieldIsFocused = false
-                            viewModel.addTask(title: taskName)
-                        }
-                    } deleteTask: { _ in
-                        print("(DEBUG) tapped on delete")
-                    } generateTasks: {
-                        textFieldIsFocused = false
-                        viewModel.suggestionSubtasks()
-                    }
-                    .padding(.top, 32)
-                    .animation(.default, value: viewModel.taskViewModels)
-
+        ScrollView(.vertical) {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                CreateReminderImageButton(color: viewModel.color,
+                                          icon: viewModel.icon) { [weak viewModel] in
+                    viewModel?.calendarPresentation = .iconSelector
                 }
-                .padding(.horizontal, 20)
-            }
-            .toolbar {
-                if subscriptionManager.userIsPro {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("", systemSymbol: .tagFill) {
-                            viewModel.presentation = .tags
-                        }
-                    }
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(role: .confirm) {
-                        viewModel.createReminder()
-                        self.dismiss()
-                    }
-                    .tint(Color.proSky.baseColor)
-                    .disabled(!viewModel.canCreateReminder)
+                .aspectRatio(1, contentMode: .fit)
+                .frame(width: 108, alignment: .center)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.bottom, 32)
+                .onGeometryChange(for: CGRect.self,
+                                  of: { $0.frame(in: .global) },
+                                  action: { [weak viewModel] in viewModel?.imageFrame = $0 })
+                
+                TextField("What would you like to be reminded of?",
+                          text: $viewModel.reminderTitle,
+                          axis: .vertical)
+                .font(.title3)
+                .fontWeight(.medium)
+                .submitLabel(.go)
+                .focused($textFieldIsFocused)
+                .autoDismissOnReturn(text: $viewModel.reminderTitle) {
+                    self.textFieldIsFocused = false
                 }
                 
+                if let tagString = viewModel.tagString {
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemSymbol: .tagFill)
+                        Text(tagString)
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(Color.tertiaryText)
+                    .padding(.top, 12)
+                    .transition(.popIn)
+                }
+                
+                OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 10) {
+                    ForEach(CreateReminderViewModel.ReminderCalendarPresentation.allCases) { presentation in
+                        ReminderButton(presentation: presentation,
+                                       buttonTitle: viewModel.buttonTitleForElement(presentation),
+                                       animation: animation, action: presentReminderButtonTap(_:))
+                    }
+                }
+                .padding(.top, 16)
+                
+                CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions,
+                                        isLoadingSuggestions: viewModel.isLoadingSuggestions,
+                                        taskViewModels: viewModel.taskViewModels) { [weak viewModel] taskName in
+                    withAnimation(.easeInOut) {
+                        textFieldIsFocused = false
+                        viewModel?.addTask(title: taskName)
+                    }
+                } deleteTask: { _ in
+                    print("(DEBUG) tapped on delete")
+                } generateTasks: { [weak viewModel] in
+                    textFieldIsFocused = false
+                    viewModel?.suggestionSubtasks()
+                }
+                .padding(.top, 32)
+                .animation(.default, value: viewModel.taskViewModels)
+                
             }
+            .padding(.horizontal, 20)
+        }
+        .toolbar {
+            if subscriptionManager.userIsPro {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("", systemSymbol: .tagFill) { [weak viewModel] in
+                        viewModel?.presentation = .tags
+                    }
+                }
+            }
+            
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(role: .confirm) { [weak viewModel] in
+                    viewModel?.createReminder()
+                    if let dismissActionFromParent {
+                        dismissActionFromParent()
+                    } else {
+                        self.dismiss()
+                    }
+                }
+                .tint(Color.proSky.baseColor)
+                .disabled(!viewModel.canCreateReminder)
+            }
+            
         }
         .sheet(item: $viewModel.calendarPresentation, onDismiss: onDismiss) { sheet in
             Group {
@@ -129,37 +134,35 @@ struct CreateReminderView: View {
                         .fittedPresentationDetent()
                 case .date:
                     DatePickerView.date("Reminder Start Date", date: $viewModel.date)
-                    .fittedPresentationDetent()
-                case .repeat:
-                    ReminderWeekPlannerView(selectedDays: viewModel.scheduleBuilder.weekdays ?? [], weekInterval: viewModel.scheduleBuilder.intervalWeek ?? 1, datesInMonth: viewModel.scheduleBuilder.dates ?? [], reminderType: viewModel.scheduleBuilder.dates != nil ? .monthly : .weekly) {
-                        viewModel.scheduleBuilder = $0
-                    }
                         .fittedPresentationDetent()
+                case .repeat:
+                    ReminderWeekPlannerView(selectedDays: viewModel.scheduleBuilder.weekdays ?? [], weekInterval: viewModel.scheduleBuilder.intervalWeek ?? 1, datesInMonth: viewModel.scheduleBuilder.dates ?? [], reminderType: viewModel.scheduleBuilder.dates != nil ? .monthly : .weekly) { [weak viewModel] in
+                        viewModel?.scheduleBuilder = $0
+                    }
+                    .fittedPresentationDetent()
                 case .iconSelector:
                     SymbolSheet(selectedIcon: $viewModel.icon,
                                 color: $viewModel.color)
                     .presentationDetents([.fraction(0.5), .height(.totalHeight - viewModel.imageFrame.maxY)])
                     .presentationDragIndicator(.automatic)
-                    .presentationBackground(.clear)
-                    .presentationBackgroundInteraction(.enabled(upThrough: .height(.totalHeight - viewModel.imageFrame.maxY)))
+                    .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.5)))
                     .presentationContentInteraction(.resizes)
                 }
             }
-            .navigationTransition(.zoom(sourceID: sheet, in: animation))
         }
         .sheet(item: $viewModel.presentation) { presentation in
             switch presentation {
             case .tags:
-                TagView(preSelected: viewModel.tags) {
-                    viewModel.tags = $0
+                TagView(preSelected: viewModel.tags) { [weak viewModel] in
+                    viewModel?.tags = $0
                 }
             }
         }
-        .task(id: mode) {
+        .task(id: mode) { [weak viewModel] in
             guard case .edit(let reminderModel) = mode else {
                 return
             }
-            viewModel.updateBasedOnMode(reminderModel: reminderModel)
+            viewModel?.updateBasedOnMode(reminderModel: reminderModel)
         }
     }
     

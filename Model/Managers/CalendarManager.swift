@@ -14,8 +14,8 @@ public class CalendarManager {
     
     public func setupCalendarForOneMonthFromToday() async -> [CalendarDay] {
         let dayInWeek = Date.now.day
-        let start = Calendar.current.date(byAdding: .day, value: -13, to: Date.now.startOfDay)!
-        let end = Calendar.current.date(byAdding: .day, value: 14, to: Date.now.startOfDay)!
+        let start = Calendar.current.date(byAdding: .weekOfYear, value: -2, to: Date.now)!.startOfWeek
+        let end = Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.date(byAdding: .weekOfYear, value: 2, to: Date.now)!.endOfWeek)!
         
         var currentDate = start
         var dates: [Date] = []
@@ -113,10 +113,10 @@ public class CalendarManager {
     nonisolated
     private func fetchCalendarDay(backgroundContext: NSManagedObjectContext, dates: [Date], reminderModels: [ReminderModel]) async -> [Date: CalendarDay] {
         let calendarValues: [Date: CalendarDay] = await withTaskGroup(of: CalendarDay?.self) { group in
+            var count: Int = 0
             for date in dates {
                 group.addTask { [weak self] in
                     guard !Task.isCancelled else { return nil }
-                    
                     if let self {
                         return await self.retrieveCalendayDay(backgroundContext: backgroundContext, date: date, reminders: reminderModels)
                     } else {
@@ -130,6 +130,7 @@ public class CalendarManager {
                 if let calendarDay {
                     calendayDaysMap[calendarDay.date] = calendarDay
                 }
+                count += 1
             }
             return calendayDaysMap
         }

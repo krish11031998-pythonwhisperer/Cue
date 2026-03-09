@@ -121,6 +121,7 @@ public class NotificationScheduler: NSObject, UNUserNotificationCenterDelegate {
     
     private func triggers(startDate: Date, hour: Int, minute: Int, for weekdays: [Int], intervalWeeks: Int, prefixID: String) -> [(String, UNCalendarNotificationTrigger)] {
         var triggers: [(String, UNCalendarNotificationTrigger)] = []
+        guard intervalWeeks >= 1 else { return triggers }
         if intervalWeeks == 1 {
             weekdays.forEach { weekday in
                 let weekdayTrigger = triggerForWeekday(hour: hour, minute: minute, weekday: weekday, week: nil, prefixID: prefixID)

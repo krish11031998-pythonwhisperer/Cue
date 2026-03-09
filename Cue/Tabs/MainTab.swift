@@ -9,12 +9,20 @@ import SwiftUI
 import VanorUI
 import Model
 
+struct IsTodayPreferenceKey: PreferenceKey {
+    static var defaultValue: Bool = true
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+    }
+    
+}
+
 struct MainTab: View {
     
     enum Tabs: Hashable {
         case home
         case organize
-        case settings
+        case calendar
+        case focus
         case create
     }
     
@@ -31,6 +39,7 @@ struct MainTab: View {
         var id: String { rawValue }
     }
     
+    @State private var isToday: Bool = true
     @Environment(Store.self) var store
     @Environment(SubscriptionManager.self) var subscriptionManager
     private let hasShowOnboarding: Bool
@@ -54,11 +63,34 @@ struct MainTab: View {
                 .ignoresSafeArea(edges: .bottom)
             } label: {
                 Label {
-                    Text("Reminders")
+                    Text("")
                 } icon: {
-                    Image(systemName: "calendar")
+                    Image(systemSymbol: .checkmarkCircleFill)
+                        .font(.body)
                 }
                 .tint(Color.proSky.baseColor)
+            }
+            
+            Tab(value: .calendar) {
+                CalendarView {
+                    self.presentCreateReminder = true
+                }
+            } label: {
+                Label {
+                    Text("")
+                } icon: {
+                    Image(systemSymbol: .calendar)
+                        .font(.body)
+                }
+                .tint(Color.proSky.baseColor)
+            }
+            
+            Tab(value: .focus) {
+                FocusTimerTabView()
+            } label: {
+                Image(systemSymbol: .hourglass)
+                    .font(.body)
+                    .tint(Color.proSky.baseColor)
             }
             
             if subscriptionManager.userIsPro {
@@ -66,31 +98,49 @@ struct MainTab: View {
                     OrangizeTabView()
                 } label: {
                     Label {
-                        Text("Organize")
+                        Text("")
                     } icon: {
-                        Image(systemSymbol: .clipboardFill)
+                        Image(systemSymbol: .folder)
+                            .font(.body)
                     }
                     .tint(Color.proSky.baseColor)
-                    
                 }
             }
-            
-            Tab(value: Tabs.settings) {
-                SettingView()
-            } label: {
-                Label {
-                    Text("Settings")
-                } icon: {
-                    Image(systemSymbol: .gearshapeFill)
-                }
-                .tint(Color.proSky.baseColor)
-            }
-
             
             Tab("", systemImage: "plus", value: .create, role: .search) {
                 Color.clear
             }
         }
+        .optionalBottomAccessoryView(selectedTab: selectedTab, enabledTabs: [.home]) { selectedTab in
+            switch selectedTab {
+            case .home:
+                Group {
+                    if !isToday {
+                        Button {
+                            // Do soemthing
+                        } label: {
+                            Text("today")
+                                .font(.bitcountMedium(style: .headline))
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        HStack(alignment: .center, spacing: 4) {
+                            Text("Tasks")
+                                .font(.headline)
+                            TimeCompactSwiftUIView(model: .init(elements: []), date: .now)
+                                .padding(.horizontal, 20)
+                        }
+                    }
+                }
+                .padding(.all, 16)
+            default:
+                EmptyView()
+            }
+        }
+        .onPreferenceChange(IsTodayPreferenceKey.self, perform: {
+            self.isToday = $0
+        })
+        .tabBarMinimizeBehavior(.onScrollDown)
         .ignoresSafeArea(edges: .bottom)
         .onChange(of: selectedTab) { oldValue, newValue in
             if newValue == .create {
@@ -108,8 +158,9 @@ struct MainTab: View {
                 presentPayWall = true
             }
         }) {
-            CreateReminderView(mode: .create, store: store)
+            CreateReminderRootView(store: store)
                 .presentationDetents([.fraction(1)])
+                .interactiveDismissDisabled(true)
         }
         .sheet(isPresented: $presentPayWall) {
             CuePaywallView()

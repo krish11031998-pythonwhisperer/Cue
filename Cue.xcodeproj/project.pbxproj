@@ -30,7 +30,7 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		EF079D952F1BFFC600986EF8 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
+			buildActionMask = 12;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
@@ -54,6 +54,7 @@
 /* Begin PBXFileReference section */
 		EF079D722F1BE5EC00986EF8 /* Kyu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kyu.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EF079D8A2F1BFFC600986EF8 /* Model.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Model.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		EF15EF692F6ED37F00334FDC /* vanor-ui-library */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vanor-ui-library"; path = "../Shipyard/vanor-ui-library"; sourceTree = SOURCE_ROOT; };
 		EF2950F12F38B18300FEAD32 /* Kyu-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Kyu-Info.plist"; sourceTree = "<group>"; };
 		EF2950FA2F38BDF800FEAD32 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		EF2950FC2F38BDF800FEAD32 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -105,6 +106,7 @@
 				EF079D8B2F1BFFC600986EF8 /* Model */,
 				EF32251F2F1EF02B0054901C /* Frameworks */,
 				EF079D732F1BE5EC00986EF8 /* Products */,
+				EF15EF692F6ED37F00334FDC /* vanor-ui-library */,
 			);
 			sourceTree = "<group>";
 		};
@@ -339,7 +341,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited) KARINA_TESTING";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -416,6 +418,7 @@
 				INFOPLIST_FILE = "Kyu-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "cue:it";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "cue:it will access on deivec microphone for audio - text transcribing features.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -458,6 +461,7 @@
 				INFOPLIST_FILE = "Kyu-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "cue:it";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "cue:it will access on deivec microphone for audio - text transcribing features.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
