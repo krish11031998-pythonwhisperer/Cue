@@ -97,6 +97,7 @@ struct SettingView: View {
         }
     }
     
+    @Environment(\.dismiss) var dismiss
     @Environment(Store.self) var store
     @Environment(SubscriptionManager.self) var subscriptionManager
     @State private var presentation: Presentation?
@@ -138,6 +139,12 @@ struct SettingView: View {
                     Text("Settings")
                         .font(.largeTitle)
                         .fontWeight(.semibold)
+                }
+                
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(role: .close) {
+                        self.dismiss()
+                    }
                 }
             }
         }

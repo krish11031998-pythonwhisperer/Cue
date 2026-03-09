@@ -48,32 +48,18 @@ struct TodayTabView: View {
                 }
             }
             .toolbar {
-                if viewModel.today.isToday == false {
-                    ToolbarItem(placement: .title) {
-                        Button {
-                            withAnimation(.easeInOut) {
-                                self.viewModel.today = Date.now.startOfDay
-                            }
-                        } label: {
-                            Text("Today")
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                        }
-                        .buttonStyle(.glass)
-                    }
-                }
-                
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         withAnimation(.easeInOut) {
-                            self.viewModel.fullPresentation = .calendar
+                            self.viewModel.fullPresentation = .settings
                         }
                     } label: {
-                        Image(systemSymbol: .calendar)
+                        Image(systemSymbol: .gearshape)
                             .font(.headline)
                     }
                 }
                 
+                #if !KARINA_TESTING
                 if subscriptionManager.userIsPro {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
@@ -86,8 +72,10 @@ struct TodayTabView: View {
                         .tint(Color.proSky.baseColor)
                     }
                 }
+                #endif
             }
         }
+        .preference(key: IsTodayPreferenceKey.self, value: viewModel.todayCalendar?.date == viewModel.today)
         .onChange(of: viewModel.today, { _, _ in
             if store.user?.hapticsEnabled == true {
                 SensoryFeedbackManager.shared.playSelection()                
@@ -128,12 +116,23 @@ struct TodayTabView: View {
     private func fullScreenPresentationContent(_ presentation: TodayViewModel.FullScreenPresentation) -> some View {
         switch presentation {
         case .calendar:
-            CalendarView {
-                self.dismiss()
-                self.presentCreateReminder()
+            NavigationView {
+                CalendarView {
+                    self.dismiss()
+                    self.presentCreateReminder()
+                }
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("", systemSymbol: .xmark) {
+                            dismiss()
+                        }
+                    }
+                }
             }
         case .focusTimer(let reminderModel, let loggedReminderTasks, let duration):
             TimerView(reminder: reminderModel, loggedTasks: loggedReminderTasks, duration: duration)
+        case .settings:
+            SettingView()
         }
     }
     
@@ -142,18 +141,23 @@ struct TodayTabView: View {
             ForEach(viewModel.calendarDay, id: \.date) { calendarDay in
                 CalendarDayView(store: store, calendarDay: calendarDay, presentCreateReminder: presentCreateReminder)
                     .tag(calendarDay.date)
-                    .environment(\.timeCompactViewTopPadding, topPadding)
             }
         }
+        .background {
+            Color.cueItBackground
+                .ignoresSafeArea(.all)
+        }
+        .environment(\.screenPadding, .init(topPadding: topPadding, bottomPadding: 83))
         .tabViewStyle(.page(indexDisplayMode: .never))
         .indexViewStyle(.page(backgroundDisplayMode: .never))
+        .ignoresSafeArea(edges: .all)
         .safeAreaBar(edge: .top, alignment: .center, spacing: 0, content: {
             CalendarDateCarousel(dateElements: viewModel.calendarDay, selectedDate: viewModel.todayInCalendar)
                 .background { Color.clear }
                 .scrollIndicators(.hidden)
                 .fixedSize(horizontal: false, vertical: true)
-                .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
-                    self.topPadding = newValue.height
+                .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newValue in
+                    self.topPadding = newValue.maxY
                 }
                 .disabled(true)
         })

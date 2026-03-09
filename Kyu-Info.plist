@@ -4,5 +4,13 @@
 <dict>
 	<key>NSAlarmKitUsageDescription</key>
 	<string>Cue:it uses alarms to power your Focus Timer and task alerts.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>BitcountSingle-Light.tff</string>
+		<string>BitcountSingle-Medium.ttf</string>
+		<string>BitcountSingle-Regular.ttf</string>
+		<string>BitcountSingle-SemiBold.ttf</string>
+		<string>BitcountSingle-Bold.ttf</string>
+	</array>
 </dict>
 </plist>

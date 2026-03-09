@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct ReminderSchedule: Hashable, Sendable {
+public struct ReminderSchedule: Hashable, Comparable, Sendable {
     public let hour: Int
     public let minute: Int
     public let intervalWeeks: Int?
@@ -35,5 +35,16 @@ public struct ReminderSchedule: Hashable, Sendable {
         dateComponents.hour = hour
         dateComponents.minute = minute
         return dateComponents.date ?? .now
+    }
+    
+    public var scheduleForToday: Date {
+        var dateComponents = Calendar.current.dateComponents([.minute, .hour, .day, .month, .year, .calendar], from: .now)
+        dateComponents.hour = hour
+        dateComponents.minute = minute
+        return dateComponents.date ?? .now
+    }
+    
+    public static func < (lhs: ReminderSchedule, rhs: ReminderSchedule) -> Bool {
+        return lhs.timeScheduled < rhs.timeScheduled
     }
 }

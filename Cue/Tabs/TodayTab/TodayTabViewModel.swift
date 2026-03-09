@@ -21,6 +21,7 @@ class TodayViewModel {
     
     enum FullScreenPresentation: Identifiable {
         case calendar
+        case settings
         case focusTimer(ReminderModel?, Set<ReminderTaskModel>, TimeInterval)
         
         var id: Int {
@@ -29,6 +30,8 @@ class TodayViewModel {
                 return 0
             case .focusTimer:
                 return 1
+            case .settings:
+                return 2
             }
         }
     }

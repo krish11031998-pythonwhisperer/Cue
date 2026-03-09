@@ -9,13 +9,22 @@ import SwiftUI
 import VanorUI
 import Model
 
-internal struct TimeCompactViewTopPaddingEnvironmentKey: @MainActor EnvironmentKey {
-    @MainActor static var defaultValue: CGFloat = 0
+struct ScreenVerticalPadding {
+    let topPadding: CGFloat
+    let bottomPadding: CGFloat
+    
+    static func zero() -> Self {
+        return .init(topPadding: 0, bottomPadding: 0)
+    }
 }
 
-public extension EnvironmentValues {
+internal struct TimeCompactViewTopPaddingEnvironmentKey: @MainActor EnvironmentKey {
+    @MainActor static var defaultValue: ScreenVerticalPadding = .zero()
+}
+
+extension EnvironmentValues {
     @MainActor
-    var timeCompactViewTopPadding: CGFloat {
+    var screenPadding: ScreenVerticalPadding {
         get {
             self[TimeCompactViewTopPaddingEnvironmentKey.self]
         } set {
@@ -43,7 +52,7 @@ public struct CalendarDayView: View {
     @State private var presentation: Presentation? = nil
     @State private var addReminder: Bool = false
     @State private var viewModel: CalendarDayViewModel
-    @Environment(\.timeCompactViewTopPadding) var topPadding
+    @Environment(\.screenPadding) var screenPadding
     
     init (store: Store, calendarDay: CalendarDay, presentCreateReminder: @escaping () -> Void) {
         self._viewModel = .init(initialValue: .init(calendarDate: calendarDay.date, store: store))
@@ -59,9 +68,19 @@ public struct CalendarDayView: View {
     public var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                DateView(todayModel: .init(date: date,
-                                           mode: date.isToday ? .arc(viewModel.timelineElements) : .noArc))
-                    .padding(.bottom, 32)
+//                DateView(todayModel: .init(date: date,
+//                                           mode: date.isToday ? .arc(viewModel.timelineElements) : .noArc))
+//                    .padding(.bottom, 32)
+                VStack(alignment: .center, spacing: 4) {
+                    Text(Calendar.current.weekdaySymbols[date.weekDayValue - 1].lowercased())
+                        .font(.bitcountMedium(style: .extraLargeTitle))
+                    Text(date.headerDateStringFormatter())
+                        .font(.subheadline)
+                }
+                .padding(.bottom, 10)
+                .padding(.top, 10)
+                .frame(maxWidth: .infinity, alignment: .center)
+                
                 if !calendarDay.reminders.isEmpty {
                     ForEach(viewModel.sections) { section in
                         Section {
@@ -71,48 +90,56 @@ public struct CalendarDayView: View {
                                 } label: {
                                     ReminderView(model: model.viewConfig)
                                         .id(model)
-                                        .padding(.bottom, 8)
+                                        .padding(.bottom, 10)
                                 }
                                 .buttonStyle(.plain)
                             }
                         } header: {
-                            SectionHeader(section: section.timeOfDay)
+                            SectionHeader(section: section.timeOfDay, hasTasks: !section.reminders.isEmpty)
                                 .padding(.bottom, 8)
+                        } footer: {
+                            Color.clear
+                                .frame(height: 14, alignment: .center)
                         }
-                        .padding(.bottom, 12)
                     }
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, 12)
+            .padding(.top, screenPadding.topPadding)
+            .padding(.bottom, screenPadding.bottomPadding)
         }
         .task(id: calendarDay) {
             self.viewModel.sections(calendarDay: calendarDay)
             self.viewModel.loggedReminders(calendarDay.loggedReminders)
         }
-        .ignoresSafeArea(edges: .bottom)
-        .scrollEdgeEffectStyle(.soft, for: .bottom)
+        .scrollEdgeEffectStyle(.soft, for: .all)
         .sheet(item: $presentation, content: { presentation in
             switch presentation {
             case .editReminder(let model):
-                CreateReminderView(mode: .edit(model), store: store)
-                    .presentationDetents([.fraction(1)])
+                NavigationView {
+                    CreateReminderView(mode: .edit(model), store: store)
+                }
+                .presentationDetents([.fraction(1)])
             }
         })
         .overlay(alignment: .center) {
             if calendarDay.reminders.isEmpty {
                 ContentUnavailableView {
+                    #if KARINA_TESTING
+                    #else
                     Image(systemSymbol: .squareSlash)
                         .resizable()
                         .scaledToFit()
                         .frame(width: 120, height: 120, alignment: .center)
+                    #endif
                 } description: {
-                    Text("There is nothing in the Cue yet.")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .fontWeight(.semibold)
-                        .padding(.top, 12)
+                    Text("there is nothing in the cue yet.")
+                        .font(.bitcountRegular(style: .title3))
+//                        .font(.title3)
+//                        .fontWeight(.semibold)
+//                        .padding(.top, 12)
                 } actions: {
+                    #if !KARINA_TESTING
                     Button {
                         self.presentCreateReminder()
                     } label: {
@@ -122,6 +149,7 @@ public struct CalendarDayView: View {
                             .font(.headline)
                     }
                     .buttonStyle(.glass)
+                    #endif
                 }
             }
         }
@@ -141,16 +169,21 @@ public struct CalendarDayView: View {
     struct SectionHeader: View {
         
         let section: CalendarDayViewModel.TimeOfDay
+        let hasTasks: Bool
         
         var body: some View {
-            HStack(alignment: .bottom, spacing: 4) {
-                Image(systemSymbol: section.symbol)
-                Text(section.title)
+            HStack(alignment: .center, spacing: 4) {
+//                Image(systemSymbol: section.symbol)
+                Text(section.title.lowercased())
+                    .font(hasTasks ? .bitcountMedium(style: .title3) : .bitcountRegular(style: .title3))
+                Image(systemSymbol: .chevronDown)
+                    .font(.caption2)
             }
-            .font(.footnote)
-            .fontWeight(.medium)
-            .padding(.init(top: 6, leading: 12, bottom: 6, trailing: 12))
-            .background(section.color.surfacePrimary, in: .capsule)
+//            .font(.footnote)
+//            .fontWeight(.medium)
+//            .padding(.init(top: 6, leading: 12, bottom: 6, trailing: 12))
+//            .background(section.color.surfacePrimary, in: .capsule)
         }
     }
 }
+//

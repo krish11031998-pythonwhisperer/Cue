@@ -210,8 +210,8 @@ class CreateReminderViewModel {
                 let task = self?.tasks[index]
                 if let objectID = task?.objectID {
                     self?.store.deleteReminderTask(reminderTaskID: objectID)
-                    self?.tasks.remove(at: index)
                 }
+                self?.tasks.remove(at: index)
             }
         }
 

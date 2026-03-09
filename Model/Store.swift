@@ -23,6 +23,8 @@ import UIKit
     @ObservationIgnored
     public private(set) var alarmManager: CueAlarmManager
     
+    
+    public private(set) var loggedTasksToday: Set<ReminderLog> = .init()
     public var viewContext: NSManagedObjectContext {
         CoreDataManager.shared.persistentContainer.viewContext
     }
@@ -53,18 +55,19 @@ import UIKit
             for await _ in remindersChangeStream {
                 if let context = self?.viewContext {
                     let reminders = Reminder.fetchAll(context: context)
+//                    self?.reminders = self?.deleteRemindersWithWrongDate(reminders) ?? reminders
                     self?.reminders = reminders
                 }
             }
         }
         
-        Task { @MainActor [weak self] in
-            for await _ in reminderTasksChangeStream {
-                if let context = self?.viewContext {
-                    let reminderTask = ReminderTask.fetchAll(context: context)
-                }
-            }
-        }
+//        Task { @MainActor [weak self] in
+//            for await _ in reminderTasksChangeStream {
+//                if let context = self?.viewContext {
+//                    let _ = ReminderTask.fetchAll(context: context)
+//                }
+//            }
+//        }
         
         Task { @MainActor [weak self] in
             for await _ in tagsChangeStream {
@@ -82,6 +85,16 @@ import UIKit
     
     public var hasLoggedTasks: AsyncStream<Void> {
         self.viewContext.changesStream(for: ReminderTaskLog.self, changeTypes: [.inserted, .deleted, .updated])
+    }
+    
+    
+    private func deleteRemindersWithWrongDate(_ reminders: [Reminder]) -> [Reminder] {
+        var validReminders: Set<Reminder> = Set(reminders)
+        for reminder in reminders where reminder.date.isToday {
+            validReminders.remove(reminder)
+            reminder.delete(context: viewContext)
+        }
+        return Array(validReminders)
     }
     
     

@@ -46,30 +46,21 @@ struct CalendarView: View {
     }
     
     var body: some View {
-        NavigationView {
-            ScrollView(.vertical) {
-                LazyVGrid(columns: [.init(.adaptive(minimum: max(44, size.width / 7).rounded(.down)),
-                                          spacing: 0,
-                                          alignment: .center)],
-                          alignment: .center,
-                          spacing: 8) {
-                    ForEach(viewModel.calendarData) { section in
-                        sectionBuilder(section: section)
-                    }
-                }
-                .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
-                    self.size = newValue
-                }
-                .padding(.horizontal, 20)
-                .frame(maxWidth: .infinity, alignment: .center)
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("", systemSymbol: .xmark) {
-                        dismiss()
-                    }
+        ScrollView(.vertical) {
+            LazyVGrid(columns: [.init(.adaptive(minimum: max(44, size.width / 7).rounded(.down)),
+                                      spacing: 0,
+                                      alignment: .center)],
+                      alignment: .center,
+                      spacing: 8) {
+                ForEach(viewModel.calendarData) { section in
+                    sectionBuilder(section: section)
                 }
             }
+                      .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
+                          self.size = newValue
+                      }
+                      .padding(.horizontal, 20)
+                      .frame(maxWidth: .infinity, alignment: .center)
         }
         .task {
             viewModel.fetchCalendarSection()
