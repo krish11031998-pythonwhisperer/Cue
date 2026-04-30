@@ -68,9 +68,6 @@ public struct CalendarDayView: View {
     public var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-//                DateView(todayModel: .init(date: date,
-//                                           mode: date.isToday ? .arc(viewModel.timelineElements) : .noArc))
-//                    .padding(.bottom, 32)
                 VStack(alignment: .center, spacing: 4) {
                     Text(Calendar.current.weekdaySymbols[date.weekDayValue - 1].lowercased())
                         .font(.bitcountMedium(style: .extraLargeTitle))

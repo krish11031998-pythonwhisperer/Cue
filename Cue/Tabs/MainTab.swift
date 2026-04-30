@@ -8,6 +8,7 @@
 import SwiftUI
 import VanorUI
 import Model
+import Combine
 
 struct IsTodayPreferenceKey: PreferenceKey {
     static var defaultValue: Bool = true
@@ -48,6 +49,8 @@ struct MainTab: View {
     @State private var fullScreenPresentation: FullScreenPresentation? = nil
     @State private var presentPayWall: Bool = false
     private let presentPayWallAfterFirstOnboarding: Bool
+    private let todayPublisher: PassthroughSubject<Void, Never> = .init()
+    @State private var tabAccessorySize: CGSize = .zero
     
     init() {
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
@@ -57,7 +60,7 @@ struct MainTab: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab(value: Tabs.home) {
-                TodayTabView {
+                TodayTabView(scrollToTodayPublisher: todayPublisher.eraseToAnyPublisher()) {
                     self.presentCreateReminder = true
                 }
                 .ignoresSafeArea(edges: .bottom)
@@ -111,16 +114,19 @@ struct MainTab: View {
                 Color.clear
             }
         }
-        .optionalBottomAccessoryView(selectedTab: selectedTab, enabledTabs: [.home]) { selectedTab in
+        .optionalBottomAccessoryView(selectedTab: selectedTab, enabledTabs: [.home, .focus]) { selectedTab in
             switch selectedTab {
             case .home:
                 Group {
                     if !isToday {
                         Button {
                             // Do soemthing
+                            todayPublisher.send(())
                         } label: {
                             Text("today")
                                 .font(.bitcountMedium(style: .headline))
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .containerShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     } else {
@@ -133,16 +139,23 @@ struct MainTab: View {
                     }
                 }
                 .padding(.all, 16)
+                .onGeometryChange(for: CGSize.self, of: { $0.size }, action: {
+                    self.tabAccessorySize = $0
+                })
+            case .focus:
+                FocusTabBottomAccessoryView()
             default:
                 EmptyView()
             }
         }
+//        .environment(\.tabAccessorySize, tabAccessorySize)
         .onPreferenceChange(IsTodayPreferenceKey.self, perform: {
             self.isToday = $0
         })
         .tabBarMinimizeBehavior(.onScrollDown)
         .ignoresSafeArea(edges: .bottom)
         .onChange(of: selectedTab) { oldValue, newValue in
+            print("(DEBUG) Change in selectedTab: ", selectedTab)
             if newValue == .create {
                 self.presentCreateReminder = true
                 self.selectedTab = oldValue

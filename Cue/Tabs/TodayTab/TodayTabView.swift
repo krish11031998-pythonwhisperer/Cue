@@ -10,6 +10,7 @@ import SwiftUI
 import Model
 import VanorUI
 internal import EmojiKit
+import Combine
 
 extension CalendarDay: @retroactive CalendarDateCarouselDataElement, @retroactive Identifiable {
     public var id: Int {
@@ -25,8 +26,10 @@ struct TodayTabView: View {
     private var presentCreateReminder: () -> Void
     @State private var viewModel: TodayViewModel = .init()
     @State private var topPadding: CGFloat = .zero
+    private let scrollToTodayPublisher: VoidPublisher
     
-    init(presentCreateReminder: @escaping () -> Void) {
+    init(scrollToTodayPublisher: VoidPublisher, presentCreateReminder: @escaping () -> Void) {
+        self.scrollToTodayPublisher = scrollToTodayPublisher
         self.presentCreateReminder = presentCreateReminder
     }
     
@@ -75,7 +78,7 @@ struct TodayTabView: View {
                 #endif
             }
         }
-        .preference(key: IsTodayPreferenceKey.self, value: viewModel.todayCalendar?.date == viewModel.today)
+        .preference(key: IsTodayPreferenceKey.self, value: viewModel.todayCalendar?.date.startOfDay == viewModel.today.startOfDay)
         .onChange(of: viewModel.today, { _, _ in
             if store.user?.hapticsEnabled == true {
                 SensoryFeedbackManager.shared.playSelection()                
@@ -91,7 +94,11 @@ struct TodayTabView: View {
         }
         .sheet(item: $viewModel.presentation, content: presentationContent(_:))
         .fullScreenCover(item: $viewModel.fullPresentation, content: fullScreenPresentationContent(_:))
-      
+        .onReceive(scrollToTodayPublisher) { _ in
+            withAnimation(.easeInOut) {
+                self.viewModel.today = Date.now.startOfDay
+            }
+        }
     }
     
     
