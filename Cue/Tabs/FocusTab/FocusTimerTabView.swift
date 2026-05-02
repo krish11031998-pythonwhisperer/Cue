@@ -22,10 +22,11 @@ struct FocusTimerTabView: View {
                     Section("Section \(section + 1)") {
                         ScrollView(.horizontal) {
                             HStack(alignment: .center, spacing: 8) {
-                                ForEach(0..<5) { _ in
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(Color.red)
-                                        .aspectRatio(1, contentMode: .fit)
+                                ForEach(0..<5) { idx in
+                                    let model: FocusTimerRowView.Model = .example()
+                                    FocusTimerRowView(model: model)
+                                        .tag("\(model.title)-\(idx)")
+                                        .aspectRatio(0.75, contentMode: .fit)
                                         .containerRelativeFrame(.horizontal) { width, _ in
                                             width * 0.275
                                         }
