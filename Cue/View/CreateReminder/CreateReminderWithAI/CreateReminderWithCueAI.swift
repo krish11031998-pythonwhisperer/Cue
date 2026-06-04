@@ -63,13 +63,6 @@ struct CreateReminderWithCueAI: View {
         .onPreferenceChange(CueTextFieldFocusPreferenceKey.self, perform: {
             textFieldIsInFocus = $0
         })
-//        .alert("", isPresented: .init(get: { self.viewModel.alert != nil }, set: { _ in self.viewModel.alert = nil }), presenting: viewModel.alert, actions: { alert in
-//            Button(role: .confirm) {
-//                dismiss()
-//            }
-//        }, message: { alert in
-//            Text(alert.message)
-//        })
         .task(id: viewModel.recorderState) { [weak viewModel] in
             guard let recorderState = viewModel?.recorderState else { return }
             switch recorderState {

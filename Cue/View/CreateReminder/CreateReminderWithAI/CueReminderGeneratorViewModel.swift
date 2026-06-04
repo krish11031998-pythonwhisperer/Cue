@@ -221,6 +221,7 @@ class CueReminderGeneratorViewModel: Sendable {
     @MainActor
     func setupRecorderAndStart() async {
         await voiceTranscriber.startOrResume()
+        guard transcriptionTask == nil else { return }
         transcriptionTask = Task { @MainActor in
             await observeTranscribedText()
         }
@@ -232,6 +233,7 @@ class CueReminderGeneratorViewModel: Sendable {
     
     func stopRecorder() async {
         voiceTranscriber.stop()
+        transcriptionTask?.cancel()
     }
     
     

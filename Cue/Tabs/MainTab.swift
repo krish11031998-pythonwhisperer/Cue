@@ -52,6 +52,10 @@ struct MainTab: View {
     private let todayPublisher: PassthroughSubject<Void, Never> = .init()
     @State private var tabAccessorySize: CGSize = .zero
     
+    // MARK:  FocusTabBottomAccessoryControl
+    @Namespace var focusTimerTabNamespace: Namespace.ID
+    @State private var focusTimerCoordinator: FocusTimerLaunchControlCoordinator = .init()
+    
     init() {
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
         presentPayWallAfterFirstOnboarding = !hasShowOnboarding
@@ -89,7 +93,7 @@ struct MainTab: View {
             }
             
             Tab(value: .focus) {
-                FocusTimerTabView()
+                FocusTimerTabView(coordinator: focusTimerCoordinator)
             } label: {
                 Image(systemSymbol: .hourglass)
                     .font(.body)
@@ -117,33 +121,9 @@ struct MainTab: View {
         .optionalBottomAccessoryView(selectedTab: selectedTab, enabledTabs: [.home, .focus]) { selectedTab in
             switch selectedTab {
             case .home:
-                Group {
-                    if !isToday {
-                        Button {
-                            // Do soemthing
-                            todayPublisher.send(())
-                        } label: {
-                            Text("today")
-                                .font(.bitcountMedium(style: .headline))
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .containerShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        HStack(alignment: .center, spacing: 4) {
-                            Text("Tasks")
-                                .font(.headline)
-                            TimeCompactSwiftUIView(model: .init(elements: []), date: .now)
-                                .padding(.horizontal, 20)
-                        }
-                    }
-                }
-                .padding(.all, 16)
-                .onGeometryChange(for: CGSize.self, of: { $0.size }, action: {
-                    self.tabAccessorySize = $0
-                })
+                TodayTabBarAccessoryView(isToday: isToday, todayPublisher: todayPublisher)
             case .focus:
-                FocusTabBottomAccessoryView()
+                FocusTabBottomAccessoryView(coordinator: focusTimerCoordinator)
             default:
                 EmptyView()
             }

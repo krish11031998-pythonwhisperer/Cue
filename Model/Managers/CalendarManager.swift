@@ -8,9 +8,23 @@
 import Foundation
 import CoreData
 
+public enum CalendarManagerError: Error, LocalizedError {
+    case camnotFetchCalendarDay
+    
+    var localizedDescription: String {
+        switch self {
+        case .camnotFetchCalendarDay:
+            return "Calendar Day not found"
+        }
+    }
+}
+
 public class CalendarManager {
     
     public static let shared = CalendarManager()
+    
+    
+    // MARK: - Calendary Days in a Year
     
     public func setupCalendarForOneMonthFromToday() async -> [CalendarDay] {
         let dayInWeek = Date.now.day
@@ -49,6 +63,9 @@ public class CalendarManager {
         return calendarDays
     }
     
+    
+    // MARK: - Calendar Days in a Year
+    
     public func setupCalendayDaysInCurrentYear(month: Int) async -> [CalendarDay] {
         var dateComponents = Calendar.current.dateComponents([.timeZone, .day, .month, .year], from: Date.now)
         dateComponents.month = month
@@ -69,6 +86,18 @@ public class CalendarManager {
         guard !Task.isCancelled else { return [] }
         
         return calendarDays
+    }
+    
+    
+    // MARK: - Calendar Day
+    
+    public func setupCalendarDay(for date: Date) async throws -> CalendarDay {
+        let calendarDay = await self.fetchCalendarDays(for: [date]).first
+        guard let calendarDay else {
+            throw CalendarManagerError.camnotFetchCalendarDay
+        }
+        
+        return calendarDay
     }
     
     nonisolated

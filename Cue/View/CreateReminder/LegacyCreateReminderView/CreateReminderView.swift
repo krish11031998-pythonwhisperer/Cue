@@ -8,15 +8,10 @@
 import SwiftUI
 import VanorUI
 import Model
-internal import EmojiKit
-internal import AlarmKit
 
 struct CreateReminderView: View {
     
-    enum Mode: Equatable {
-        case create
-        case edit(ReminderModel)
-    }
+    typealias Mode = CreateReminderViewModel.Mode
     
     @Environment(SubscriptionManager.self) var subscriptionManager
     @State private var viewModel: CreateReminderViewModel
@@ -28,7 +23,7 @@ struct CreateReminderView: View {
     
     init(mode: Mode, store: Store, dismissActionFromParent: Callback? = nil) {
         self.mode = mode
-        self.viewModel = .init(store: store)
+        self.viewModel = .init(store: store, mode: mode)
         self.dismissActionFromParent = dismissActionFromParent
     }
     
@@ -47,7 +42,7 @@ struct CreateReminderView: View {
                                   of: { $0.frame(in: .global) },
                                   action: { [weak viewModel] in viewModel?.imageFrame = $0 })
                 
-                TextField("What would you like to be reminded of?",
+                TextField("What you'd like to be reminded of?",
                           text: $viewModel.reminderTitle,
                           axis: .vertical)
                 .font(.title3)
@@ -158,12 +153,12 @@ struct CreateReminderView: View {
                 }
             }
         }
-        .task(id: mode) { [weak viewModel] in
-            guard case .edit(let reminderModel) = mode else {
-                return
-            }
-            viewModel?.updateBasedOnMode(reminderModel: reminderModel)
-        }
+//        .task(id: mode) { [weak viewModel] in
+//            guard case .edit(let reminderModel) = mode else {
+//                return
+//            }
+//            viewModel?.updateBasedOnMode(reminderModel: reminderModel)
+//        }
     }
     
     

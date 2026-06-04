@@ -8,65 +8,55 @@
 import Foundation
 import SwiftUI
 import VanorUI
+import Model
 
 struct FocusTimerTabView: View {
     
-    @State private var presentFocusTimerSheet: Bool = false
-    @State private var timeDuration: TimeInterval? = nil
+    @Bindable private var coordinator: FocusTimerLaunchControlCoordinator
+    @State private var viewModel: FocusTimeViewModel = .init()
+    @Environment(Store.self) var store
+    
+    init(coordinator: FocusTimerLaunchControlCoordinator) {
+        self.coordinator = coordinator
+    }
     
     var body: some View {
         Group {
-#if DEBUG
-            ScrollView(.vertical) {
-                ForEach(0..<10) { section in
-                    Section("Section \(section + 1)") {
-                        ScrollView(.horizontal) {
-                            HStack(alignment: .center, spacing: 8) {
-                                ForEach(0..<5) { idx in
-                                    let model: FocusTimerRowView.Model = .example()
-                                    FocusTimerRowView(model: model)
-                                        .tag("\(model.title)-\(idx)")
-                                        .aspectRatio(0.75, contentMode: .fit)
-                                        .containerRelativeFrame(.horizontal) { width, _ in
-                                            width * 0.275
-                                        }
-                                }
-                            }
-                            .padding(.horizontal, 20)
+            if let calendarDay = viewModel.calendarDay {
+                // Need to add a static view
+                FocusCountdownRootView(coordinator: coordinator, reminders: calendarDay.reminders)
+            } else {
+                ProgressView()
+            }
+        }
+        .task {
+            await viewModel.fetchRemindersForToday()
+        }
+        .tabBarMinimizeBehavior(.automatic)
+        .sheet(isPresented: $coordinator.showTasksSheet) {
+            NavigationView {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 8) {
+                        
+                    }
+                }
+                .navigationTitle("Tasks")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(role: .close) {
+                            coordinator.showTasksSheet = false
                         }
                     }
                 }
             }
-#else
-            ZStack(alignment: .center) {
-                if let timeDuration {
-                    TimerView(reminder: nil, loggedTasks: .init(), duration: timeDuration)
-                } else {
-                    Button("Start Focus", systemSymbol: .timer) {
-                        self.presentFocusTimerSheet.toggle()
-                    }
-                    .tint(.proSky.baseColor)
-                    .buttonStyle(.glassProminent)
-                }
-            }
-            .sheet(isPresented: $presentFocusTimerSheet) {
-                TimerSheet(reminderModels: []) { _, timeDuration in
-                    withAnimation {
-                        self.presentFocusTimerSheet = false
-                    } completion: {
-                        self.timeDuration = timeDuration
-                    }
-                }
-                .fittedPresentationDetent()
-            }
-#endif
-        }
-        .safeAreaBar(edge: .bottom, alignment: .center, spacing: 8) {
-            FocusTimerLaunchControl()
-                .padding(.bottom, 8)
-                .padding(.horizontal, 24)
-                .fixedSize(horizontal: false, vertical: true)
+            .presentationDetents([.medium])
         }
     }
     
+}
+
+
+#Preview {
+    FocusTimerTabView(coordinator: .init())
 }
