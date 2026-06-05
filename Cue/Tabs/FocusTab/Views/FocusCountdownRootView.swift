@@ -9,79 +9,63 @@ import SwiftUI
 import VanorUI
 import Model
 
-#warning("Move this to VanorUI")
-public struct DragPopGesture: UIGestureRecognizerRepresentable {
-
-    let isEnabled: Bool
-    let translation: (CGPoint) -> Void
-    let hasEnded: (CGPoint) -> Void
-    
-    public init(isEnabled: Bool, translation: @escaping (CGPoint) -> Void, hasEnded: @escaping (CGPoint) -> Void) {
-        self.isEnabled = isEnabled
-        self.translation = translation
-        self.hasEnded = hasEnded
-    }
-    
-    public func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
-        let panGesture = UIPanGestureRecognizer()
-        return panGesture
-    }
-    
-    public func updateUIGestureRecognizer(_ recognizer: UIPanGestureRecognizer, context: Context) {
-        recognizer.isEnabled = isEnabled
-    }
-    
-    public func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
-        switch recognizer.state {
-        case .began:
-            print("(DEBUG) state: began")
-            translation(.zero)
-        case .cancelled:
-            print("(DEBUG) state: cancelled")
-            translation(.zero)
-        case .failed:
-            print("(DEBUG) state: failed")
-            translation(.zero)
-        case .possible:
-            print("(DEBUG) state: possible")
-            translation(.zero)
-        case .changed:
-            let translation = recognizer.translation(in: recognizer.view)
-            print("(DEBUG) changed.translation: ", translation)
-            self.translation(translation)
-        case .ended:
-            print("(DEBUG) ended.translation: ", translation)
-            let translation = recognizer.translation(in: recognizer.view)
-            self.hasEnded(translation)
-        @unknown default:
-            self.translation(.zero)
-        }
-    }
-    
-}
-
-
 @MainActor
 @Observable
 class FocusCountdownRootViewModel {
     
     static let translationsXThreshold: CGFloat = 100
     
-    let reminders: [ReminderModel]
-    var selectedReminder: ReminderModel
+    enum TimerType: Identifiable, Equatable {
+        case focus
+        case reminder(ReminderModel)
+        
+        var id: String {
+            switch self {
+            case .focus:
+                return "focus"
+            case .reminder(let reminderModel):
+                return "reminder_\(reminderModel.title)"
+            }
+        }
+        
+        var icon: Icon {
+            switch self {
+            case .focus:
+                return .symbol(.timer)
+            case .reminder(let reminderModel):
+                return .init(reminderModel.icon)!
+            }
+        }
+        
+        var title: String {
+            switch self {
+            case .focus:
+                return "Focus"
+            case .reminder(let reminderModel):
+                return reminderModel.title
+            }
+        }
+    }
+    
+    var timerItems: [TimerType] = [.focus]
+    var selectedTimerItem: TimerType = .focus
     @ObservationIgnored
     var currentSelectedReminderIdx: Int = 0
     var panGestureTranslation: CGFloat = 0
     
+
     init(reminders: [ReminderModel]) {
-        #warning("Need to add an warning to ensure that we will only show this view once we have some reminders")
-        self._selectedReminder = reminders.first!
-        self.reminders = reminders
+        self.selectedTimerItem = .focus
+        self.timerItems = [.focus] + reminders.map { .reminder($0) }
+    }
+    
+    convenience init() {
+        self.init(reminders: [])
     }
     
     
     func updateSelectedReminder(forwards: Bool, backwards: Bool) {
-        if forwards && currentSelectedReminderIdx < reminders.count - 1 {
+        if forwards && currentSelectedReminderIdx < timerItems.count - 1 {
             currentSelectedReminderIdx += 1
         } else if backwards && currentSelectedReminderIdx > 0 {
             currentSelectedReminderIdx -= 1
@@ -91,7 +75,15 @@ class FocusCountdownRootViewModel {
             }
         }
         
-        self.selectedReminder = reminders[currentSelectedReminderIdx]
+        self.selectedTimerItem = timerItems[currentSelectedReminderIdx]
+    }
+    
+    func updateWithReminders(_ reminders: [ReminderModel]) {
+        var newUpdatedItems: [TimerType] = [.focus]
+        reminders.forEach { reminder in
+            newUpdatedItems.append(.reminder(reminder))
+        }
+        self.timerItems = newUpdatedItems
     }
 }
 
@@ -108,12 +100,13 @@ struct FocusCountdownTopGradient: Shape {
 struct FocusCountdownRootView: View {
 
     @Bindable private var coordinator: FocusTimerLaunchControlCoordinator
-    @State private var viewModel: FocusCountdownRootViewModel
+    @State private var viewModel: FocusCountdownRootViewModel = .init()
+    let reminders: [ReminderModel]
     @Environment(\.colorScheme) var colorScheme
     
     init(coordinator: FocusTimerLaunchControlCoordinator, reminders: [ReminderModel]) {
         self.coordinator = coordinator
-        self._viewModel = .init(initialValue: .init(reminders: reminders))
+        self.reminders = reminders
     }
     
     var appTheme: LCHColor {
@@ -155,19 +148,23 @@ struct FocusCountdownRootView: View {
                     .position(x: size.width.half, y: size.width * 0.7)
             }
         }
-        .sensoryFeedback(.selection, trigger: viewModel.selectedReminder)
+        .sensoryFeedback(.selection, trigger: viewModel.selectedTimerItem)
         .gesture(DragPopGesture(isEnabled: gestureRecognizerEnabled, translation: dragGestureHandler, hasEnded: hasEnded))
         .safeAreaBar(edge: .top, alignment: .center, spacing: 8) {
-            FocusReminderCarouselSelectorView(selectedItem: viewModel.selectedReminder, reminders: viewModel.reminders)
+            FocusReminderCarouselSelectorView(selectedItem: viewModel.selectedTimerItem, items: viewModel.timerItems)
                 .fixedSize(horizontal: false, vertical: true)
                 .disabled(true)
         }
         .safeAreaBar(edge: .bottom, alignment: .center, spacing: 8) {
             FloatingFocusTimerFooterView(viewModel: viewModel, coordinator: coordinator)
         }
-        .onChange(of: viewModel.selectedReminder, initial: true) { oldValue, newValue in
-            let tasks = newValue.tasks
+        .onChange(of: viewModel.selectedTimerItem, initial: true) { _, newValue in
+            guard case .reminder(let reminderModel) = newValue else { return }
+            let tasks = reminderModel.tasks
             coordinator.numberOfTasks = tasks.count
+        }
+        .onChange(of: reminders, initial: true) { oldValue, newValue in
+            viewModel.updateWithReminders(newValue)
         }
     }
     
@@ -199,6 +196,7 @@ struct FocusCountdownRootView: View {
     
     
     // MARK: - Floating Focus Timer View
+    
     struct FloatingFocusTimerFooterView: View {
         
         private var viewModel: FocusCountdownRootViewModel
@@ -220,12 +218,12 @@ struct FocusCountdownRootView: View {
                     .transition(.popIn)
                 case .pause, .resume, .start:
                     HStack(alignment: .center, spacing: 8) {
-                        ReminderIconView(icon: .init(viewModel.selectedReminder.icon)!,
+                        ReminderIconView(icon: viewModel.selectedTimerItem.icon,
                                          foregroundColor: .primary,
                                          backgroundColor: Color.secondarySystemBackground,
                                          font: .caption)
                         .frame(width: 32, height: 32, alignment: .center)
-                        Text(viewModel.selectedReminder.title)
+                        Text(viewModel.selectedTimerItem.title)
                             .font(.headline.weight(.semibold))
                         Spacer()
                         
@@ -248,7 +246,7 @@ struct FocusCountdownRootView: View {
 }
 
 #Preview {
-    @Previewable @State var coordinator: FocusTimerLaunchControlCoordinator = .init()
+    @Previewable @State var coordinator: FocusTimerLaunchControlCoordinator = .init(alarmCoordinator: nil)
     FocusCountdownRootView(coordinator: coordinator, reminders: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()])
         .safeAreaBar(edge: .bottom) {
             FocusTimerLaunchControl(coordinator: coordinator) {

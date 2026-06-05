@@ -54,11 +54,13 @@ struct MainTab: View {
     
     // MARK:  FocusTabBottomAccessoryControl
     @Namespace var focusTimerTabNamespace: Namespace.ID
-    @State private var focusTimerCoordinator: FocusTimerLaunchControlCoordinator = .init()
+    @State private var focusTimerCoordinator: FocusTimerLaunchControlCoordinator! = nil
+    let focusAlarmManager: FocusAlarmManager = .init()
     
     init() {
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
         presentPayWallAfterFirstOnboarding = !hasShowOnboarding
+        self._focusTimerCoordinator = .init(initialValue: .init(alarmCoordinator: focusAlarmManager))
     }
     
     var body: some View {
@@ -170,6 +172,9 @@ struct MainTab: View {
             @unknown default:
                 fatalError("This shouldn't happen")
             }
+        }
+        .task {
+            self.focusAlarmManager.alarmManager = store.alarmManager
         }
     }
     

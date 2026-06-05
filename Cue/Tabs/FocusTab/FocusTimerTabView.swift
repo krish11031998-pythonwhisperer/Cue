@@ -21,42 +21,38 @@ struct FocusTimerTabView: View {
     }
     
     var body: some View {
-        Group {
-            if let calendarDay = viewModel.calendarDay {
-                // Need to add a static view
-                FocusCountdownRootView(coordinator: coordinator, reminders: calendarDay.reminders)
-            } else {
-                ProgressView()
+        FocusCountdownRootView(coordinator: coordinator, reminders: viewModel.calendarDay?.reminders ?? [])
+            .task {
+                await viewModel.fetchRemindersForToday()
             }
-        }
-        .task {
-            await viewModel.fetchRemindersForToday()
-        }
-        .tabBarMinimizeBehavior(.automatic)
-        .sheet(isPresented: $coordinator.showTasksSheet) {
-            NavigationView {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 8) {
-                        
+            .tabBarMinimizeBehavior(.automatic)
+            .sheet(isPresented: $coordinator.showTasksSheet) {
+                NavigationView {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 8) {
+                            
+                        }
                     }
-                }
-                .navigationTitle("Tasks")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(role: .close) {
-                            coordinator.showTasksSheet = false
+                    .navigationTitle("Tasks")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(role: .close) {
+                                coordinator.showTasksSheet = false
+                            }
                         }
                     }
                 }
+                .presentationDetents([.medium])
             }
-            .presentationDetents([.medium])
-        }
+            .onChange(of: viewModel.calendarDay?.reminders, initial: true) { oldValue, newValue in
+                print("(DEBUG) reminders: \(newValue?.count ?? 0)")
+            }
     }
     
 }
 
 
 #Preview {
-    FocusTimerTabView(coordinator: .init())
+    FocusTimerTabView(coordinator: .init(alarmCoordinator: nil))
 }

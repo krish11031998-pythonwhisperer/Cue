@@ -11,9 +11,11 @@ import Model
 
 struct FocusCountdownTimerView: View {
     
+    typealias TimerType = FocusCountdownRootViewModel.TimerType
+    
     enum ViewState: Equatable {
         case idle
-        case withReminder(ReminderModel)
+        case withTimer(TimerType)
         case transitioningBetweenReminders
     }
     
@@ -44,8 +46,8 @@ struct FocusCountdownTimerView: View {
                 switch state {
                 case .idle:
                     EmptyView()
-                case .withReminder(let reminderModel):
-                    SelectedReminderView(reminderModel: reminderModel)
+                case .withTimer(let item):
+                    SelectedTimerView(item: item)
                         .position(frame.center)
                         .frame(width: frame.width, height: frame.height, alignment: .center)
                         .popIn(percent: viewModel.panGestureTranslation)
@@ -57,21 +59,21 @@ struct FocusCountdownTimerView: View {
             }
             
         }
-        .task(id: viewModel.selectedReminder) {
-            guard case .withReminder(let reminderModel) = state else {
-                self.state = .withReminder(viewModel.selectedReminder)
+        .task(id: viewModel.selectedTimerItem) {
+            guard case .withTimer(let timer) = state else {
+                self.state = .withTimer(viewModel.selectedTimerItem)
                 return
             }
-            guard reminderModel != viewModel.selectedReminder else { return }
+            guard timer != viewModel.selectedTimerItem else { return }
             self.state = .transitioningBetweenReminders
             self.viewModel.panGestureTranslation = 0
             try? await Task.sleep(for: .milliseconds(0.5))
             withAnimation(.snappy) {
-                self.state = .withReminder(viewModel.selectedReminder)
+                self.state = .withTimer(viewModel.selectedTimerItem)
             }
         }
         .onChange(of: state, initial: false) { oldValue, newValue in
-            guard case .withReminder = newValue else { return }
+            guard case .withTimer = newValue else { return }
             coordinator.state = .idle
         }
     }
@@ -94,6 +96,34 @@ struct FocusCountdownTimerView: View {
         }
     }
     
+    
+    // MARK: - Selected Timer View
+    
+    struct SelectedTimerView: View {
+        
+        @Environment(FocusTimerLaunchControlCoordinator.self) var coordinator
+        let item: TimerType
+        
+        var body: some View {
+            switch item {
+            case .focus:
+                VStack(alignment: .center, spacing: 0) {
+                    Text("Focus")
+                        .font(.title2.weight(.semibold))
+                        .foregroundColor(.primary)
+                    
+                    Text(coordinator.timerDuration.timerDurationString)
+                        .contentTransition(.numericText(value: coordinator.timerDuration))
+                        .animation(.easeInOut, value: coordinator.timerDuration)
+                        .font(.largeTitle.weight(.bold))
+                        .foregroundStyle(.primary)
+                        .padding(.top, 16)
+                }
+            case .reminder(let reminder):
+                SelectedReminderView(reminderModel: reminder)
+            }
+        }
+    }
     
     // MARK: - Selected Reminder View
     
@@ -139,6 +169,6 @@ struct FocusCountdownTimerView: View {
 #Preview {
     FocusCountdownTimerView()
         .environment(FocusCountdownRootViewModel(reminders: [.exampleOne(), .exampleTwo(), .exampleThree()]))
-        .environment(FocusTimerLaunchControlCoordinator())
+        .environment(FocusTimerLaunchControlCoordinator(alarmCoordinator: nil))
         .padding(.all, 20)
 }

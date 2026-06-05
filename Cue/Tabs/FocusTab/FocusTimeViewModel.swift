@@ -23,7 +23,6 @@ class FocusTimeViewModel {
     
     @concurrent
     func fetchRemindersForToday() async {
-        
         do {
             let calendarDay = try await CalendarManager.shared.setupCalendarDay(for: .now)
             await MainActor.run {
