@@ -223,16 +223,20 @@ struct FocusCountdownRootView: View {
                                          backgroundColor: Color.secondarySystemBackground,
                                          font: .caption)
                         .frame(width: 32, height: 32, alignment: .center)
+                        
                         Text(viewModel.selectedTimerItem.title)
                             .font(.headline.weight(.semibold))
+                        
                         Spacer()
                         
                         LaunchControlButton(image: .lockAppDashed, size: .regular) {
                             // Disable App Blocking
+                            return
                         }
                         
                         LaunchControlButton(image: .alarmWavesLeftAndRight, size: .regular) {
                             // Diable Alarm
+                            return
                         }
                     }
                     .transition(.popIn)

@@ -116,8 +116,17 @@ struct MainTab: View {
                 }
             }
             
-            Tab("", systemImage: "plus", value: .create, role: .search) {
-                Color.clear
+            if #available(iOS 27, *) {
+                Tab(value: .create, role: .prominent) {
+                    Color.clear
+                } label: {
+                    Image(systemSymbol: .plus)
+                        .font(.body)
+                }
+            } else {
+                Tab("", systemImage: "plus", value: .create, role: .search) {
+                    Color.clear
+                }
             }
         }
         .optionalBottomAccessoryView(selectedTab: selectedTab, enabledTabs: [.home, .focus]) { selectedTab in

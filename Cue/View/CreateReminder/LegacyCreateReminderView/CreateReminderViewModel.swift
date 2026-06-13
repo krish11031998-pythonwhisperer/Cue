@@ -97,7 +97,11 @@ class CreateReminderViewModel: CreateReminderManager {
                 scheduleBuilder = .init(intervalWeek: nil, weekdays: nil, dates: nil)
             }
             let icon: Icon = .init(reminderModel.icon) ?? .symbol(SFSymbol.allSymbols.randomElement()!)
-            self.init(store: store, edittingMode: true, reminderID: reminderModel.objectId, reminderTitle: reminderModel.title, snoozeDuration: reminderModel.snoozeDuration, reminderNotification: reminderModel.notificationType, date: reminderModel.date, timeDate: timeDate, tasks: [], tags: [], scheduleBuilder: scheduleBuilder, icon: icon, color: .proSky.baseColor)
+            let reminderTasks: [CreateReminderTask] = reminderModel.tasks.compactMap { task -> CreateReminderTask? in
+                guard let icon = Icon(task.icon) else { return nil }
+                return .init(title: task.title, icon: icon, objectID: task.objectId)
+            }
+            self.init(store: store, edittingMode: true, reminderID: reminderModel.objectId, reminderTitle: reminderModel.title, snoozeDuration: reminderModel.snoozeDuration, reminderNotification: reminderModel.notificationType, date: reminderModel.date, timeDate: timeDate, tasks: reminderTasks, tags: [], scheduleBuilder: scheduleBuilder, icon: icon, color: .proSky.baseColor)
         }
     }
     

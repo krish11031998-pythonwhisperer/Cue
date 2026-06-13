@@ -142,6 +142,7 @@ struct FocusCountdownTimerView: View {
                     .aspectRatio(1, contentMode: .fit)
                     .frame(width: 32, alignment: .center)
                     Text(reminderModel.title)
+                        .multilineTextAlignment(.center)
                         .font(.title2.weight(.semibold))
                 }
                     .foregroundColor(.primary)
