@@ -1,124 +1,69 @@
 //
-//  CreateReminderViewModel.swift
+//  CreateReminderManager.swift
 //  Cue
 //
-//  Created by Krishna Venkatramani on 18/01/2026.
+//  Created by Krishna Venkatramani on 19/05/2026.
 //
 
-import SwiftUI
-import VanorUI
 import Model
-import CoreData
+import VanorUI
+import SwiftUI
 import FoundationModels
+import CoreData
 internal import AlarmKit
 
-@Observable
-class CreateReminderViewModel {
+struct CreateReminderTask: Identifiable {
+    let title: String
+    let icon: Icon
+    let objectID: NSManagedObjectID?
     
-    enum ReminderCalendarPresentation: String, Identifiable {
-        case alarmAt = "Alarm At"
-        case duration = "Duration"
-        case date = "Date"
-        case `repeat` = "Repeat"
-        case iconSelector = "Symbol And Color"
-        
-        var id: String { self.rawValue }
-        
-        static var allCases: [ReminderCalendarPresentation] { [.alarmAt, .duration, .date, .repeat] }
+    init(title: String, icon: Icon, objectID: NSManagedObjectID?) {
+        self.title = title
+        self.icon = icon
+        self.objectID = objectID
     }
     
-    enum Presentation: String, Identifiable {
-        case tags
-        
-        var id: String { self.rawValue }
+    var id: Int {
+        var hasher = Hasher()
+        hasher.combine(title)
+        hasher.combine(icon)
+        return hasher.finalize()
     }
+}
+
+protocol CreateReminderManager: AnyObject {
     
-    // MARK: Time
+    var store: Store { get set }
+    var edittingMode: Bool { get set }
+    var reminderID: NSManagedObjectID? { get set }
+    var reminderTitle: String { get set }
+    var snoozeDuration: Double { get set }
+    var date: Date { get set }
+    var timeDate: Date { get set }
+    var tags: [TagModel] { get set }
+    var tasks: [CreateReminderTask] { get set }
+    var reminderNotification: ReminderNotification { set get }
+    var scheduleBuilder: Reminder.ScheduleBuilder { get set }
+    var icon: Icon { get set }
+    var color: Color { get set }
+    var reminderSubtasksSession: ReminderSubtaskSession { get set }
+    var suggestionTask: Task<Void, Never>? { get set }
+    var isLoadingSuggestions: Bool { get set }
     
-    struct Time {
-        let hour: Int
-        let minute: Int
-        
-        init(hour: Int, minute: Int) {
-            self.hour = hour
-            self.minute = minute
-        }
-        
-        init(_ date: Date) {
-            self.hour = date.hours
-            self.minute = date.minutes
-        }
-        
-        var date: Date {
-            Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: .now)!
-        }
-    }
+    var canCreateReminder: Bool { get }
+    var canLoadSuggestions: Bool { get }
     
     
-    // MARK: - Task
+    // METHODS
     
-    struct CreateReminderTask: Identifiable {
-        let title: String
-        let icon: Icon
-        let objectID: NSManagedObjectID?
-        
-        init(title: String, icon: Icon, objectID: NSManagedObjectID?) {
-            self.title = title
-            self.icon = icon
-            self.objectID = objectID
-        }
-        
-        var id: Int {
-            var hasher = Hasher()
-            hasher.combine(title)
-            hasher.combine(icon)
-            return hasher.finalize()
-        }
-    }
-    
-    @ObservationIgnored
-    let store: Store
-    @ObservationIgnored
-    let reminderSubtasksSession: ReminderSubtaskSession = .init()
-    @ObservationIgnored
-    var suggestionTask: Task<Void, Never>?
-    @ObservationIgnored
-    var edittingMode: Bool
-    @ObservationIgnored
-    var reminderID: NSManagedObjectID?
-    
-    var imageFrame: CGRect = .zero
-    var reminderTitle: String = ""
-    var snoozeDuration: Double = 15 * 60
-    var reminderNotification: ReminderNotification = .notification
-    var date: Date = .now
-    var timeDate: Date = .now
-    var tasks: [CreateReminderTask] = []
-    var tags: [TagModel] = []
-    var scheduleBuilder: Reminder.ScheduleBuilder = .init(.now)
-    var icon: Icon = .symbol(SFSymbol.allSymbols.randomElement()!)
-    var color: Color = (Color.proSky.baseColor)
-    var isLoadingSuggestions: Bool = false
-    var calendarPresentation: ReminderCalendarPresentation? = nil
-    var presentation: Presentation? = nil
-    
-    init(store: Store) {
-        print("(DEBUG) init is called!!!")
-        self.store = store
-        self.edittingMode = false
-        self.reminderID = nil
-    }
-    
-    var theme: LCHColor {
-        .init(color: color)
-    }
-    
-    // MARK: - Helpers
-    
+    func presentIconSheet()
+}
+
+extension CreateReminderManager {
     var canCreateReminder: Bool {
         !self.reminderTitle.isEmpty
     }
-    
+
     var canLoadSuggestions: Bool {
         switch SystemLanguageModel.default.availability {
         case .available:
@@ -163,37 +108,6 @@ class CreateReminderViewModel {
         timeDate.timeBuilder()
     }
     
-    func buttonTitleForElement(_ presentation: ReminderCalendarPresentation) -> String {
-        switch presentation {
-        case .alarmAt:
-            timeString
-        case .duration:
-            durationString
-        case .date:
-            dateString
-        case .repeat:
-            scheduleString
-        case .iconSelector:
-            fatalError("No Button with title for \(presentation.rawValue)")
-        }
-    }
-    
-    var tagString: String? {
-        guard !tags.isEmpty else { return nil }
-        let tagName = tags.reduce("", {
-            if $0.isEmpty {
-                return $1.name
-            } else {
-                return "\($0) • \($1.name)"
-            }
-        })
-        
-        return tagName
-    }
-    
-    
-    // MARK: - Data Helpers
-    
     var taskViewModels: [ReminderTaskView.Model] {
         var models: [ReminderTaskView.Model] = []
         
@@ -218,7 +132,8 @@ class CreateReminderViewModel {
         for(index, task) in tasks.enumerated() {
             let viewType = ReminderTaskView.ViewType.displayOnly(edit(index), delete(index)) { [weak self] in
                 print("(DEBUG) tapped on icon!")
-                self?.calendarPresentation = .iconSelector
+//                self?.calendarPresentation = .iconSelector
+                self?.presentIconSheet()
             }
         
             let model = ReminderTaskView.Model(taskTitle: task.title,
@@ -231,7 +146,7 @@ class CreateReminderViewModel {
     }
     
     
-    // MARK: - Methods
+    // Helper Methods
     
     func updateScheduleBuilder(_ scheduleBuilder: Reminder.ScheduleBuilder) {
         self.scheduleBuilder.intervalWeek = scheduleBuilder.intervalWeek
@@ -241,6 +156,28 @@ class CreateReminderViewModel {
     
     func addTask(title: String) {
         self.tasks.append(.init(title: title, icon: .emoji(Emoji.all.randomElement()!), objectID: nil))
+    }
+    
+    
+    // Create SubTasks
+    
+    func suggestionSubtasks() {
+        suggestionTask?.cancel()
+        isLoadingSuggestions = true
+        suggestionTask = Task { [weak self] in
+            guard let reminderTitle = self?.reminderTitle else { return }
+            let suggestions = await self?.reminderSubtasksSession.suggestionTasks(for: reminderTitle)
+            let tasks: [CreateReminderTask]? = suggestions?.subTasks.map { suggestion in
+                    .init(title: suggestion.title, icon: .emoji(.init(suggestion.icon)), objectID: nil)
+            }
+            
+            await MainActor.run { [weak self] in
+                if let tasks, !Task.isCancelled {
+                    self?.tasks = tasks
+                }
+                self?.isLoadingSuggestions = false
+            }
+        }
     }
     
     func createReminder() {
@@ -291,28 +228,6 @@ class CreateReminderViewModel {
         }
     }
     
-    func suggestionSubtasks() {
-        suggestionTask?.cancel()
-        isLoadingSuggestions = true
-        suggestionTask = Task { [weak self] in
-            guard let reminderTitle = self?.reminderTitle else { return }
-            let suggestions = await self?.reminderSubtasksSession.suggestionTasks(for: reminderTitle)
-            let tasks: [CreateReminderTask]? = suggestions?.subTasks.map { suggestion in
-                    .init(title: suggestion.title, icon: .emoji(.init(suggestion.icon)), objectID: nil)
-            }
-            
-            await MainActor.run { [weak self] in
-                if let tasks, !Task.isCancelled {
-                    self?.tasks = tasks
-                }
-                self?.isLoadingSuggestions = false
-            }
-        }
-    }
-    
-    
-    // MARK: - Setup Based on Mode
-    
     func updateBasedOnMode(reminderModel: ReminderModel) {
         self.reminderTitle = reminderModel.title
         self.date = reminderModel.date
@@ -345,3 +260,4 @@ class CreateReminderViewModel {
         }
     }
 }
+

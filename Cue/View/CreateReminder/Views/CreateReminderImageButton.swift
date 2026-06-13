@@ -37,3 +37,34 @@ struct CreateReminderImageButton: View {
 
     }
 }
+
+
+struct NewCreateReminderImageButton: View {
+    
+    let color: Color
+    let icon: Icon
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Group {
+                switch icon {
+                case .emoji(let emoji):
+                    EmojiImageView(emoji: emoji)
+                        .aspectRatio(contentMode: .fit)
+                case .symbol(let symbol):
+                    Image(systemSymbol: symbol)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                }
+            }
+            .padding(.all, 4)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .containerShape(.circle)
+        }
+        .tint(color)
+        .buttonStyle(.glassProminent)
+        .aspectRatio(1, contentMode: .fit)
+
+    }
+}

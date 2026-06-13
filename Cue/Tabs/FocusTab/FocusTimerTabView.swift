@@ -8,34 +8,51 @@
 import Foundation
 import SwiftUI
 import VanorUI
+import Model
 
 struct FocusTimerTabView: View {
     
-    @State private var presentFocusTimerSheet: Bool = false
-    @State private var timeDuration: TimeInterval? = nil
+    @Bindable private var coordinator: FocusTimerLaunchControlCoordinator
+    @State private var viewModel: FocusTimeViewModel = .init()
+    @Environment(Store.self) var store
     
-    var body: some View {
-        ZStack(alignment: .center) {
-            if let timeDuration {
-                TimerView(reminder: nil, loggedTasks: .init(), duration: timeDuration)
-            } else {
-                Button("Start Focus", systemSymbol: .timer) {
-                    self.presentFocusTimerSheet.toggle()
-                }
-                .tint(.proSky.baseColor)
-                .buttonStyle(.glassProminent)
-            }
-        }
-        .sheet(isPresented: $presentFocusTimerSheet) {
-            TimerSheet(reminderModels: []) { _, timeDuration in
-                withAnimation {
-                    self.presentFocusTimerSheet = false
-                } completion: {
-                    self.timeDuration = timeDuration
-                }
-            }
-            .fittedPresentationDetent()
-        }
+    init(coordinator: FocusTimerLaunchControlCoordinator) {
+        self.coordinator = coordinator
     }
     
+    var body: some View {
+        FocusCountdownRootView(coordinator: coordinator, reminders: viewModel.calendarDay?.reminders ?? [])
+            .task {
+                await viewModel.fetchRemindersForToday()
+            }
+            .tabBarMinimizeBehavior(.automatic)
+            .sheet(isPresented: $coordinator.showTasksSheet) {
+                NavigationView {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 8) {
+                            
+                        }
+                    }
+                    .navigationTitle("Tasks")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(role: .close) {
+                                coordinator.showTasksSheet = false
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.medium])
+            }
+            .onChange(of: viewModel.calendarDay?.reminders, initial: true) { oldValue, newValue in
+                print("(DEBUG) reminders: \(newValue?.count ?? 0)")
+            }
+    }
+    
+}
+
+
+#Preview {
+    FocusTimerTabView(coordinator: .init(alarmCoordinator: nil))
 }

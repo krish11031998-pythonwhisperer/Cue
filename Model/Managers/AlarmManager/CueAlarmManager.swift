@@ -67,9 +67,9 @@ public class CueAlarmManager {
         case .notDetermined:
             authorizationState = .notDetermined
         case .denied:
-            authorizationState = .authorized
-        case .authorized:
             authorizationState = .denied
+        case .authorized:
+            authorizationState = .authorized
         @unknown default:
             break
         }
@@ -128,6 +128,47 @@ public class CueAlarmManager {
         do {
             let  alarm = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
             print("(DEBUG) Successfully created an alarm \(alarm.id) ✅!")
+            return (id, alarm)
+        } catch {
+            print("(ERROR) there was an error!\(error.self): ", error.localizedDescription)
+        }
+        
+        return nil
+    }
+    
+    @concurrent
+    public func scheduleAlarm(title: String, startDate: Date, timeDuration: TimeInterval, color: Color = .blue) async -> (UUID, Alarm)? {
+        let targetAlarm = startDate.addingTimeInterval(timeDuration)
+        
+        let id: UUID = .init()
+        let alert: AlarmPresentation.Alert
+        let alarmSchedule: Alarm.Schedule
+        
+        var dateComponents = Calendar.current.dateComponents([.day, .month, .year], from: startDate)
+        dateComponents.hour = targetAlarm.hours
+        dateComponents.minute = targetAlarm.minutes
+        dateComponents.second = targetAlarm.seconds
+        dateComponents.calendar = .current
+        alarmSchedule = .fixed(dateComponents.date!)
+        
+        if #available(iOS 26.1, *) {
+            alert = AlarmPresentation.Alert(title: .init(stringLiteral: title), secondaryButton: .snoozeButton, secondaryButtonBehavior: .countdown)
+        } else {
+            alert = AlarmPresentation.Alert(title: .init(stringLiteral: title), stopButton: .stopButton, secondaryButton: .snoozeButton, secondaryButtonBehavior: .countdown)
+        }
+        
+        
+        let alarmPresentation = AlarmPresentation(alert: alert)
+        
+        let attributes = AlarmAttributes<CueFocusAlarmAttributes>(presentation: alarmPresentation, metadata: .init(title: title), tintColor: Color.blue)
+        
+        let configuration = AlarmManager.AlarmConfiguration.init(countdownDuration: .init(preAlert: nil, postAlert: 5 * 60),
+                                                                 schedule: alarmSchedule,
+                                                                 attributes: attributes, stopIntent: nil, secondaryIntent: nil, sound: .default)
+        
+        do {
+            let  alarm = try await alarmManager.schedule(id: id, configuration: configuration)
+            print("(DEBUG) Successfully created an alarm for focusTimers: \(alarm.id) @ \(targetAlarm.timeBuilder()) ✅!")
             return (id, alarm)
         } catch {
             print("(ERROR) there was an error!\(error.self): ", error.localizedDescription)

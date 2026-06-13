@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/danielsaidi/EmojiKit.git",
       "state" : {
-        "revision" : "c92d27cf9fca545898459f8b1dc8a79ee58b7199",
-        "version" : "2.3.5"
+        "revision" : "e615f635e0b45f852c37b3f7a42e17a2ce1857a9",
+        "version" : "2.5.0"
       }
     },
     {

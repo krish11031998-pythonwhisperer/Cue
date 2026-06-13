@@ -22,7 +22,7 @@ class TimerViewModel {
         self.presentSheet = !(reminderModel?.tasks.isEmpty ?? true)
     }
     
-    func updatePresentSheet(_ state: FocusCountdownView.TimerState) {
+    func updatePresentSheet(_ state: FocusCountDownTimerState) {
         guard let reminderModel,
               !reminderModel.tasks.isEmpty else { return }
         switch state {

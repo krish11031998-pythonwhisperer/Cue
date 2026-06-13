@@ -15,6 +15,9 @@ struct ReminderButton: View {
     var animation: Namespace.ID
     let action: (CreateReminderViewModel.ReminderCalendarPresentation) -> Void
     
+    static let horizontalPadding: CGFloat = 10
+    static let verticalPadding: CGFloat = 10
+    
     var body: some View {
         Button {
             action(presentation)
@@ -26,7 +29,7 @@ struct ReminderButton: View {
             }
             .font(.subheadline)
             .fontWeight(.semibold)
-            .padding(.init(top: 6, leading: 8, bottom: 6, trailing: 8))
+            .padding(.init(top: Self.verticalPadding, leading: Self.horizontalPadding, bottom: Self.verticalPadding, trailing: Self.horizontalPadding))
             .background(Color.backgroundSecondary, in: .capsule)
         }
         .buttonStyle(.plain)
