@@ -43,7 +43,6 @@ struct TimerView: View {
                         .padding(.bottom, proxy.size.height * 0.35 - proxy.size.width.half)
                     
                     FocusCountdownView(targetDuration: duration,
-                                       mode: .asTimer,
                                        theme: Color.proSky,
                                        stateUpdateHandler: viewModel.updatePresentSheet(_:))
                     .aspectRatio(1, contentMode: .fit)

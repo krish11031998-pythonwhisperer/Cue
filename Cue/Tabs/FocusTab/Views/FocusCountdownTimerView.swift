@@ -11,7 +11,7 @@ import Model
 
 struct FocusCountdownTimerView: View {
     
-    typealias TimerType = FocusCountdownRootViewModel.TimerType
+    typealias TimerType = FocusTimerRootViewModel.TimerType
     
     enum ViewState: Equatable {
         case idle
@@ -19,7 +19,7 @@ struct FocusCountdownTimerView: View {
         case transitioningBetweenReminders
     }
     
-    @Environment(FocusCountdownRootViewModel.self) var viewModel
+    @Environment(FocusTimerRootViewModel.self) var viewModel
     @Environment(FocusTimerLaunchControlCoordinator.self) var coordinator
     @State private var frame: CGRect = .zero
     @State private var state: ViewState = .idle
@@ -31,14 +31,21 @@ struct FocusCountdownTimerView: View {
     var body: some View {
         
         ZStack(alignment: .center) {
-            FocusCountdownView(targetDuration: coordinator.timerDuration, mode: .asTimer, theme: Color.proSky, stateUpdateHandler: stateUpdateHandler(_:)) {
-                Color.clear
-                    .aspectRatio(1, contentMode: .fit)
-                    .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newValue in
-                        self.frame = newValue
+            FocusCountdownView(targetDuration: coordinator.timerDuration, theme: Color.proSky) {
+                ZStack(alignment: .center) {
+                    if coordinator.state == .idle || coordinator.state == .reset {
+                        Color.clear
+                    } else {
+                        FocusSessionTimeCountdownView(theme: Color.proSky, remainingTime: coordinator.remainingTimeDuration, isCompleted: false)
                     }
+                }
+                .aspectRatio(1, contentMode: .fit)
+                .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newValue in
+                    self.frame = newValue
+                }
             }
             .environment(\.focusTimerStateFromCoordinator, coordinator.state)
+            .environment(\.focusTimerProgressFromCoordinator, coordinator.progress)
             .opacity(isIdle ? 0.275 : 1)
             .blur(radius: isIdle ? 5 : 0)
             
@@ -81,20 +88,20 @@ struct FocusCountdownTimerView: View {
     
     // MARK: - State Updates
     
-    private func stateUpdateHandler(_ timerState: FocusCountdownView.TimerState) {
-        switch timerState {
-        case .completed:
-            coordinator.reset()
-        case .resume:
-            // Hide the safeBottomArea View
-            break
-        case .paused:
-            // Do nothing for now
-            break
-        case .idle:
-            break
-        }
-    }
+//    private func stateUpdateHandler(_ timerState: FocusCountdownView.TimerState) {
+//        switch timerState {
+//        case .completed:
+//            coordinator.reset()
+//        case .resume:
+//            // Hide the safeBottomArea View
+//            break
+//        case .paused:
+//            // Do nothing for now
+//            break
+//        case .idle:
+//            break
+//        }
+//    }
     
     
     // MARK: - Selected Timer View
@@ -169,7 +176,7 @@ struct FocusCountdownTimerView: View {
 
 #Preview {
     FocusCountdownTimerView()
-        .environment(FocusCountdownRootViewModel(reminders: [.exampleOne(), .exampleTwo(), .exampleThree()]))
+        .environment(FocusTimerRootViewModel(reminders: [.exampleOne(), .exampleTwo(), .exampleThree()]))
         .environment(FocusTimerLaunchControlCoordinator(alarmCoordinator: nil))
         .padding(.all, 20)
 }
