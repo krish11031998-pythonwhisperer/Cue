@@ -7,6 +7,7 @@
 
 
 import Foundation
+
 class CueVoiceTranscriber {
     
     private let transcriber: CueTranscriber = .init()

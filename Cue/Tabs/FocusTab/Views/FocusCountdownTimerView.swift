@@ -74,7 +74,7 @@ struct FocusCountdownTimerView: View {
         }
         .onChange(of: state, initial: false) { oldValue, newValue in
             guard case .withTimer = newValue else { return }
-            coordinator.state = .idle
+//            coordinator.state = .idle
         }
     }
     

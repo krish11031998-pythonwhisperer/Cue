@@ -13,7 +13,7 @@ import Foundation
 struct SuggestedSubTask {
     @Guide(description: "Title of the sub-task")
     var title: String
-    @Guide(.anyOf(EmojiCategory.objects.emojis.map(\.char)))
+    @Guide(description: "Emoji of the sub-task")
     var icon: String
 }
 

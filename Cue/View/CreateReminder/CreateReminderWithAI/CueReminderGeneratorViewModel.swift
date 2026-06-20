@@ -28,8 +28,6 @@ class CueReminderGeneratorViewModel: Sendable {
         case generate(String)
     }
     
-//    private let transcriber: CueTranscriber
-//    private let recorder: CueRecorder
     private let voiceTranscriber: CueVoiceTranscriber
     private let store: Store
     private var transcriptionTask: Task<Void, Never>?
@@ -41,7 +39,7 @@ class CueReminderGeneratorViewModel: Sendable {
     @ObservationIgnored
     private var sentences: Set<String> = .init()
     
-    private let reminderGenerator: ReminderGenerator = .init()
+    private let reminderGenerator: ReminderGenerator = .init(sessionType: .simple)
     var recorderState: CueRecorder.RecorderState = .idle
     var transribedString: AttributedString = .init()
     var volatileTranscribedText: AttributedString = .init()
@@ -85,11 +83,7 @@ class CueReminderGeneratorViewModel: Sendable {
     
     init(store: Store) {
         self.store = store
-//        let transcriber = CueTranscriber()
-//        self.transcriber = transcriber
-//        self.recorder = .init()
         self.voiceTranscriber = .init()
-//        self.observeDownloadFromTranscriber()
     }
     
     @MainActor
@@ -109,7 +103,8 @@ class CueReminderGeneratorViewModel: Sendable {
         }
     }
     
-    private func generateReminderWithGenerator(_ reminderText: String) async throws {
+    @concurrent
+    nonisolated private func generateReminderWithGenerator(_ reminderText: String) async throws {
         guard !reminderText.isEmpty else { return }
         
         let generatedReminder = await reminderGenerator.suggestReminder(for: reminderText)
@@ -117,7 +112,7 @@ class CueReminderGeneratorViewModel: Sendable {
         
         guard let generatedReminder else { return }
         let weekdays = generatedReminder.date.weekdays?.map(\.weekdayIntValue) ?? []
-        let timeSchedule: ReminderSchedule? = .init(hour: generatedReminder.date.hour, minute: generatedReminder.date.minute, intervalWeeks: nil, weekdays: nil, calendarDates: nil)
+        let timeSchedule: ReminderSchedule? = .init(hour: generatedReminder.date.hour, minute: generatedReminder.date.minute, intervalWeeks: generatedReminder.date.internvalWeek, weekdays: Set(weekdays), calendarDates: nil)
         
         let date = timeSchedule?.scheduleForToday ?? .now
         
@@ -199,7 +194,8 @@ class CueReminderGeneratorViewModel: Sendable {
                             schedule = nil
                         }
                         try Task.checkCancellation()
-                        self?.store.createReminder(title: reminder.title, icon: reminder.icon, date: reminder.date, snoozeDuration: reminder.snoozeDuration, scheduleBuilder: schedule, tasks: reminder.tasks, reminderNotification: .notification, tags: reminder.tags)
+                        #warning("Need to fix this before saving")
+//                        self?.store.createReminder(title: reminder.title, icon: reminder.icon, date: reminder.date, snoozeDuration: reminder.snoozeDuration, scheduleBuilder: schedule, tasks: reminder.tasks, reminderNotification: .notification, tags: reminder.tags)
                     }
                 }
                 

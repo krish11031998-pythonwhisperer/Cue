@@ -9,6 +9,7 @@ import FoundationModels
 import VanorUI
 import Foundation
 import SwiftUI
+import Model
 
 fileprivate extension Calendar {
     var weekdayIndices: ClosedRange<Int> {
@@ -44,8 +45,7 @@ struct SuggestedReminder {
     @Guide(description: "Title of the reminder")
     var title: String
     
-    @Guide(description: "Icon of the reminder")
-    @Guide(.anyOf(EmojiCategory.activity.emojis.map(\.char)))
+    @Guide(description: "Emoji of the reminder")
     var icon: String
     
     @Guide(description: "Time at which the reminder is set")
@@ -74,106 +74,123 @@ struct SuggestedReminder {
         components.hour = 19
         components.minute = 0
         
-        return .init(title: "Workout in at Gym", icon: "🏋️‍♀️", date: .init(hour: 17, minute: 0, internvalWeek: 1, weekdays: [1, 2, 3].map { SuggestedReminderSchedule.Weekday(weekdayIntValue: $0) }))
-    }    
+        return .init(title: "Workout in at Gym", icon: "🏋️", date: .init(hour: 19, minute: 0, internvalWeek: 1, weekdays: [1, 2, 3].map { SuggestedReminderSchedule.Weekday(weekdayIntValue: $0) }))
+    }
 }
 
-class ReminderGenerator {
+class ReminderGenerator: CueLanguagareModelSession {
     
-    var session: LanguageModelSession
-    
-    init() {
-        session = .init {
-            """
-            You are a reminder extraction assistant.
-
-            Return exactly one `SuggestedReminder` from the user’s request.
-            Do not explain anything.
-
-            Core rule:
-            - If the user does NOT mention repetition → create a one-time reminder.
-              - internvalWeek = 0
-              - weekdays = nil
-            - If the user mentions repetition → create a recurring reminder.
-
-            Title:
-            - Short, natural action (no schedule details)
-
-            Time:
-            - Use provided time or infer reasonable defaults
-
-            Recurring:
-            - weekly / every week → internvalWeek = 1
-            - every N weeks → internvalWeek = N
-            - Map weekdays when mentioned
-
-            Examples:
-
-            Input:
-            \(SuggestedReminder.promptExample)
-            Output:
-            """
-            SuggestedReminder.example
-            """
-            Input:
-            \(SuggestedReminder.promptExampleTwo)
-            Output:
-            """
-            SuggestedReminder.exampleTwo
-            """
-            If no repetition is mentioned, return a one-time reminder.
-
-            Return only a `SuggestedReminder`.
-            """
-        }
-    }
-    
-    nonisolated func suggestReminder(for description: String) async -> SuggestedReminder? {
-        do {
-            let prompt = Prompt("Create an reminder of this description: \(description)")
-            let tasks = try await session.respond(to: prompt,
-                                                  generating: SuggestedReminder.self,
-                                                  includeSchemaInPrompt: true)
-            guard !Task.isCancelled else { return nil }
-            return tasks.content
-        } catch let error as LanguageModelSession.GenerationError {
-            switch error {
-            case .exceededContextWindowSize:
-                await createNewContextualSession()
-                return await suggestReminder(for: description)
-            case .assetsUnavailable:
-                print("asset Unavailable")
-            case .guardrailViolation:
-                print("guardrailViolation")
-            case .unsupportedGuide:
-                print("unsupportedGuide")
-            case .unsupportedLanguageOrLocale:
-                print("unsupportedLanguageOrLocale")
-            case .decodingFailure:
-                print("decodingFailure")
-            case .rateLimited:
-                print("rateLimited")
-            case .concurrentRequests:
-                print("concurrentRequests")
-            case .refusal:
-                print("concurrentRequests")
-            @unknown default:
-                break
+    enum SessionType {
+        case simple
+        case withTools
+        
+        var tools: [any Tool] {
+            switch self {
+            case .simple:
+                return []
+            case .withTools:
+//                return [EmojiTool(), ScheduleTool()]
+                return [EmojiTool()]
+//                return [ScheduleTool()]
             }
-        } catch {
-            print("(DEBUG) There was an error: \(error.localizedDescription)")
         }
-        return nil
+        
+        var instruction: Instructions {
+            switch self {
+            case .simple:
+                    .init {
+                        """
+                        You are an expert at building routines and you will help the user build routines that they want to cultivate.
+                        You should be able to recognize the activity that the user mentions in their prompt.
+                        
+                        Core rule:
+                        - If the user does NOT mention repetition → create a one
+                        - internvalWeek = 0
+                        - weekdays = nil
+                        - If the user mentions repetition → create a recurring reminders
+                        
+                        Title:
+                        - Short, natural action (no schedule details)
+                        
+                        Time:
+                        - Use provided time or infer reasonable defaults
+                        
+                        Recurring:
+                        - Map the recurring weeks → intervalWeek = N where N is number of weeks.
+                        - Map weekdays when mentioned
+                        
+                        Input:
+                        \(SuggestedReminder.promptExample)
+                        Output:
+                        """
+                        SuggestedReminder.example
+                        
+                        """
+                        here is an example with reccuring reminders where the intervalWeeks is recognized
+                        Input:
+                        \(SuggestedReminder.promptExampleTwo)
+                        Output:
+                        """
+                        SuggestedReminder.exampleTwo
+                    }
+            case .withTools:
+                    .init {
+                        """
+                        You are a reminder extraction assistant.
+                        
+                        Return exactly one `SuggestedReminder` from the user’s request.
+                        Do not explain anything.
+                        
+                        Core rule:
+                        - If the user does NOT mention repetition → create a one-time reminder.
+                        - internvalWeek = 0
+                        - weekdays = nil
+                        - If the user mentions repetition → create a recurring reminder.
+                        
+                        Title:
+                        - Short, natural action (no schedule details)
+                        
+                        Time:
+                        - Use provided time or infer reasonable defaults
+                        
+                        Recurring:
+                        - weekly / every week → internvalWeek = 1
+                        - every N weeks → internvalWeek = N
+                        - Map weekdays when mentioned
+                        
+                        ALWAYS USE EmojiTool to get suitable emoji for the reminder
+                        
+                        Examples:
+                        
+                        Input:
+                        \(SuggestedReminder.promptExample)
+                        Output:
+                        """
+                        SuggestedReminder.example
+                        """
+                        Input:
+                        \(SuggestedReminder.promptExampleTwo)
+                        Output:
+                        """
+                        SuggestedReminder.exampleTwo
+                    }
+            }
+        }
     }
     
-    @MainActor
-    func createNewContextualSession() {
-        let allEntries = session.transcript
-        let condensedEntries = [allEntries.first, allEntries.last].compactMap { $0 }
-        let condensedTranscript = Transcript(entries: condensedEntries)
-        let newSession = LanguageModelSession(transcript: condensedTranscript)
-        newSession.prewarm()
-        self.session = newSession
+    let sessionType: SessionType
+    
+    init(sessionType: SessionType = .simple) {
+        self.sessionType = sessionType
+        let session = LanguageModelSession(model: .default, tools: sessionType.tools, instructions: {
+            sessionType.instruction
+        })
+        super.init(session: session)
+    }
+    
+    func suggestReminder(for description: String) async ->
+    SuggestedReminder? {
+        await generate(for: description)
     }
 }
 
@@ -181,7 +198,8 @@ fileprivate struct TestView: View {
     
     @State private var loading: Bool = false
     @State private var reminderSearch: String = ""
-    private let suggestionModel: ReminderGenerator = .init()
+    @State private var reminders: [ReminderModel] = []
+    private let suggestionModel: ReminderGenerator = .init(sessionType: .simple)
     
     var examples: [String] {
         [
@@ -216,9 +234,15 @@ fileprivate struct TestView: View {
                                             .tint(Color.proSky.invertedForegroundPrimary)
                                     }
                                 }
-                        }	
+                        }
                         .tint(Color.proSky.baseColor)
                         .buttonStyle(.glassProminent)
+                    }
+                }
+                
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(reminders) { reminder in
+                        ReminderView(model: .init(title: reminder.title, icon: .init(reminder.icon)!, theme: Color.proSky, time: reminder.schedule?.timeScheduled ?? .now, state: .display, tags: [], logReminder: nil, deleteReminder: nil))
                     }
                 }
             }
@@ -228,13 +252,13 @@ fileprivate struct TestView: View {
         .task(id: reminderSearch) { @MainActor in
             guard !reminderSearch.isEmpty else { return }
             self.loading = true
-            let reminder = await suggestionModel.suggestReminder(for: reminderSearch)
+            let suggestedReminder = await suggestionModel.suggestReminder(for: reminderSearch)
+            
             self.loading = false
-            print("(DEBUG) reminder:", reminder)
-            if let weekdays = reminder?.date.weekdays {
-                weekdays.forEach { weekdayValue in
-                    print("\(Calendar.current.weekdaySymbols[weekdayValue.weekdayIntValue])")
-                }
+            print("(DEBUG) reminder:", suggestedReminder)
+            if let suggestedReminder {
+                let reminder = ReminderModel(notificationType: .notification, title: suggestedReminder.title, icon: .init(symbol: nil, emoji: suggestedReminder.icon), date: .now, snoozeDuration: .zero, tasks: [], tags: [], schedule: .init(hour: suggestedReminder.date.hour, minute: suggestedReminder.date.minute, intervalWeeks: suggestedReminder.date.internvalWeek, weekdays: nil, calendarDates: nil))
+                self.reminders.append(reminder)
             }
         }
     }

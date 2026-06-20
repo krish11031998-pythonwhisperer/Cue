@@ -42,6 +42,8 @@ class CreateReminderViewModel: CreateReminderManager {
     @ObservationIgnored
     var store: Store
     @ObservationIgnored
+    var emojiSession: EmojiSession = .init()
+    @ObservationIgnored
     lazy var reminderSubtasksSession: ReminderSubtaskSession = .init()
     @ObservationIgnored
     var suggestionTask: Task<Void, Never>?

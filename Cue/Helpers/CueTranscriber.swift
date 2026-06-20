@@ -60,11 +60,7 @@ class CueTranscriber {
             do {
                 for try await result in transcriber.results {
                     if result.isFinal {
-                        if let finalizedString = self?.finalizeSentences(String(result.text.characters)) {
-                            return Result.final(AttributedString(finalizedString))
-                        } else {
-                            return Result.final(result.text)
-                        }
+                        return Result.final(result.text)
                     } else {
                         return Result.volatile(result.text)
                     }
@@ -105,7 +101,10 @@ class CueTranscriber {
     
     func stopTranscribing() async throws {
         inputBuilder?.finish()
-        try await analyzer.finalizeAndFinishThroughEndOfInput()
+//        try await analyzer.finalizeAndFinishThroughEndOfInput()
+//        transcriptionResult.cancel()
+        
+        await analyzer.cancelAndFinishNow()
     }
     
     

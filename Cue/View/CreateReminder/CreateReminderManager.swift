@@ -14,7 +14,7 @@ internal import AlarmKit
 
 struct CreateReminderTask: Identifiable {
     let title: String
-    let icon: Icon
+    var icon: Icon
     let objectID: NSManagedObjectID?
     
     init(title: String, icon: Icon, objectID: NSManagedObjectID?) {
@@ -46,6 +46,7 @@ protocol CreateReminderManager: AnyObject {
     var scheduleBuilder: Reminder.ScheduleBuilder { get set }
     var icon: Icon { get set }
     var color: Color { get set }
+    var emojiSession: EmojiSession { get set }
     var reminderSubtasksSession: ReminderSubtaskSession { get set }
     var suggestionTask: Task<Void, Never>? { get set }
     var isLoadingSuggestions: Bool { get set }
@@ -155,7 +156,14 @@ extension CreateReminderManager {
     }
     
     func addTask(title: String) {
-        self.tasks.append(.init(title: title, icon: .emoji(Emoji.all.randomElement()!), objectID: nil))
+        self.tasks.append(.init(title: title, icon: .symbol(.progressIndicator), objectID: nil))
+        Task {
+            let emoji = await emojiSession.generateEmoji(for: title)
+            
+            if let firstIndex = self.tasks.firstIndex(where: { $0.title == title }) {
+                self.tasks[firstIndex].icon = .emoji(emoji)
+            }
+        }
     }
     
     

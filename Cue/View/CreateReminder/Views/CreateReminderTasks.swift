@@ -21,12 +21,13 @@ struct CreateReminderTasksView: View {
         VStack(alignment: .center, spacing: 0) {
             Section {
                 if !taskViewModels.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 0) {
                         ForEach(taskViewModels) { taskViewModel in
                             ReminderTaskView(model: taskViewModel)
                                 .transition(.scale(scale: 1, anchor: .center))
                         }
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
                     .padding(.top, 16)
                 }
             } header: {
