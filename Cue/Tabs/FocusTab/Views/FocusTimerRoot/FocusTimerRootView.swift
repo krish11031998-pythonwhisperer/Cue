@@ -83,7 +83,7 @@ struct FocusTimerRootView: View {
         .sheet(item: $viewModel.sheetPresentation, content: { sheet in
             switch sheet {
             case .pomodoroSessionEditor:
-                PomodoroSessionEditorView()
+                PomodoroSessionEditorView(sessionDuration: $coordinator.timerDuration, breakDuration: $coordinator.breakDuration, sessionCount: $coordinator.pomodoroSessionCount)
                     .fittedPresentationDetent()
             }
         })

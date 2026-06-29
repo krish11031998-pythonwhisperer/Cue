@@ -133,7 +133,6 @@ extension CreateReminderManager {
         for(index, task) in tasks.enumerated() {
             let viewType = ReminderTaskView.ViewType.displayOnly(edit(index), delete(index)) { [weak self] in
                 print("(DEBUG) tapped on icon!")
-//                self?.calendarPresentation = .iconSelector
                 self?.presentIconSheet()
             }
         

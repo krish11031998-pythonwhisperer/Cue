@@ -25,6 +25,7 @@ class EmojiSession: CueLanguagareModelSession {
             For eg.
             if the prompt is "Pay Rent"
             you will return "💵"
+            DO NOT USE MORE THAN ONE EMOJI
         """)
         self.init(session: session)
     }

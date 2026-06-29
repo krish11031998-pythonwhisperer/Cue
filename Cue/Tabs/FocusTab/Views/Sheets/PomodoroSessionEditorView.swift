@@ -54,9 +54,15 @@ struct PomodoroSessionEditorView: View {
     private static let sessionCountUpperBound: Int = 11
     
     @State private var selectedButton: Options = .sessionDuration
-    @State private var sessionDuration: TimeInterval = 5 * Self.minuteInTimeInterval
-    @State private var breakDuration: TimeInterval = 5 * Self.minuteInTimeInterval
-    @State private var sessionCount: Int = 4
+    @Binding private var sessionDuration: TimeInterval
+    @Binding private var breakDuration: TimeInterval
+    @Binding private var sessionCount: Int
+    
+    init(sessionDuration: Binding<TimeInterval>, breakDuration: Binding<TimeInterval>, sessionCount: Binding<Int>) {
+        self._sessionDuration = sessionDuration
+        self._breakDuration = breakDuration
+        self._sessionCount = sessionCount
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -181,6 +187,9 @@ struct PomodoroSessionEditorView: View {
 fileprivate struct TestView: View {
     
     @State private var presentSheet: Bool = false
+    @State private var sessionDuration: TimeInterval = 5 * 60
+    @State private var breakDuration: TimeInterval = 5 * 60
+    @State private var sessionCount: Int = 4
     
     var body: some View {
         Button {
@@ -193,17 +202,12 @@ fileprivate struct TestView: View {
         .tint(.accentColor)
         .glassEffect(.regular, in: .capsule)
         .sheet(isPresented: $presentSheet) {
-            PomodoroSessionEditorView()
+            PomodoroSessionEditorView(sessionDuration: $sessionDuration, breakDuration: $breakDuration, sessionCount: $sessionCount)
                 .fittedPresentationDetent()
         }
 
     }
     
-}
-
-#Preview {
-    PomodoroSessionEditorView()
-//        .environment(FocusTimerLaunchControlCoordinator(alarmCoordinator: CueAlarmManager()))
 }
 
 #Preview {
