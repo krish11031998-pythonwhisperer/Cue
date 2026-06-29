@@ -1,5 +1,5 @@
 //
-//  FocusCountdownRootView.swift
+//  FocusTimerRootView.swift
 //  Cue
 //
 //  Created by Krishna Venkatramani on 01/06/2026.
@@ -8,84 +8,6 @@
 import SwiftUI
 import VanorUI
 import Model
-
-@MainActor
-@Observable
-class FocusCountdownRootViewModel {
-    
-    static let translationsXThreshold: CGFloat = 100
-    
-    enum TimerType: Identifiable, Equatable {
-        case focus
-        case reminder(ReminderModel)
-        
-        var id: String {
-            switch self {
-            case .focus:
-                return "focus"
-            case .reminder(let reminderModel):
-                return "reminder_\(reminderModel.title)"
-            }
-        }
-        
-        var icon: Icon {
-            switch self {
-            case .focus:
-                return .symbol(.timer)
-            case .reminder(let reminderModel):
-                return .init(reminderModel.icon)!
-            }
-        }
-        
-        var title: String {
-            switch self {
-            case .focus:
-                return "Focus"
-            case .reminder(let reminderModel):
-                return reminderModel.title
-            }
-        }
-    }
-    
-    var timerItems: [TimerType] = [.focus]
-    var selectedTimerItem: TimerType = .focus
-    @ObservationIgnored
-    var currentSelectedReminderIdx: Int = 0
-    var panGestureTranslation: CGFloat = 0
-    
-
-    init(reminders: [ReminderModel]) {
-        self.selectedTimerItem = .focus
-        self.timerItems = [.focus] + reminders.map { .reminder($0) }
-    }
-    
-    convenience init() {
-        self.init(reminders: [])
-    }
-    
-    
-    func updateSelectedReminder(forwards: Bool, backwards: Bool) {
-        if forwards && currentSelectedReminderIdx < timerItems.count - 1 {
-            currentSelectedReminderIdx += 1
-        } else if backwards && currentSelectedReminderIdx > 0 {
-            currentSelectedReminderIdx -= 1
-        } else {
-            withAnimation(.snappy) {
-                self.panGestureTranslation = 0
-            }
-        }
-        
-        self.selectedTimerItem = timerItems[currentSelectedReminderIdx]
-    }
-    
-    func updateWithReminders(_ reminders: [ReminderModel]) {
-        var newUpdatedItems: [TimerType] = [.focus]
-        reminders.forEach { reminder in
-            newUpdatedItems.append(.reminder(reminder))
-        }
-        self.timerItems = newUpdatedItems
-    }
-}
 
 struct FocusCountdownTopGradient: Shape {
     nonisolated func path(in rect: CGRect) -> Path {
@@ -97,10 +19,10 @@ struct FocusCountdownTopGradient: Shape {
     }
 }
 
-struct FocusCountdownRootView: View {
+struct FocusTimerRootView: View {
 
     @Bindable private var coordinator: FocusTimerLaunchControlCoordinator
-    @State private var viewModel: FocusCountdownRootViewModel = .init()
+    @State private var viewModel: FocusTimerRootViewModel = .init()
     let reminders: [ReminderModel]
     @Environment(\.colorScheme) var colorScheme
     
@@ -158,6 +80,13 @@ struct FocusCountdownRootView: View {
         .safeAreaBar(edge: .bottom, alignment: .center, spacing: 8) {
             FloatingFocusTimerFooterView(viewModel: viewModel, coordinator: coordinator)
         }
+        .sheet(item: $viewModel.sheetPresentation, content: { sheet in
+            switch sheet {
+            case .pomodoroSessionEditor:
+                PomodoroSessionEditorView()
+                    .fittedPresentationDetent()
+            }
+        })
         .onChange(of: viewModel.selectedTimerItem, initial: true) { _, newValue in
             guard case .reminder(let reminderModel) = newValue else { return }
             let tasks = reminderModel.tasks
@@ -176,7 +105,7 @@ struct FocusCountdownRootView: View {
             }
             return
         }
-        let diff = min(1, max(0, abs(x)/FocusCountdownRootViewModel.translationsXThreshold))
+        let diff = min(1, max(0, abs(x)/FocusTimerRootViewModel.translationsXThreshold))
         #if DEBUG
 //        print("(DEBUG) diff: ", diff)
         #endif
@@ -185,7 +114,7 @@ struct FocusCountdownRootView: View {
     
     private func hasEnded(_ point: CGPoint) {
         let x = point.x
-        guard abs(x) > FocusCountdownRootViewModel.translationsXThreshold else {
+        guard abs(x) > FocusTimerRootViewModel.translationsXThreshold else {
             withAnimation(.snappy) {
                 self.viewModel.panGestureTranslation = 0
             }
@@ -199,10 +128,10 @@ struct FocusCountdownRootView: View {
     
     struct FloatingFocusTimerFooterView: View {
         
-        private var viewModel: FocusCountdownRootViewModel
+        private var viewModel: FocusTimerRootViewModel
         @Bindable private var coordinator: FocusTimerLaunchControlCoordinator
         
-        init(viewModel: FocusCountdownRootViewModel, coordinator: FocusTimerLaunchControlCoordinator) {
+        init(viewModel: FocusTimerRootViewModel, coordinator: FocusTimerLaunchControlCoordinator) {
             self.viewModel = viewModel
             self.coordinator = coordinator
         }
@@ -214,29 +143,19 @@ struct FocusCountdownRootView: View {
                     FocusTimerLaunchControl(coordinator: coordinator) {
                         // Present Sheet
                         print("(DEBUG) present sheet with reminders")
+                        viewModel.presentAction(sessionType: coordinator.selectedTimerType)
                     }
                     .transition(.popIn)
                 case .pause, .resume, .start:
-                    HStack(alignment: .center, spacing: 8) {
-                        ReminderIconView(icon: viewModel.selectedTimerItem.icon,
-                                         foregroundColor: .primary,
-                                         backgroundColor: Color.secondarySystemBackground,
-                                         font: .caption)
-                        .frame(width: 32, height: 32, alignment: .center)
-                        
-                        Text(viewModel.selectedTimerItem.title)
-                            .font(.headline.weight(.semibold))
-                        
-                        Spacer()
-                        
-                        LaunchControlButton(image: .lockAppDashed, size: .regular) {
-                            // Disable App Blocking
-                            return
-                        }
-                        
-                        LaunchControlButton(image: .alarmWavesLeftAndRight, size: .regular) {
-                            // Diable Alarm
-                            return
+                    Group {
+                        switch coordinator.selectedTimerType {
+                        case .classic:
+                            ClassicFocusSessionTimerView(icon: viewModel.selectedTimerItem.icon, title: viewModel.selectedTimerItem.title)
+                        case .pomodoro:
+                            PomodoroFocusSessionTimerView(icon: viewModel.selectedTimerItem.icon,
+                                                          title: viewModel.selectedTimerItem.title,
+                                                          currentSessionIndex: coordinator.currentSessionIndex,
+                                                          sessionCount: coordinator.pomodoroSessionCount)
                         }
                     }
                     .transition(.popIn)
@@ -247,11 +166,93 @@ struct FocusCountdownRootView: View {
             .fixedSize(horizontal: false, vertical: true)
         }
     }
+    
+    
+    // MARK: - Classic Focus Session Timer View
+    
+    struct ClassicFocusSessionTimerView: View {
+        let icon: Icon
+        let title: String
+        
+        var body: some View {
+            HStack(alignment: .center, spacing: 8) {
+                ReminderIconView(icon: icon,
+                                 foregroundColor: .primary,
+                                 backgroundColor: Color.secondarySystemBackground,
+                                 font: .caption)
+                .frame(width: 32, height: 32, alignment: .center)
+                
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                
+                Spacer()
+                
+                LaunchControlButton(image: .lockAppDashed, size: .regular) {
+                    // Disable App Blocking
+                    return
+                }
+                
+                LaunchControlButton(image: .alarmWavesLeftAndRight, size: .regular) {
+                    // Diable Alarm
+                    return
+                }
+            }
+            .transition(.popIn)
+        }
+    }
+    
+    struct PomodoroFocusSessionTimerView: View {
+        
+        let icon: Icon
+        let title: String
+        let currentSessionIndex: Int
+        let sessionCount: Int
+        
+        @ViewBuilder
+        func capsule(for index: Int) -> some View {
+            let theme: LCHColor = index % 2 == 0 ? Color.proSky : Color.proPlum
+            if index < currentSessionIndex {
+                Capsule()
+                    .fill(theme.baseColor)
+            } else if index == currentSessionIndex {
+                Capsule()
+                    .fill(theme.baseColor)
+                    .animation(.easeInOut.repeatForever()) { content in
+                        content
+                            .opacity(index == currentSessionIndex ? 0.3 : 1)
+                    }
+            } else {
+                Capsule()
+                    .fill(theme.backgroundPrimary)
+            }
+        }
+        
+        var body: some View {
+            VStack(alignment: .center, spacing: 4) {
+                ClassicFocusSessionTimerView(icon: icon, title: title)
+                
+                HStack(alignment: .center, spacing: 2) {
+                    ForEach(0..<(sessionCount + sessionCount - 1)) { index in
+                        if index % 2 == 0 {
+                            capsule(for: index)
+                                .frame(height: 4)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                        } else {
+                            capsule(for: index)
+                                .frame(width: 24, height: 4, alignment: .center)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    
 }
 
 #Preview {
     @Previewable @State var coordinator: FocusTimerLaunchControlCoordinator = .init(alarmCoordinator: nil)
-    FocusCountdownRootView(coordinator: coordinator, reminders: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()])
+    FocusTimerRootView(coordinator: coordinator, reminders: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()])
         .safeAreaBar(edge: .bottom) {
             FocusTimerLaunchControl(coordinator: coordinator) {
                 //

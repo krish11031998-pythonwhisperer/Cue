@@ -25,7 +25,7 @@ struct WelcomeFocusView: View {
             
             Group {
                 if isCurrentTab {
-                    FocusCountdownView(targetDuration: 3, mode: .forDisplay, theme: Color.proSky) {
+                    FocusCountdownView(targetDuration: 3, theme: Color.proSky) {
                         guard case .completed = $0 else { return }
                         self.completed()
                     }

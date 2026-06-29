@@ -12,6 +12,7 @@ internal import AlarmKit
 
 class FocusAlarmManager: FocusTimerAlarmCoordinator {
     
+    
     var alarmManager: CueAlarmManager?
     
     public func scheduleAlarmForTimer(startDate: Date, timeInterval: TimeInterval, title: String, color: Color) async -> (UUID, Alarm)? {
@@ -34,6 +35,10 @@ class FocusAlarmManager: FocusTimerAlarmCoordinator {
         }
     }
     
+    public func cancelAlarm(_ uuid: UUID) {
+        alarmManager?.cancelAlarms([uuid])
+    }
+
     func authorizationStatus() async -> AlarmManager.AuthorizationState {
         return alarmManager?.authorizationState ?? .notDetermined
     }

@@ -191,7 +191,7 @@ public class CueAlarmManager {
         }
     }
     
-    private func cancelAlarms(_ ids: [UUID]) {
+    public func cancelAlarms(_ ids: [UUID]) {
         for id in ids {
             try? alarmManager.cancel(id: id)
             Task { @MainActor in
