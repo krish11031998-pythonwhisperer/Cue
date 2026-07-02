@@ -187,7 +187,7 @@ class CueReminderGeneratorViewModel: Sendable {
                         if let generatedSchedule = reminder.schedule {
                             schedule = .init(hour: generatedSchedule.hour,
                                              minute: generatedSchedule.minute,
-                                             intervalWeek: generatedSchedule.intervalWeeks,
+                                             intervalWeek: generatedSchedule.intervalWeeks == 0 ? nil : generatedSchedule.intervalWeeks,
                                              weekdays: generatedSchedule.weekdays,
                                              dates: generatedSchedule.calendarDates)
                         } else {
@@ -195,7 +195,7 @@ class CueReminderGeneratorViewModel: Sendable {
                         }
                         try Task.checkCancellation()
                         #warning("Need to fix this before saving")
-//                        self?.store.createReminder(title: reminder.title, icon: reminder.icon, date: reminder.date, snoozeDuration: reminder.snoozeDuration, scheduleBuilder: schedule, tasks: reminder.tasks, reminderNotification: .notification, tags: reminder.tags)
+                        self?.store.createReminder(title: reminder.title, icon: reminder.icon, date: reminder.date, snoozeDuration: reminder.snoozeDuration, scheduleBuilder: schedule, tasks: reminder.tasks, reminderNotification: .notification, tags: reminder.tags)
                     }
                 }
                 

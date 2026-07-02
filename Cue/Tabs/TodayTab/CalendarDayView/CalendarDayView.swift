@@ -132,9 +132,6 @@ public struct CalendarDayView: View {
                 } description: {
                     Text("there is nothing in the cue yet.")
                         .font(.bitcountRegular(style: .title3))
-//                        .font(.title3)
-//                        .fontWeight(.semibold)
-//                        .padding(.top, 12)
                 } actions: {
                     #if !KARINA_TESTING
                     Button {

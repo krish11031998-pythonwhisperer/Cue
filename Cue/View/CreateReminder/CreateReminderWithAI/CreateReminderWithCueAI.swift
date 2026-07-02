@@ -84,6 +84,7 @@ struct CreateReminderWithCueAI: View {
                 await viewModel?.stopRecorder()
             }
         })
+        #if !AI_TAB
         .toolbar(content: {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("", systemSymbol: .checkmark) {
@@ -98,6 +99,7 @@ struct CreateReminderWithCueAI: View {
                 .disabled(!viewModel.createRemindersIsEnabled)
             }
         })
+        #endif
         .safeAreaBar(edge: .bottom, alignment: .center, spacing: 0) {
             CueRecordingTextFieldFloatingView(generating: viewModel.isGenerating,
                                               waveformBuilder: nil) { [weak viewModel] in
@@ -105,6 +107,9 @@ struct CreateReminderWithCueAI: View {
             } generateReminder: { [weak viewModel] text in
                 viewModel?.generationState = .generate(text)
             }
+            #if AI_TAB
+            .padding(.bottom, 20)
+            #endif
 
         }
     }

@@ -17,7 +17,7 @@ struct CreateReminderRootView: View {
     
     @Environment(\.dismiss) var dismiss
     @Environment(SubscriptionManager.self) var subscriptionManager
-    @State private var mode: Mode = .ai
+    @State private var mode: Mode? = nil
     let store: Store
     
     init(store: Store) {
@@ -25,6 +25,34 @@ struct CreateReminderRootView: View {
     }
     
     var body: some View {
+        #if AI_TAB
+        NavigationView {
+            CreateReminderWithCueAI(store: store)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("", systemSymbol: .pencilTip) {
+                            withAnimation(.easeInOut) {
+                                mode = .manual
+                            }
+                        }
+                    }
+                }
+        }
+        .sheet(isPresented: .init(get: { mode == .manual }, set: { _ in mode = nil }), onDismiss: nil) {
+            NavigationView {
+                CreateReminderView(mode: .create, store: store)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button(role: .close) {
+                                dismiss()
+                            }
+                        }
+                    }
+            }
+            .presentationDetents([.large])
+            .interactiveDismissDisabled(true)
+        }
+        #else
         NavigationView {
             ZStack(alignment: .center) {
                 switch mode {
@@ -54,5 +82,6 @@ struct CreateReminderRootView: View {
                 }
             }
         }
+        #endif
     }
 }

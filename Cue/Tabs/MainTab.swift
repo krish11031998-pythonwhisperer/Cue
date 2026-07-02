@@ -62,6 +62,14 @@ struct MainTab: View {
         self._focusTimerCoordinator = .init(initialValue: .init(alarmCoordinator: focusAlarmManager))
     }
     
+    var bottomTabAccessories: [Tabs] {
+        #if AI_TAB
+        return [.focus]
+        #else
+        return [.home, .focus]
+        #endif
+    }
+    
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab(value: Tabs.home) {
@@ -117,7 +125,9 @@ struct MainTab: View {
             
             if #available(iOS 27, *) {
                 Tab(value: .create, role: .prominent) {
-                    Color.clear
+                    CreateReminderRootView(store: store)
+                        .presentationDetents([.fraction(1)])
+                        .interactiveDismissDisabled(true)
                 } label: {
                     Image(systemSymbol: .plus)
                         .font(.body)
@@ -128,29 +138,33 @@ struct MainTab: View {
                 }
             }
         }
-        .optionalBottomAccessoryView(selectedTab: selectedTab, enabledTabs: [.home, .focus]) { selectedTab in
+        .optionalBottomAccessoryView(selectedTab: selectedTab, enabledTabs: bottomTabAccessories) { selectedTab in
             switch selectedTab {
             case .home:
+                #if AI_TAB
+                EmptyView()
+                #else
                 TodayTabBarAccessoryView(isToday: isToday, todayPublisher: todayPublisher)
+                #endif
             case .focus:
                 FocusTabBottomAccessoryView(coordinator: focusTimerCoordinator)
             default:
                 EmptyView()
             }
         }
-//        .environment(\.tabAccessorySize, tabAccessorySize)
+        .scrollEdgeEffectStyle(.soft, for: .top)
         .onPreferenceChange(IsTodayPreferenceKey.self, perform: {
             self.isToday = $0
         })
         .tabBarMinimizeBehavior(.onScrollDown)
         .ignoresSafeArea(edges: .bottom)
-        .onChange(of: selectedTab) { oldValue, newValue in
-            print("(DEBUG) Change in selectedTab: ", selectedTab)
-            if newValue == .create {
-                self.presentCreateReminder = true
-                self.selectedTab = oldValue
-            }
-        }
+//        .onChange(of: selectedTab) { oldValue, newValue in
+//            print("(DEBUG) Change in selectedTab: ", selectedTab)
+//            if newValue == .create {
+//                self.presentCreateReminder = true
+//                self.selectedTab = oldValue
+//            }
+//        }
         .onChange(of: fullScreenPresentation, initial: false, { oldValue, newValue in
             if oldValue == .onboarding {
                 self.presentCreateReminder = true

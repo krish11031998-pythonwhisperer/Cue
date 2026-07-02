@@ -29,9 +29,9 @@ struct SuggestedSubTasks {
     
     static var example: SuggestedSubTasks {
         let subTasks: [SuggestedSubTask] = [
-            .init(title: "Warm up", icon: SFSymbol.figureStrengthtrainingFunctional.rawValue),
-            .init(title: "Exercise", icon: SFSymbol.figureStrengthtrainingTraditional.rawValue),
-            .init(title: "Warm down", icon: SFSymbol.figureYoga.rawValue)
+            .init(title: "Warm up", icon: "🏃"),
+            .init(title: "Exercise", icon: "🏋️"),
+            .init(title: "Warm down", icon: "🧘")
         ]
         
         return .init(subTasks: subTasks)
@@ -50,6 +50,7 @@ class ReminderSubtaskSession {
             
             For Example if I say \(SuggestedSubTasks.promptExample). 
             I expect you to give me something cohorent like the following
+            PROVIDE ONE Emoji for each task.
             """
             SuggestedSubTasks.example
         })

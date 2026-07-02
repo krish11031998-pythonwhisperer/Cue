@@ -26,6 +26,7 @@ public class CalendarManager {
     
     // MARK: - Calendary Days in a Year
     
+    @concurrent
     public func setupCalendarForOneMonthFromToday() async -> [CalendarDay] {
         let dayInWeek = Date.now.day
         let start = Calendar.current.date(byAdding: .weekOfYear, value: -2, to: Date.now)!.startOfWeek
@@ -100,6 +101,7 @@ public class CalendarManager {
         return calendarDay
     }
     
+    @concurrent
     nonisolated
     private func fetchCalendarDays(for dates: [Date]) async -> [CalendarDay] {
         let background = CoreDataManager.shared.retrieveBackgroundContext()
@@ -119,6 +121,7 @@ public class CalendarManager {
         return calendarDays
     }
     
+    @concurrent
     nonisolated
     private func fetchReminders(backgroundContext: NSManagedObjectContext) async -> [ReminderModel] {
         let reminderModels: [ReminderModel] = await backgroundContext.perform {
@@ -139,6 +142,7 @@ public class CalendarManager {
         return reminderModels
     }
     
+    @concurrent
     nonisolated
     private func fetchCalendarDay(backgroundContext: NSManagedObjectContext, dates: [Date], reminderModels: [ReminderModel]) async -> [Date: CalendarDay] {
         let calendarValues: [Date: CalendarDay] = await withTaskGroup(of: CalendarDay?.self) { group in
@@ -167,6 +171,7 @@ public class CalendarManager {
         return calendarValues
     }
     
+    @concurrent
     nonisolated
     private func retrieveCalendayDay(backgroundContext: NSManagedObjectContext, date: Date, reminders: [ReminderModel]) async -> CalendarDay {
         let (loggedReminders, loggedReminderTasks): ([CalendarDay.LoggedReminder], [ReminderTaskModel]) = await backgroundContext.perform {
