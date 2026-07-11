@@ -60,6 +60,18 @@ class CueReminderGeneratorViewModel: Sendable {
 //        recorder.waveformBarsBuilderFromAVAudioPCMBuffer
 //    }
     
+    func addReminder(_ reminder: ReminderModel) -> Bool {
+        return false
+    }
+    
+    func remove(_ reminder: ReminderModel) {
+        
+    }
+    
+    func edit(_ reminder: ReminderModel) {
+        
+    }
+    
     var createRemindersIsEnabled: Bool {
         guard !reminders.isEmpty else { return false }
         

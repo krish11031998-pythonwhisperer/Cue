@@ -106,9 +106,6 @@ struct FocusTimerRootView: View {
             return
         }
         let diff = min(1, max(0, abs(x)/FocusTimerRootViewModel.translationsXThreshold))
-        #if DEBUG
-//        print("(DEBUG) diff: ", diff)
-        #endif
         viewModel.panGestureTranslation = diff
     }
     

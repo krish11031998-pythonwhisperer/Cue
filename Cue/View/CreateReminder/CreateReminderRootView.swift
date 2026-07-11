@@ -16,8 +16,12 @@ struct CreateReminderRootView: View {
     }
     
     @Environment(\.dismiss) var dismiss
-    @Environment(SubscriptionManager.self) var subscriptionManager
+    @Environment(SubscriptionManager.self) var subscriptionManager  
+    #if AI_TAB
     @State private var mode: Mode? = nil
+    #else
+    @State private var mode: Mode = .ai
+    #endif
     let store: Store
     
     init(store: Store) {
@@ -41,13 +45,6 @@ struct CreateReminderRootView: View {
         .sheet(isPresented: .init(get: { mode == .manual }, set: { _ in mode = nil }), onDismiss: nil) {
             NavigationView {
                 CreateReminderView(mode: .create, store: store)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button(role: .close) {
-                                dismiss()
-                            }
-                        }
-                    }
             }
             .presentationDetents([.large])
             .interactiveDismissDisabled(true)

@@ -39,7 +39,7 @@ class CueRecorder {
     
     func setupRecorder() async {
         if recorderState != .idle {
-            stopAudioSession()
+            await stopAudioSession()
         }
         guard await authorizeMicrophone() else { return }
         
@@ -81,11 +81,30 @@ class CueRecorder {
         try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
     }
     
-    private func stopAudioSession() {
+    @concurrent
+    private func stopAudioSession() async {
         let audioSession = AVAudioSession.sharedInstance()
         do {
+            #if NOT_IOS27
             try audioSession.setActive(false)
-            recorderState = .idle
+            await MainActor.run {
+                recorderState = .idle
+            }
+            #else
+            if #available(iOS 27.0, *) {
+                let hasDeactivated = try await audioSession.deactivate()
+                if hasDeactivated {
+                    await MainActor.run {
+                        recorderState = .idle
+                    }
+                }
+            } else {
+                try audioSession.setActive(false)
+                await MainActor.run {
+                    recorderState = .idle
+                }
+            }
+            #endif
         } catch {
             print("(ERROR) failed to stop the audioSession: ", error.localizedDescription)
         }
@@ -132,8 +151,11 @@ class CueRecorder {
     }
     
     func stop() {
-        audioEngine.stop()
-//        outputContinuation?.finish()
-        stopAudioSession()
+        Task {
+            audioEngine.stop()
+            //        outputContinuation?.finish()
+            await stopAudioSession()
+            recorderState = .idle
+        }
     }
 }

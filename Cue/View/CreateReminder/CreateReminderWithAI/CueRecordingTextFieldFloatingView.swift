@@ -23,6 +23,14 @@ struct CueRecordingTextFieldFloatingView: View {
         case voiceRecording
     }
     
+    enum SaveState {
+        case idle
+        case canSave
+        case saving
+        case saved
+        case errorWhileSaving
+    }
+    
     enum RecordingState {
         case startRecording
         case pauseRecording
@@ -33,14 +41,18 @@ struct CueRecordingTextFieldFloatingView: View {
     @State private var recordingState: RecordingState = .idle
     @FocusState private var textFieldIsInFocus: Bool
     @State private var textFieldText: String = ""
+    @State private var saveState: SaveState = .idle
+    @Namespace private var namespace
     let waveformBarBuilder: AsyncStream<[CGFloat]>?
     let recordingAction: (CueRecorder.RecorderState) -> Void
     let generateReminder: (String) -> Void
     let generating: Bool
+    let canSaveGenerated: Bool
     
     private static let maxCharacterLimit: Int = 100
     
     init(generating: Bool,
+         canSaveGenerated: Bool,
          waveformBuilder: AsyncStream<[CGFloat]>?,
          recordingAction: @escaping (CueRecorder.RecorderState) -> Void,
          generateReminder: @escaping (String) -> Void) {
@@ -48,6 +60,7 @@ struct CueRecordingTextFieldFloatingView: View {
         self.generateReminder = generateReminder
         self.waveformBarBuilder = waveformBuilder
         self.generating = generating
+        self.canSaveGenerated = canSaveGenerated
     }
     
     var generateButtonDisabled: Bool {
@@ -83,15 +96,18 @@ struct CueRecordingTextFieldFloatingView: View {
                 }
             }
             
-//            if viewState != .voiceRecording {
-                CueAITextField(viewState: $viewState, textFieldText: $textFieldText, textFieldIsInFocus: $textFieldIsInFocus, generating: generating, generateReminder: generateReminder)
-//            } else {
-//                Spacer()
-//                FloatingButton(symbol: .checkmark) {
-//                    recordingAction(.stop)
-//                    viewState = .idle
-//                }
-//            }
+            GlassEffectContainer(spacing: 8) {
+                HStack(alignment: .center, spacing: 8) {
+                    CueAITextField(viewState: $viewState, textFieldText: $textFieldText, textFieldIsInFocus: $textFieldIsInFocus, generating: generating, generateReminder: generateReminder)
+                        .glassEffectID("textField", in: namespace)
+                    if saveState != .idle {
+                        SaveButton(state: saveState) {
+                            // Save
+                        }
+                        .glassEffectID("saveButton", in: namespace)
+                    }
+                }
+            }
         }
         .padding(.horizontal, 20)
         .padding(.bottom, textFieldIsInFocus ? 8 : 0)
@@ -106,6 +122,12 @@ struct CueRecordingTextFieldFloatingView: View {
                 recordingAction(.pause)
             case .idle:
                 break
+            }
+        }
+        .onChange(of: canSaveGenerated) { _, newValue in
+            withAnimation(.snappy) {
+                guard newValue else { return saveState = .idle }
+                saveState = .canSave
             }
         }
     }
@@ -127,6 +149,7 @@ struct CueRecordingTextFieldFloatingView: View {
                     .foregroundStyle(.white)
                     .frame(width: 44, height: 44, alignment: .center)
                     .glassEffect(.regular.tint(.proSky.baseColor), in: .circle)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .transition(.asymmetric(insertion: .popIn, removal: .move(edge: .leading)).animation(.easeInOut.delay(0.3)))
@@ -274,5 +297,64 @@ struct CueRecordingTextFieldFloatingView: View {
         }
     }
     
+    
+    // MARK: - Save Button
+    
+    struct SaveButton: View {
+        
+        var state: SaveState
+        let action: () -> Void
+        
+        var symbol: SFSymbol {
+            switch state {
+            case .idle:
+                fatalError("Shouldn't be active")
+            case .canSave:
+                return .squareAndArrowDown
+            case .saved:
+                return .checkmark
+            case .errorWhileSaving:
+                return .xmark
+            case .saving:
+                return .progressIndicator
+            }
+        }
+        
+        var color: Color {
+            switch state {
+            case .idle:
+                Color.clear
+            case .canSave:
+                Color.proSky.baseColor
+            case .saving:
+                Color.proGreen.surfacePrimary
+            case .saved:
+                Color.proGreen.baseColor
+            case .errorWhileSaving:
+                Color.proRed.baseColor
+            }
+        }
+        
+        var body: some View {
+            Button(action: action) {
+                Group {
+                    switch state {
+                    case .idle:
+                        Color.clear
+                    case .saving:
+                        ProgressView()
+                    case .canSave, .saved, .errorWhileSaving:
+                        Image(systemSymbol: symbol)
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+                }
+                .font(.headline)
+                .frame(width: 44, height: 44)
+                .glassEffect(.regular.tint(Color.proSky.baseColor), in: .circle)
+            }
+            .buttonStyle(.plain)
+        }
+        
+    }
     
 }

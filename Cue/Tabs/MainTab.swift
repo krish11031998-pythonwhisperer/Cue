@@ -62,7 +62,19 @@ struct MainTab: View {
         self._focusTimerCoordinator = .init(initialValue: .init(alarmCoordinator: focusAlarmManager))
     }
     
-    var bottomTabAccessories: [Tabs] {
+    var createTabRole: TabRole {
+        #if NOT_IOS27
+        return .search
+        #else
+        if #available(iOS 27.0, *) {
+            return .prominent
+        } else {
+            return .search
+        }
+        #endif
+    }
+    
+    var bottomTabAccessories: Set<Tabs> {
         #if AI_TAB
         return [.focus]
         #else
@@ -123,29 +135,23 @@ struct MainTab: View {
                 }
             }
             
-            if #available(iOS 27, *) {
-                Tab(value: .create, role: .prominent) {
-                    CreateReminderRootView(store: store)
-                        .presentationDetents([.fraction(1)])
-                        .interactiveDismissDisabled(true)
-                } label: {
-                    Image(systemSymbol: .plus)
-                        .font(.body)
-                }
-            } else {
-                Tab("", systemImage: "plus", value: .create, role: .search) {
-                    Color.clear
-                }
+            Tab(value: .create, role: createTabRole) {
+                #if AI_TAB
+                CreateReminderRootView(store: store)
+                    .presentationDetents([.fraction(1)])
+                    .interactiveDismissDisabled(true)
+                #else
+                Color.clear
+                #endif
+            } label: {
+                Image(systemSymbol: .plus)
+                    .font(.body)
             }
         }
         .optionalBottomAccessoryView(selectedTab: selectedTab, enabledTabs: bottomTabAccessories) { selectedTab in
             switch selectedTab {
             case .home:
-                #if AI_TAB
-                EmptyView()
-                #else
                 TodayTabBarAccessoryView(isToday: isToday, todayPublisher: todayPublisher)
-                #endif
             case .focus:
                 FocusTabBottomAccessoryView(coordinator: focusTimerCoordinator)
             default:
@@ -158,13 +164,15 @@ struct MainTab: View {
         })
         .tabBarMinimizeBehavior(.onScrollDown)
         .ignoresSafeArea(edges: .bottom)
-//        .onChange(of: selectedTab) { oldValue, newValue in
-//            print("(DEBUG) Change in selectedTab: ", selectedTab)
-//            if newValue == .create {
-//                self.presentCreateReminder = true
-//                self.selectedTab = oldValue
-//            }
-//        }
+        #if !AI_TAB
+        .onChange(of: selectedTab) { oldValue, newValue in
+            print("(DEBUG) Change in selectedTab: ", selectedTab)
+            if newValue == .create {
+                self.presentCreateReminder = true
+                self.selectedTab = oldValue
+            }
+        }
+        #endif
         .onChange(of: fullScreenPresentation, initial: false, { oldValue, newValue in
             if oldValue == .onboarding {
                 self.presentCreateReminder = true

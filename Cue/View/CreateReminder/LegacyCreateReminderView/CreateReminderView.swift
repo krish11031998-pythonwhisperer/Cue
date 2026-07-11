@@ -104,6 +104,14 @@ struct CreateReminderView: View {
                 }
             }
             
+            #if AI_TAB
+            ToolbarItem(placement: .topBarLeading) {
+                Button(role: .close) {
+                    dismiss()
+                }
+            }
+            #endif
+            
             ToolbarItem(placement: .topBarTrailing) {
                 Button(role: .confirm) { [weak viewModel] in
                     viewModel?.createReminder()

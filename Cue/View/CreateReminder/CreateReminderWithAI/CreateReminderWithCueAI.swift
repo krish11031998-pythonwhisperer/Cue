@@ -33,7 +33,13 @@ struct CreateReminderWithCueAI: View {
                             .animation(.easeInOut, value: viewModel.transribedString + viewModel.volatileTranscribedText)
                             .padding(.horizontal, 20)
                         ForEach(Array(viewModel.reminders), id: \.self) { reminder in
-                            reminderViewBuilder(reminder: reminder)
+                            ReminderCard(reminder: reminder) {
+                                viewModel.remove(reminder)
+                            } add: {
+                                viewModel.addReminder(reminder)
+                            } edit: {
+                                viewModel.edit(reminder)
+                            }
                         }
                     }
                     .padding(.top, 24)
@@ -45,7 +51,13 @@ struct CreateReminderWithCueAI: View {
                     ScrollView(.vertical) {
                         VStack(alignment: .center, spacing: 12) {
                             ForEach(Array(viewModel.reminders), id: \.self) { reminder in
-                                reminderViewBuilder(reminder: reminder)
+                                ReminderCard(reminder: reminder) {
+                                    viewModel.remove(reminder)
+                                } add: {
+                                    viewModel.addReminder(reminder)
+                                } edit: {
+                                    viewModel.edit(reminder)
+                                }
                             }
                         }
                         .padding(.top, 24)
@@ -102,6 +114,7 @@ struct CreateReminderWithCueAI: View {
         #endif
         .safeAreaBar(edge: .bottom, alignment: .center, spacing: 0) {
             CueRecordingTextFieldFloatingView(generating: viewModel.isGenerating,
+                                              canSaveGenerated: !viewModel.reminders.isEmpty,
                                               waveformBuilder: nil) { [weak viewModel] in
                 viewModel?.recorderState = $0
             } generateReminder: { [weak viewModel] text in
@@ -117,24 +130,22 @@ struct CreateReminderWithCueAI: View {
     
     // MARK: - View Builder
     
-    @ViewBuilder
-    private func reminderViewBuilder(reminder: ReminderModel) -> some View {
-        ReminderView(model: .init(title: reminder.title,
-                                  icon: .init(reminder.icon)!,
-                                  theme: Color.proSky,
-                                  time: reminder.date,
-                                  state: .display,
-                                  tags: [],
-                                  logReminder: nil,
-                                  deleteReminder: { [weak viewModel] in
-            viewModel?.reminders.remove(reminder)
-        }))
-        .padding(.horizontal, 20)
-        .id(reminder.title)
-        .popInContainer(angle: 0,
-                        animation: .snappy)
+    struct ReminderCard: View {
+        
+        let reminder: ReminderModel
+        let remove: () -> Void
+        let add: () -> Bool
+        let edit: () -> Void
+        
+        var body: some View {
+            ReminderView(model: .init(title: reminder.title, icon: .init(reminder.icon)!, theme: Color.proSky, time: reminder.date, state: .showDisplayOptions(add: add, delete: remove, edit: edit), tags: [], logReminder: nil, deleteReminder: nil))
+            .padding(.horizontal, 20)
+            .id(reminder.title)
+            .popInContainer(angle: .random(in: -10..<10),
+                            animation: .snappy)
+        }
+        
     }
-    
     
     @ViewBuilder
     var emptyView: some View {
