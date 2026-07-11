@@ -130,8 +130,14 @@ public struct CalendarDayView: View {
                         .frame(width: 120, height: 120, alignment: .center)
                     #endif
                 } description: {
-                    Text("there is nothing in the cue yet.")
-                        .font(.bitcountRegular(style: .title3))
+                    Group {
+                        if calendarDay.date.startOfDay < Date.now.startOfDay {
+                            Text("no past reminders in cue.")
+                        } else {
+                            Text("there is nothing in the cue yet.")
+                        }
+                    }
+                    .font(.bitcountRegular(style: .title3))
                 } actions: {
                     #if !KARINA_TESTING
                     Button {
