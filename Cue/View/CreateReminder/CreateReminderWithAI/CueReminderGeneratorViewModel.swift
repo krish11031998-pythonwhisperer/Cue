@@ -128,7 +128,7 @@ class CueReminderGeneratorViewModel: Sendable {
         
         let date = timeSchedule?.scheduleForToday ?? .now
         
-        let reminder = ReminderModel(notificationType: .notification, title: generatedReminder.title, icon: .init(symbol: nil , emoji: generatedReminder.icon), date: date, snoozeDuration: 15 * 60, tasks: [], tags: [], schedule: timeSchedule)
+        let reminder = ReminderModel(notificationType: .notification, title: generatedReminder.title, icon: .init(symbol: nil , emoji: generatedReminder.icon), date: date, snoozeDuration: 15 * 60, tasks: [], tags: [], schedule: timeSchedule, colorName: "sky")
         
         try Task.checkCancellation()
         await MainActor.run {
@@ -207,7 +207,7 @@ class CueReminderGeneratorViewModel: Sendable {
                         }
                         try Task.checkCancellation()
                         #warning("Need to fix this before saving")
-                        self?.store.createReminder(title: reminder.title, icon: reminder.icon, date: reminder.date, snoozeDuration: reminder.snoozeDuration, scheduleBuilder: schedule, tasks: reminder.tasks, reminderNotification: .notification, tags: reminder.tags)
+                        self?.store.createReminder(title: reminder.title, icon: reminder.icon, date: reminder.date, colorName: "sky", snoozeDuration: reminder.snoozeDuration, scheduleBuilder: schedule, tasks: reminder.tasks, reminderNotification: .notification, tags: reminder.tags)
                     }
                 }
                 

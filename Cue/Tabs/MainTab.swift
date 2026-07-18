@@ -63,15 +63,11 @@ struct MainTab: View {
     }
     
     var createTabRole: TabRole {
-        #if NOT_IOS27
-        return .search
-        #else
         if #available(iOS 27.0, *) {
             return .prominent
         } else {
             return .search
         }
-        #endif
     }
     
     var bottomTabAccessories: Set<Tabs> {
@@ -90,13 +86,9 @@ struct MainTab: View {
                 }
                 .ignoresSafeArea(edges: .bottom)
             } label: {
-                Label {
-                    Text("")
-                } icon: {
-                    Image(systemSymbol: .checkmarkCircleFill)
-                        .font(.body)
-                }
-                .tint(Color.proSky.baseColor)
+                Image(systemSymbol: .checkmarkCircleFill)
+                    .font(.body)
+                    .tint(Color.proSky.baseColor)
             }
             
             Tab(value: .calendar) {
@@ -104,13 +96,9 @@ struct MainTab: View {
                     self.presentCreateReminder = true
                 }
             } label: {
-                Label {
-                    Text("")
-                } icon: {
-                    Image(systemSymbol: .calendar)
-                        .font(.body)
-                }
-                .tint(Color.proSky.baseColor)
+                Image(systemSymbol: .calendar)
+                    .font(.body)
+                    .tint(Color.proSky.baseColor)
             }
             
             Tab(value: .focus) {
@@ -125,13 +113,9 @@ struct MainTab: View {
                 Tab(value: .organize) {
                     OrangizeTabView()
                 } label: {
-                    Label {
-                        Text("")
-                    } icon: {
-                        Image(systemSymbol: .folder)
-                            .font(.body)
-                    }
-                    .tint(Color.proSky.baseColor)
+                    Image(systemSymbol: .folder)
+                        .font(.body)
+                        .tint(Color.proSky.baseColor)
                 }
             }
             
@@ -158,7 +142,6 @@ struct MainTab: View {
                 EmptyView()
             }
         }
-        .scrollEdgeEffectStyle(.soft, for: .top)
         .onPreferenceChange(IsTodayPreferenceKey.self, perform: {
             self.isToday = $0
         })

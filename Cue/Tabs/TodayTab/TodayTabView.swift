@@ -42,7 +42,8 @@ struct TodayTabView: View {
     var body: some View {
         NavigationView {
             ZStack(alignment: .center) {
-                Color(uiColor: .systemBackground)
+                Color.cueItBackground
+                    .ignoresSafeArea(.all)
                 if store.reminders.isEmpty {
                     ContentUnavailableView("No Reminders", systemImage: "bell.fill", description: descriptionText)
                         .font(.headline)
@@ -147,12 +148,9 @@ struct TodayTabView: View {
         TabView(selection: $viewModel.today) {
             ForEach(viewModel.calendarDay, id: \.date) { calendarDay in
                 CalendarDayView(store: store, calendarDay: calendarDay, presentCreateReminder: presentCreateReminder)
+                    .scrollEdgeEffectStyle(.soft, for: .all)
                     .tag(calendarDay.date)
             }
-        }
-        .background {
-            Color.cueItBackground
-                .ignoresSafeArea(.all)
         }
         .environment(\.screenPadding, .init(topPadding: topPadding, bottomPadding: 83))
         .tabViewStyle(.page(indexDisplayMode: .never))
@@ -160,7 +158,7 @@ struct TodayTabView: View {
         .ignoresSafeArea(edges: .all)
         .safeAreaBar(edge: .top, alignment: .center, spacing: 0, content: {
             CalendarDateCarousel(dateElements: viewModel.calendarDay, selectedDate: viewModel.todayInCalendar)
-                .background { Color.clear }
+                .background(Color.clear)
                 .scrollIndicators(.hidden)
                 .fixedSize(horizontal: false, vertical: true)
                 .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newValue in

@@ -32,11 +32,32 @@ struct CreateReminderSectionHeaderView: View {
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
             Text("Add Tasks")
-                .font(.subheadline)
+                .font(.headline)
                 .fontWeight(.medium)
             
             Spacer()
             
+            #if NEW_CREATE_REMINDER
+            Button(action: action) {
+                Group {
+                    if isLoadingSuggestions {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .controlSize(.small)
+                            .tint(Color.proSky.foregroundPrimary)
+                    } else {
+                        Text("suggest")
+                            .font(.bitcountRegular(style: .footnote))
+                    }
+                }
+                .transition(.opacity)
+                .animation(.default, value: isLoadingSuggestions)
+                .padding(.init(top: 2, leading: 4, bottom: 2, trailing: 4))
+                .clipped()
+            }
+            .buttonStyle(.glass)
+            .disabled(!canLoadSuggestions)
+            #else
             Button(action: action) {
                 Group {
                     if isLoadingSuggestions {
@@ -57,6 +78,7 @@ struct CreateReminderSectionHeaderView: View {
             .tint(Color.proSky.baseColor)
             .buttonStyle(.glassProminent)
             .disabled(!canLoadSuggestions)
+            #endif
         }
     }
 }

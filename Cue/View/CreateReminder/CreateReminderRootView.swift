@@ -54,10 +54,17 @@ struct CreateReminderRootView: View {
             ZStack(alignment: .center) {
                 switch mode {
                 case .manual:
+                    #if NEW_CREATE_REMINDER
+                    NewCreateReminderView(mode: .create, store: store) {
+                        dismiss()
+                    }
+                        .transition(.blurReplace)
+                    #else
                     CreateReminderView(mode: .create, store: store) {
                         dismiss()
                     }
                     .transition(.blurReplace)
+                    #endif
                 case .ai:
                     CreateReminderWithCueAI(store: store)
                         .transition(.blurReplace)

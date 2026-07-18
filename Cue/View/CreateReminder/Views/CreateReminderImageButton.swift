@@ -58,7 +58,7 @@ struct NewCreateReminderImageButton: View {
                         .aspectRatio(contentMode: .fit)
                 }
             }
-            .padding(.all, 4)
+            .padding(.all, 0)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .containerShape(.circle)
         }

@@ -200,7 +200,7 @@ class CalendarDayViewModel {
         
         let model: ReminderView.Model = .init(title: reminder.title,
                                               icon: icon,
-                                              theme: Color.proSky,
+                                              theme: .init(color: reminder.color),
                                               time: reminder.schedule?.timeScheduled,
                                               state: .hasLogged(isLogged),
                                               tasks: tasks,

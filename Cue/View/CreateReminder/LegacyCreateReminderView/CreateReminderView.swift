@@ -83,8 +83,6 @@ struct CreateReminderView: View {
                         textFieldIsFocused = false
                         viewModel?.addTask(title: taskName)
                     }
-                } deleteTask: { _ in
-                    print("(DEBUG) tapped on delete")
                 } generateTasks: { [weak viewModel] in
                     textFieldIsFocused = false
                     viewModel?.suggestionSubtasks()
@@ -144,7 +142,8 @@ struct CreateReminderView: View {
                     }
                     .fittedPresentationDetent()
                 case .iconSelector:
-                    SymbolSheet(selectedIcon: $viewModel.icon,
+                    SymbolSheet(colors: .defaultColors,
+                                selectedIcon: $viewModel.icon,
                                 color: $viewModel.color)
                     .presentationDetents([.fraction(0.5), .height(.totalHeight - viewModel.imageFrame.maxY)])
                     .presentationDragIndicator(.automatic)

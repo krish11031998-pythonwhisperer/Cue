@@ -114,7 +114,11 @@ public struct CalendarDayView: View {
             switch presentation {
             case .editReminder(let model):
                 NavigationView {
+                    #if NEW_CREATE_REMINDER
+                    NewCreateReminderView(mode: .edit(model), store: store)
+                    #else
                     CreateReminderView(mode: .edit(model), store: store)
+                    #endif
                 }
                 .presentationDetents([.fraction(1)])
             }

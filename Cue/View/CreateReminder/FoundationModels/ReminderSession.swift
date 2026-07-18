@@ -257,7 +257,7 @@ fileprivate struct TestView: View {
             self.loading = false
             print("(DEBUG) reminder:", suggestedReminder)
             if let suggestedReminder {
-                let reminder = ReminderModel(notificationType: .notification, title: suggestedReminder.title, icon: .init(symbol: nil, emoji: suggestedReminder.icon), date: .now, snoozeDuration: .zero, tasks: [], tags: [], schedule: .init(hour: suggestedReminder.date.hour, minute: suggestedReminder.date.minute, intervalWeeks: suggestedReminder.date.internvalWeek, weekdays: nil, calendarDates: nil))
+                let reminder = ReminderModel(notificationType: .notification, title: suggestedReminder.title, icon: .init(symbol: nil, emoji: suggestedReminder.icon), date: .now, snoozeDuration: .zero, tasks: [], tags: [], schedule: .init(hour: suggestedReminder.date.hour, minute: suggestedReminder.date.minute, intervalWeeks: suggestedReminder.date.internvalWeek, weekdays: nil, calendarDates: nil), colorName: Color.sky.assetName)
                 self.reminders.append(reminder)
             }
         }

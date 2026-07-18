@@ -31,15 +31,11 @@ class CueLanguagareModelSession {
     func generate<T: FoundationModels.Generable>(for prompt: String) async -> T? {
         guard !Task.isCancelled else { return nil }
         let result: Result<T>
-        #if NOT_IOS27
-        result = await generateFromSession(session: session, for: prompt)
-        #else
         if #available(iOS 27.0, *) {
             result = await newGenerateFromSession(session: session, for: prompt)
         } else {
             result = await generateFromSession(session: session, for: prompt)
         }
-        #endif
         
         switch result {
         case .generatedResponse(let response):
@@ -79,7 +75,6 @@ class CueLanguagareModelSession {
     
     // MARK: - iOS 27.0
     
-#if !NOT_IOS27
     @available(iOS 27.0, *)
     @concurrent
     private func newGenerateFromSession<T: FoundationModels.Generable>(session: LanguageModelSession, for prompt: String) async -> Result<T> {
@@ -101,7 +96,6 @@ class CueLanguagareModelSession {
             return .error(error)
         }
     }
-    #endif
     
     @MainActor
     func createNewContextualSession() {

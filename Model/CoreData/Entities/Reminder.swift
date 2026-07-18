@@ -20,6 +20,7 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     @NSManaged public private(set) var notificationType: NSNumber!
     @NSManaged public private(set) var snoozeDurationRawValue: NSNumber!
     @NSManaged public private(set) var tags: NSSet!
+    @NSManaged public private(set) var cueColorName: String!
     
     public var tasks: [ReminderTask] {
         reminderTasks.array as! [ReminderTask]
@@ -39,6 +40,10 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     
     internal var mutableTagSet: NSMutableOrderedSet {
         mutableOrderedSetValue(forKey: "tags")
+    }
+    
+    public var colorName: String {
+        cueColorName
     }
     
     public var reminderNotification: ReminderNotification {
@@ -95,22 +100,24 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     
     // MARK: - Create
     
-    static func createReminder(context: NSManagedObjectContext, title: String, icon: CueIcon, date: Date, snoozeDuration: TimeInterval, schedule: ScheduleBuilder? = nil, reminderNotification: ReminderNotification) -> Reminder {
+    static func createReminder(context: NSManagedObjectContext, title: String, icon: CueIcon, colorName: String, date: Date, snoozeDuration: TimeInterval, schedule: ScheduleBuilder? = nil, reminderNotification: ReminderNotification) -> Reminder {
         let reminder = create(context: context)
         reminder.notificationID = UUID()
         reminder.title = title
         reminder.icon = icon
         reminder.date = date
+        reminder.cueColorName = colorName
         reminder.snoozeDuration = snoozeDuration
         reminder.reminderNotification = reminderNotification
         reminder.schedule = .init(hour: schedule?.hour ?? 0, minute: schedule?.minute ?? 0, intervalWeeks: schedule?.intervalWeek, weekdays: schedule?.weekdays, calendarDates: schedule?.dates)
         return reminder
     }
     
-    public func updateProperties(title: String, icon: CueIcon, date: Date, snoozeDuration: TimeInterval, scheduleBuilder: ScheduleBuilder? = nil, reminderNotification: ReminderNotification) {
+    public func updateProperties(title: String, icon: CueIcon, colorName: String, date: Date, snoozeDuration: TimeInterval, scheduleBuilder: ScheduleBuilder? = nil, reminderNotification: ReminderNotification) {
         self.title = title
         self.icon = icon
         self.date = date
+        self.cueColorName = colorName
         self.snoozeDuration = snoozeDuration
         self.reminderNotification = reminderNotification
         self.schedule = .init(hour: scheduleBuilder?.hour ?? 0,

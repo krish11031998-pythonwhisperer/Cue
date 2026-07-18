@@ -40,8 +40,8 @@ public class CueReminderSchedule: NSObject, NSSecureCoding, Codable {
         let hour = coder.decodeInteger(forKey: Keys.hour.rawValue)
         let minute = coder.decodeInteger(forKey: Keys.minute.rawValue)
         let intervalWeeks = coder.decodePropertyList(forKey: Keys.intervalWeeks.rawValue) as? Int
-        let weekdays = coder.decodeObject(of: NSSet.self, forKey: Keys.weekdays.rawValue) as? Set<Int>
-        let calendarDates = coder.decodeObject(of: NSSet.self, forKey: Keys.calendarDates.rawValue) as? Set<Int>
+        let weekdays = coder.decodeObject(of: [NSSet.self, NSNumber.self], forKey: Keys.weekdays.rawValue) as? Set<Int>
+        let calendarDates = coder.decodeObject(of: [NSSet.self, NSNumber.self], forKey: Keys.calendarDates.rawValue) as? Set<Int>
         
         self.hour = hour
         self.minute = minute

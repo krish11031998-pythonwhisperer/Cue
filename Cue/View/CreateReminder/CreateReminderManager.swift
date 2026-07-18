@@ -12,7 +12,7 @@ import FoundationModels
 import CoreData
 internal import AlarmKit
 
-struct CreateReminderTask: Identifiable {
+struct CreateReminderTask: Identifiable, Equatable {
     let title: String
     var icon: Icon
     let objectID: NSManagedObjectID?
@@ -31,6 +31,11 @@ struct CreateReminderTask: Identifiable {
     }
 }
 
+struct ColorModel {
+    let color: Color
+    let colorName: String
+}
+
 protocol CreateReminderManager: AnyObject {
     
     var store: Store { get set }
@@ -45,7 +50,7 @@ protocol CreateReminderManager: AnyObject {
     var reminderNotification: ReminderNotification { set get }
     var scheduleBuilder: Reminder.ScheduleBuilder { get set }
     var icon: Icon { get set }
-    var color: Color { get set }
+    var colorModel: ColorModel { get set }
     var emojiSession: EmojiSession { get set }
     var reminderSubtasksSession: ReminderSubtaskSession { get set }
     var suggestionTask: Task<Void, Never>? { get set }
@@ -61,6 +66,14 @@ protocol CreateReminderManager: AnyObject {
 }
 
 extension CreateReminderManager {
+    
+    var color: Color {
+        get { colorModel.color }
+        set {
+            colorModel = .init(color: newValue, colorName: newValue.assetName)
+        }
+    }
+    
     var canCreateReminder: Bool {
         !self.reminderTitle.isEmpty
     }
@@ -209,6 +222,7 @@ extension CreateReminderManager {
             store.updateReminder(for: reminderID) { reminder in
                 reminder.updateProperties(title: reminderTitle,
                                           icon: .from(icon),
+                                          colorName: colorModel.colorName,
                                           date: date,
                                           snoozeDuration: snoozeDuration,
                                           scheduleBuilder: scheduleBuilder,
@@ -228,6 +242,7 @@ extension CreateReminderManager {
             store.createReminder(title: reminderTitle,
                                  icon: .from(icon),
                                  date: date,
+                                 colorName: colorModel.colorName,
                                  snoozeDuration: snoozeDuration,
                                  scheduleBuilder: scheduleBuilder,
                                  tasks: reminderTasks,

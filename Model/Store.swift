@@ -115,8 +115,8 @@ import UIKit
     // MARK: - Reminders
     
     @discardableResult
-    public func createReminder(title: String, icon: CueIcon, date: Date, snoozeDuration: TimeInterval, scheduleBuilder: Reminder.ScheduleBuilder?, tasks: [ReminderTaskModel] = [], reminderNotification: ReminderNotification, tags tagModels: [TagModel]) -> Reminder {
-        let reminder = Reminder.createReminder(context: viewContext, title: title, icon: icon, date: date, snoozeDuration: snoozeDuration, schedule: scheduleBuilder, reminderNotification: reminderNotification)
+    public func createReminder(title: String, icon: CueIcon, date: Date, colorName: String, snoozeDuration: TimeInterval, scheduleBuilder: Reminder.ScheduleBuilder?, tasks: [ReminderTaskModel] = [], reminderNotification: ReminderNotification, tags tagModels: [TagModel]) -> Reminder {
+        let reminder = Reminder.createReminder(context: viewContext, title: title, icon: icon, colorName: colorName, date: date, snoozeDuration: snoozeDuration, schedule: scheduleBuilder, reminderNotification: reminderNotification)
         
         tasks.forEach { task in
             let reminderTask = fetchReminderTask(task.objectId)
