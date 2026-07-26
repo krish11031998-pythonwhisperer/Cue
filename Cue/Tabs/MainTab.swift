@@ -63,18 +63,14 @@ struct MainTab: View {
     }
     
     var createTabRole: TabRole {
-        if #available(iOS 27.0, *) {
-            return .prominent
-        } else {
-            return .search
-        }
+        return .search
     }
     
     var bottomTabAccessories: Set<Tabs> {
         #if AI_TAB
         return [.focus]
         #else
-        return [.home, .focus]
+        return [.focus]
         #endif
     }
     

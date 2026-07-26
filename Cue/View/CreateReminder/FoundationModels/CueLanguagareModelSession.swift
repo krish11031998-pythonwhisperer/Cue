@@ -31,11 +31,8 @@ class CueLanguagareModelSession {
     func generate<T: FoundationModels.Generable>(for prompt: String) async -> T? {
         guard !Task.isCancelled else { return nil }
         let result: Result<T>
-        if #available(iOS 27.0, *) {
-            result = await newGenerateFromSession(session: session, for: prompt)
-        } else {
-            result = await generateFromSession(session: session, for: prompt)
-        }
+
+        result = await generateFromSession(session: session, for: prompt)
         
         switch result {
         case .generatedResponse(let response):
@@ -70,31 +67,6 @@ class CueLanguagareModelSession {
             } catch {
                 return .error(error)
             }
-    }
-    
-    
-    // MARK: - iOS 27.0
-    
-    @available(iOS 27.0, *)
-    @concurrent
-    private func newGenerateFromSession<T: FoundationModels.Generable>(session: LanguageModelSession, for prompt: String) async -> Result<T> {
-        do {
-            let prompt = Prompt("Create an reminder of this description: \(prompt)")
-            let generatingOptions = GenerationOptions(temperature: 1.0)
-            let tasks = try await session.respond(to: prompt,
-                                                  generating: T.self,
-                                                  includeSchemaInPrompt: true, options: generatingOptions)
-            guard !Task.isCancelled else { return .error(Task.CancellationError()) }
-            return .generatedResponse(tasks.content)
-        } catch let error as LanguageModelError {
-            guard case .contextSizeExceeded(let contextSizeExceeded) = error else {
-                return .error(error)
-            }
-            
-            return .createNewSession
-        } catch {
-            return .error(error)
-        }
     }
     
     @MainActor

@@ -85,18 +85,9 @@ class CueRecorder {
     private func stopAudioSession() async {
         let audioSession = AVAudioSession.sharedInstance()
         do {
-            if #available(iOS 27.0, *) {
-                let hasDeactivated = try await audioSession.deactivate()
-                if hasDeactivated {
-                    await MainActor.run {
-                        recorderState = .idle
-                    }
-                }
-            } else {
-                try audioSession.setActive(false)
-                await MainActor.run {
-                    recorderState = .idle
-                }
+            try audioSession.setActive(false)
+            await MainActor.run {
+                recorderState = .idle
             }
         } catch {
             print("(ERROR) failed to stop the audioSession: ", error.localizedDescription)
