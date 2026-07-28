@@ -71,6 +71,8 @@ class PageViewController<Content: PageContentView>: UIViewController, UIPageView
         
         view.insetsLayoutMarginsFromSafeArea = false
         
+//        pageViewController.gestureRecognizers
+        
         if #available(iOS 26.0, *), let scrollView = internalScrollView {
             scrollView.topEdgeEffect.style = .soft
         }
