@@ -48,17 +48,15 @@ public struct CalendarDayView: View {
     
     private let store: Store
     private let calendarDay: CalendarDay
-    private var presentCreateReminder: () -> Void
     @State private var presentation: Presentation? = nil
     @State private var addReminder: Bool = false
     @State private var viewModel: CalendarDayViewModel
     @Environment(\.screenPadding) var screenPadding
     
-    init (store: Store, calendarDay: CalendarDay, presentCreateReminder: @escaping () -> Void) {
+    init (store: Store, calendarDay: CalendarDay) {
         self._viewModel = .init(initialValue: .init(calendarDate: calendarDay.date, store: store))
         self.store = store
         self.calendarDay = calendarDay
-        self.presentCreateReminder = presentCreateReminder
     }
     
     var date: Date {
@@ -104,12 +102,12 @@ public struct CalendarDayView: View {
             .padding(.horizontal, 20)
             .padding(.top, screenPadding.topPadding)
             .padding(.bottom, screenPadding.bottomPadding)
+            .scrollEdgeEffectStyle(.soft, for: .all)
         }
         .task(id: calendarDay) {
             self.viewModel.sections(calendarDay: calendarDay)
             self.viewModel.loggedReminders(calendarDay.loggedReminders)
         }
-        .scrollEdgeEffectStyle(.soft, for: .all)
         .sheet(item: $presentation, content: { presentation in
             switch presentation {
             case .editReminder(let model):
@@ -142,21 +140,11 @@ public struct CalendarDayView: View {
                         }
                     }
                     .font(.bitcountRegular(style: .title3))
-                } actions: {
-                    #if !KARINA_TESTING
-                    Button {
-                        self.presentCreateReminder()
-                    } label: {
-                        Text("Add a reminder")
-                            .font(.headline)
-                            .padding(.init(top: 8, leading: 12, bottom: 8, trailing: 12))
-                            .font(.headline)
-                    }
-                    .buttonStyle(.glass)
-                    #endif
                 }
             }
         }
+        .scrollEdgeEffectStyle(.soft, for: .all)
+        .ignoresSafeArea(.container, edges: .all)
     }
     
     
@@ -177,17 +165,32 @@ public struct CalendarDayView: View {
         
         var body: some View {
             HStack(alignment: .center, spacing: 4) {
-//                Image(systemSymbol: section.symbol)
                 Text(section.title.lowercased())
                     .font(hasTasks ? .bitcountMedium(style: .title3) : .bitcountRegular(style: .title3))
                 Image(systemSymbol: .chevronDown)
                     .font(.caption2)
             }
-//            .font(.footnote)
-//            .fontWeight(.medium)
-//            .padding(.init(top: 6, leading: 12, bottom: 6, trailing: 12))
-//            .background(section.color.surfacePrimary, in: .capsule)
         }
     }
 }
-//
+
+extension CalendarDayView: PageContentView {
+    
+    struct Model: Hashable {
+        let store: Store
+        let calendarDay: CalendarDay
+        
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(calendarDay)
+        }
+        
+        static func ==(lhs: Model, rhs: Model) -> Bool {
+            lhs.calendarDay == rhs.calendarDay
+        }
+    }
+    
+    init(model: Model) {
+        self.init(store: model.store, calendarDay: model.calendarDay)
+    }
+    
+}

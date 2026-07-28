@@ -144,22 +144,24 @@ struct TodayTabView: View {
         }
     }
     
+    @ViewBuilder
     private func tabView() -> some View {
-        TabView(selection: $viewModel.today) {
-            ForEach(viewModel.calendarDay, id: \.date) { calendarDay in
-                CalendarDayView(store: store, calendarDay: calendarDay, presentCreateReminder: presentCreateReminder)
-                    .scrollEdgeEffectStyle(.soft, for: .all)
-                    .tag(calendarDay.date)
-            }
+        let current: Binding<CalendarDayView.Model?> = .init {
+            guard let todayCalendar = viewModel.todayInCalendar else { return nil }
+            return .init(store: store, calendarDay: todayCalendar)
+        } set: { model in
+            guard let calendarDate = model?.calendarDay.date else { return }
+            viewModel.today = calendarDate
         }
+    
+        PageView<CalendarDayView>(models: viewModel.calendarDay.map { .init(store: store, calendarDay: $0) },
+                                  current: current)
         .environment(\.screenPadding, .init(topPadding: topPadding, bottomPadding: 83))
         .tabViewStyle(.page(indexDisplayMode: .never))
         .indexViewStyle(.page(backgroundDisplayMode: .never))
         .ignoresSafeArea(edges: .all)
         .safeAreaBar(edge: .top, alignment: .center, spacing: 0, content: {
-            CalendarDateCarousel(dateElements: viewModel.calendarDay, selectedDate: viewModel.todayInCalendar)
-                .background(Color.clear)
-                .scrollIndicators(.hidden)
+            CalendarDateCarousel(dateElements: viewModel.calendarDay, selectedDate: viewModel.todayInCalendar)                .scrollIndicators(.hidden)
                 .fixedSize(horizontal: false, vertical: true)
                 .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newValue in
                     self.topPadding = newValue.maxY
@@ -167,7 +169,7 @@ struct TodayTabView: View {
                 .disabled(true)
         })
     }
-    
+
     
     // MARK: - DescriptionText
     
