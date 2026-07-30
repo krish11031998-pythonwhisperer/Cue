@@ -131,7 +131,7 @@ struct CreateReminderView: View {
                     DatePickerView.time("Remind me at", date: $viewModel.timeDate, notification: $viewModel.reminderNotification)
                         .fittedPresentationDetent()
                 case .duration:
-                    TimerSheetView(timeDuration: $viewModel.snoozeDuration, title: "Snooze Duration", bound: .hour)
+                    TimerSheetView(timeDuration: $viewModel.snoozeDuration, controlType: .snoozeDuration)
                         .fittedPresentationDetent()
                 case .date:
                     DatePickerView.date("Reminder Start Date", date: $viewModel.date)

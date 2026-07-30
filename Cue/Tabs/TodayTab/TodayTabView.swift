@@ -161,7 +161,8 @@ struct TodayTabView: View {
         .indexViewStyle(.page(backgroundDisplayMode: .never))
         .ignoresSafeArea(edges: .all)
         .safeAreaBar(edge: .top, alignment: .center, spacing: 0, content: {
-            CalendarDateCarousel(dateElements: viewModel.calendarDay, selectedDate: viewModel.todayInCalendar)                .scrollIndicators(.hidden)
+            CalendarDateCarousel(dateElements: viewModel.calendarDay, selectedDate: viewModel.todayInCalendar)
+                .scrollIndicators(.hidden)
                 .fixedSize(horizontal: false, vertical: true)
                 .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newValue in
                     self.topPadding = newValue.maxY

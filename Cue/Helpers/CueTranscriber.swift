@@ -8,6 +8,7 @@
 import Speech
 import AsyncAlgorithms
 import NaturalLanguage
+import VanorUI
 
 class CueTranscriber {
     
@@ -18,7 +19,7 @@ class CueTranscriber {
     
     private var transcriber: SpeechTranscriber!
     private var analyzer: SpeechAnalyzer!
-    private var analyzerFormat : AVAudioFormat!
+    nonisolated(unsafe) private var analyzerFormat : AVAudioFormat!
     
     var converter = BufferConverter()
     
@@ -26,14 +27,14 @@ class CueTranscriber {
     
     // Analyzer
     private var inputSequence: AsyncStream<AnalyzerInput>!
-    private var inputBuilder: AsyncStream<AnalyzerInput>.Continuation!
+    nonisolated(unsafe) private var inputBuilder: AsyncStream<AnalyzerInput>.Continuation!
+    
+    // Analyzer → Transcriber
+    private var transcriptionTask: Task<Void, Never>?
     
     // Result
-    private var resultContinuation: AsyncStream<Result>.Continuation!
-    private(set) var resultStream: AsyncStream<Result>!
-    
-    public private(set) var transcriptionResult: AsyncStream<Result>!
-    
+    nonisolated let resultStreamProvider: StreamProvider<Result> = .init()
+  
     func setupTranscriberAndAnalyzer() async {
         transcriber = SpeechTranscriber(locale: Locale.current,
                                         transcriptionOptions: [],
@@ -56,24 +57,27 @@ class CueTranscriber {
         }
         
         // Setup Transcription Result
-        transcriptionResult = .init(unfolding: { [weak self] in
+        transcriptionTask = Task { [weak resultStreamProvider] in
             do {
                 for try await result in transcriber.results {
                     if result.isFinal {
-                        return Result.final(result.text)
+                        resultStreamProvider?.yield(.final(result.text))
                     } else {
-                        return Result.volatile(result.text)
+                        resultStreamProvider?.yield(.volatile(result.text))
                     }
                 }
             } catch {
-                print("(DEBUG) error: ", error.localizedDescription)
+                print("(ERROR) error: ", error.localizedDescription)
             }
-            return nil
-        })
+        }
         
         analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
         
         (inputSequence, inputBuilder) = AsyncStream<AnalyzerInput>.makeStream()
+        
+        inputBuilder.onTermination = {
+            print("(DEBUG) inputBuilder is terminated: ", $0)
+        }
         
         guard let inputSequence else { return }
         
@@ -86,25 +90,27 @@ class CueTranscriber {
         print("(DEBUG) Analuzer Setup DONE")
     }
     
-    func streamAudioToTranscriber(_ buffer: AVAudioPCMBuffer) throws {
+    @MainActor
+    func streamAudioToTranscriber(_ buffer: AVAudioPCMBuffer) async throws {
         guard let inputBuilder,
-              let analyzerFormat,
-              !Task.isCancelled else {
+              let analyzerFormat else {
             fatalError("invalid Audio Data type provided here")
         }
         
-        let converted = try self.converter.convertBuffer(buffer, to: analyzerFormat)
+        guard !Task.isCancelled else {
+            return
+        }
+        
+        let converted = try BufferConverter.convertBuffer(buffer, to: analyzerFormat)
         let input = AnalyzerInput(buffer: converted)
         
         inputBuilder.yield(input)
     }
     
-    func stopTranscribing() async throws {
+    func stopTranscribing() async {
         inputBuilder?.finish()
-//        try await analyzer.finalizeAndFinishThroughEndOfInput()
-//        transcriptionResult.cancel()
-        
-        await analyzer.cancelAndFinishNow()
+        await analyzer?.cancelAndFinishNow()
+        transcriptionTask?.cancel()
     }
     
     

@@ -1,5 +1,5 @@
 //
-//  CueReminderGeneratorViewModel.swift
+//  CueAIViewModel.swift
 //  Cue
 //
 //  Created by Krishna Venkatramani on 10/03/2026.
@@ -21,15 +21,37 @@ enum CueReminderGeneratorError: Error {
 
 @MainActor
 @Observable
-class CueReminderGeneratorViewModel: Sendable {
+class CueAIViewModel: Sendable {
+    
+    struct AICuratedReminderModel: Identifiable, Hashable {
+        let id: UUID
+        var reminder: ReminderModel
+        
+        init(id: UUID = UUID(), reminder: ReminderModel) {
+            self.id = id
+            self.reminder = reminder
+        }
+    }
+    
     
     enum GenerationState: Equatable {
         case idle
         case generate(String)
     }
     
-    private let voiceTranscriber: CueVoiceTranscriber
-    private let store: Store
+    enum Presentation: Identifiable {
+        case editReminder(ReminderModel, (ReminderModel) -> Void)
+        
+        var id: String {
+            switch self {
+            case .editReminder(let reminderModel, _):
+                return reminderModel.id
+            }
+        }
+    }
+    
+    let voiceTranscriber: CueVoiceTranscriber
+    let store: Store
     private var transcriptionTask: Task<Void, Never>?
     
     @ObservationIgnored
@@ -40,10 +62,11 @@ class CueReminderGeneratorViewModel: Sendable {
     private var sentences: Set<String> = .init()
     
     private let reminderGenerator: ReminderGenerator = .init(sessionType: .simple)
+    var presentation: Presentation? = nil
     var recorderState: CueRecorder.RecorderState = .idle
     var transribedString: AttributedString = .init()
     var volatileTranscribedText: AttributedString = .init()
-    var reminders: Set<ReminderModel> = .init()
+    var reminders: Array<AICuratedReminderModel> = .init()
     var reminderText: String = ""
     var generationState: GenerationState = .idle
     var bubbleAnimation: Bool = false
@@ -55,21 +78,21 @@ class CueReminderGeneratorViewModel: Sendable {
         }
         return true
     }
-    
-//    var waveformsBuilder: AsyncStream<[CGFloat]>? {
-//        recorder.waveformBarsBuilderFromAVAudioPCMBuffer
-//    }
-    
+
     func addReminder(_ reminder: ReminderModel) -> Bool {
         return false
     }
     
-    func remove(_ reminder: ReminderModel) {
-        
+    func remove(_ reminderModel: AICuratedReminderModel) {
+        guard let index = self.reminders.firstIndex(where: { $0 == reminderModel }) else { return }
+        reminders.remove(at: index)
     }
     
-    func edit(_ reminder: ReminderModel) {
-        
+    func edit(_ reminderModel: AICuratedReminderModel) {
+        self.presentation = .editReminder(reminderModel.reminder) { [weak self] edittedReminder in
+            guard let index = self?.reminders.firstIndex(where: { $0 == reminderModel }) else { return }
+            self?.reminders[index].reminder = edittedReminder
+        }
     }
     
     var createRemindersIsEnabled: Bool {
@@ -132,7 +155,7 @@ class CueReminderGeneratorViewModel: Sendable {
         
         try Task.checkCancellation()
         await MainActor.run {
-            self.reminders.insert(reminder)
+            self.reminders.append(.init(reminder: reminder))
             self.generationState = .idle
         }
     }
@@ -141,10 +164,8 @@ class CueReminderGeneratorViewModel: Sendable {
     // MARK: - Transcriber
     
     @MainActor
-    func observeTranscribedText() async {
-        for await text in voiceTranscriber.transcriptionStream() {
-            self.generateReminderTask?.cancel()
-            self.generateReminderTask = nil
+    func observeTranscribedText(_ stream: AsyncStream<CueTranscriber.Result>) async {
+        for await text in stream {
             switch text {
             case .final(let text):
                 var attributedString = text
@@ -153,13 +174,13 @@ class CueReminderGeneratorViewModel: Sendable {
                 volatileTranscribedText = ""
                 self.transribedString += attributedString
                 let sentence = String(attributedString.characters)
-                print("(DEBUG) Recently uttered sentence: ", sentence)
-                await self.generateReminderFromTranscribedText(sentence)
+                Task {
+                    await self.generateReminderFromTranscribedText(sentence)                    
+                }
             case .volatile(let volatileResult):
                 var attributedString = volatileResult
                 attributedString.font = .body.weight(.medium)
                 attributedString.foregroundColor = .proSky.foregroundSecondary
-                print("(DEBUG) volatileTranscribeText: ", String(attributedString.characters))
                 volatileTranscribedText = attributedString
             }
         }
@@ -193,8 +214,9 @@ class CueReminderGeneratorViewModel: Sendable {
                     throw CueReminderGeneratorError.viewModelOutOfMemory
                 }
                 
-                for reminder in reminders {
+                for reminderModel in reminders {
                     group.addTask { @MainActor [weak self] in
+                        let reminder = reminderModel.reminder
                         let schedule: Reminder.ScheduleBuilder?
                         if let generatedSchedule = reminder.schedule {
                             schedule = .init(hour: generatedSchedule.hour,
@@ -231,7 +253,8 @@ class CueReminderGeneratorViewModel: Sendable {
         await voiceTranscriber.startOrResume()
         guard transcriptionTask == nil else { return }
         transcriptionTask = Task { @MainActor in
-            await observeTranscribedText()
+            let transcription = self.voiceTranscriber.transcriptionStream()
+            await observeTranscribedText(transcription)
         }
     }
     
@@ -240,8 +263,9 @@ class CueReminderGeneratorViewModel: Sendable {
     }
     
     func stopRecorder() async {
-        voiceTranscriber.stop()
         transcriptionTask?.cancel()
+        transcriptionTask = nil
+        await voiceTranscriber.stop()
     }
     
     

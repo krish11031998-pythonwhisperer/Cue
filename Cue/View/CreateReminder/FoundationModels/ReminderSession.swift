@@ -185,11 +185,11 @@ class ReminderGenerator: CueLanguagareModelSession {
         let session = LanguageModelSession(model: .default, tools: sessionType.tools, instructions: {
             sessionType.instruction
         })
+        session.prewarm()
         super.init(session: session)
     }
     
-    func suggestReminder(for description: String) async ->
-    SuggestedReminder? {
+    func suggestReminder(for description: String) async -> SuggestedReminder? {
         await generate(for: description)
     }
 }

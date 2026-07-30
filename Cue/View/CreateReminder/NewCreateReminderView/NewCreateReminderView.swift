@@ -66,9 +66,14 @@ struct NewCreateReminderView: View {
                         case .alarm:
                             ReminderOptionView(config: editFeild.config(viewModel)) {
                                 if viewModel.alarmIsOn {
-                                    ActionButtonListRow(config: .init(symbol: .zzz, label: String.formattedTimelineInterval(viewModel.snoozeDuration), action: {
-                                        viewModel.presentation = .snoozeDuration
-                                    }))
+                                    OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 8) {
+                                        ActionButtonListRow(config: .init(symbol: .zzz, label: String.formattedTimelineInterval(viewModel.snoozeDuration), action: {
+                                            viewModel.presentation = .snoozeDuration
+                                        }))
+                                        ActionButtonListRow(config: .init(symbol: .clockArrowTriangleheadCounterclockwiseRotate90, label: String.formattedTimelineInterval(viewModel.remindMeBefore), action: {
+                                            viewModel.presentation = .remindMeDuration
+                                        }))
+                                    }
                                 }
                             }
                             .animation(.easeInOut, value: viewModel.alarmIsOn)
@@ -107,17 +112,23 @@ struct NewCreateReminderView: View {
             .padding(.horizontal, 20)
         }
         .animation(.easeInOut, value: viewModel.taskViewModels)
+        #if NEW_CREATE_REMINDER
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("", systemSymbol: .xmark) {
+                    dismiss()
+                }
+            }
+        }
+        #endif
         .sheet(item: $viewModel.presentation, content: { presentation in
             switch presentation {
             case .emojiAndColorPicker:
-                SymbolSheet(colors: .defaultColors,
-                            colorSelector: .grid,
-                            selectedIcon: $viewModel.icon,
-                            color: $viewModel.color)
-                .presentationDetents([.fraction(0.5), .height(.totalHeight - viewModel.imageFrame.maxY - 24)])
-                .presentationDragIndicator(.automatic)
-                .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.5)))
-                .presentationContentInteraction(.resizes)
+                SymbolSheet(colors: .defaultColors, colorSelector: .grid, selectedIcon: $viewModel.icon, color: $viewModel.color)
+                    .presentationDetents([.fraction(0.5), .height(.totalHeight - viewModel.imageFrame.maxY - 24)])
+                    .presentationDragIndicator(.automatic)
+                    .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.5)))
+                    .presentationContentInteraction(.resizes)
             case .calendar:
                 DatePickerView.date("Reminder Start Date", date: $viewModel.date)
                     .fittedPresentationDetent()
@@ -127,7 +138,12 @@ struct NewCreateReminderView: View {
                 }
                 .fittedPresentationDetent()
             case .snoozeDuration:
-                TimerSheetView(timeDuration: $viewModel.snoozeDuration, title: "Snooze Duration", bound: .hour)
+                TimerSheetView(timeDuration: $viewModel.snoozeDuration,
+                               controlType: .snoozeDuration)
+                    .fittedPresentationDetent()
+            case .remindMeDuration:
+                TimerSheetView(timeDuration: $viewModel.remindMeBefore,
+                               controlType: .remindMe)
                     .fittedPresentationDetent()
             case .timeSheet:
                 DatePickerView.time("Remind me at", date: $viewModel.timeDate, notification: $viewModel.reminderNotification)
@@ -146,7 +162,11 @@ struct NewCreateReminderView: View {
         .safeAreaInset(edge: .bottom, alignment: .center, spacing: 0, content: {
             HStack(alignment: .center, spacing: 12) {
                 Button {
-                    viewModel.createReminder()
+                    if case .editFromAI(_, let action) = viewModel.mode {
+                        action(viewModel.reminderFromViewModel())
+                    } else {
+                        viewModel.createReminder()                        
+                    }
                     dismissSheet()
                 } label: {
                     Image(systemSymbol: .checkmark)

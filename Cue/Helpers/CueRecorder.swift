@@ -6,6 +6,7 @@
 //
 
 import AVFoundation
+import VanorUI
 
 class CueRecorder {
     
@@ -19,43 +20,26 @@ class CueRecorder {
     }
     
     private(set) var recorderState: RecorderState = .idle
-//    private var outputContinuation: AudioBufferStream.Continuation?
-//    private let transcriber: CueTranscriber
-    private(set) var audioStream: AudioBufferStream?
     private let audioEngine: AVAudioEngine
-    var playerNode: AVAudioPlayerNode!
+    nonisolated private let audioBufferStreamPublisher: StreamProvider<AVAudioPCMBuffer> = .init()
     
     var waveformBarsBuilderFromAVAudioPCMBuffer: AsyncStream<[CGFloat]>?
     
-//    var transcribedTextStream: AsyncStream<CueTranscriber.Result> {
-//        transcriber.resultStream
-//    }
-    
-//    init(transcriber: CueTranscriber) {
     init() {
-//        self.transcriber = transcriber
         self.audioEngine = .init()
     }
     
-    func setupRecorder() async {
+    func setupRecorder() async throws {
         if recorderState != .idle {
             await stopAudioSession()
         }
         guard await authorizeMicrophone() else { return }
         
         #if os(iOS)
-        do {
-            try self.setUpAudioSession()
-        } catch {
-            print("ERROR while setting up the audio session: ", error.localizedDescription)
-        }
+        try await self.setUpAudioSession()
         #endif
-//        await transcriber.setupTranscriber()
-        do {
-            self.audioStream = try setupAudioStream()
-        } catch {
-            print("ERROR while setting up the audio stream: ", error.localizedDescription)
-        }
+
+        try setupAudioStream()
     }
     
     
@@ -67,17 +51,18 @@ class CueRecorder {
         if currentAccess {
             return true
         }
-        
-        return await AVCaptureDevice.requestAccess(for: .audio)
+    
+        return false
     }
     
     
     // MARK: - Setup Audio
     
 #if os(iOS)
-    private func setUpAudioSession() throws {
+    @concurrent
+    private func setUpAudioSession() async throws {
         let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.record, mode: .spokenAudio)
+        try audioSession.setCategory(.record, mode: .default)
         try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
     }
     
@@ -104,29 +89,27 @@ class CueRecorder {
     }
 #endif
     
-    private func setupAudioStream() throws -> AudioBufferStream {
+    private func setupAudioStream() throws {
         // Remove Tap on Bus
         audioEngine.inputNode.removeTap(onBus: 0)
         
-        let audioStream = AudioBufferStream(bufferingPolicy: .bufferingNewest(10)) { continuation in
-            audioEngine.inputNode.installTap(onBus: 0,
-                                             bufferSize: 4096,
-                                             format: audioEngine.inputNode.outputFormat(forBus: 0)) { [weak self] (buffer, time) in
-                continuation.yield(buffer)
-            }
-            continuation.onTermination = { _ in
-                print("(DEBUG) audioEngine.continuation is terminated")
-            }
+        audioEngine.inputNode.installTap(onBus: 0,
+                                         bufferSize: 4096,
+                                         format: audioEngine.inputNode.outputFormat(forBus: 0)) { [weak self] (buffer, time) in
+            self?.audioBufferStreamPublisher.yield(buffer)
         }
         
         print("(DEBUG) audioEngine installedTap!")
         audioEngine.prepare()
         print("(DEBUG) audioEngine prepare!")
-        return audioStream
     }
     
     
     // MARK: - Audio Player State Management
+    
+    nonisolated func audioStream() -> AsyncStream<AVAudioPCMBuffer> {
+        audioBufferStreamPublisher.makeStream()
+    }
     
     func pause() {
         audioEngine.pause()
@@ -146,7 +129,6 @@ class CueRecorder {
     func stop() {
         Task {
             audioEngine.stop()
-            //        outputContinuation?.finish()
             await stopAudioSession()
             recorderState = .idle
         }

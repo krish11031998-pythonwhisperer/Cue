@@ -10,68 +10,82 @@ import VanorUI
 
 struct TimerSheetView: View {
     
-    enum Bound {
-        case day
-        case hour
+    enum ControlType {
+        case snoozeDuration
+        case remindMe
         
-        var step: TimeInterval {
+        var range: Range<TimeInterval> {
             switch self {
-            case .day:
-                return 24 * 60 * 60
-            case .hour:
-                return 60 * 60
+            case .snoozeDuration:
+                return (5 * 60)..<(61 * 60)
+            case .remindMe:
+                return (5 * 60)..<(24 * 60 * 60 + 60)
+            }
+        }
+        
+        var stride: TimeInterval {
+            switch self {
+            case .snoozeDuration:
+                return 1 * 60
+            case .remindMe:
+                return 1 * 60
+            }
+        }
+        
+        var type: SegmentedSliderViewType {
+            switch self {
+            case .snoozeDuration:
+                return .uneven(step: 5)
+            case .remindMe:
+                return .uneven(step: 5)
+            }
+        }
+        
+        var title: String {
+            switch self {
+            case .snoozeDuration:
+                return "Snooze Duration"
+            case .remindMe:
+                return "Remind Me Before"
+            }
+        }
+        
+        var symbol: SFSymbol {
+            switch self {
+            case .snoozeDuration:
+                return .zzz
+            case .remindMe:
+                return .clockArrowTriangleheadCounterclockwiseRotate90
             }
         }
     }
     
     @Binding var timeDuration: TimeInterval
-    private let title: String
-    private let bound: Bound
-    private let startingProgress: CGFloat
+    let controlType: ControlType
     
-    init(timeDuration: Binding<TimeInterval>, title: String, bound: Bound) {
+    init(timeDuration: Binding<TimeInterval>, controlType: ControlType) {
         self._timeDuration = timeDuration
-        self.title = title
-        self.bound = bound
-        self.startingProgress = timeDuration.wrappedValue / bound.step
+        self.controlType = controlType
     }
     
     var body: some View {
         VStack(alignment: .center, spacing: 16) {
-            Label("Snooze Duration", systemSymbol: .zzz)
+            Label(controlType.title, systemSymbol: controlType.symbol)
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
             
-            Group {
-                switch bound {
-                case .day:
-                    Text(String.formatttedTimeIntervalToDate(timeDuration))
-                case .hour:
-                    Text(String.formattedTimelineInterval(timeDuration))
-                }
-            }
-            .font(.title)
-            .fontWeight(.semibold)
-            .contentTransition(.numericText(value: timeDuration))
-            .animation(.easeInOut, value: timeDuration)
-            .padding(.bottom, 24)
-            
-            InteractiveSwiftUIView(progress: startingProgress) { progress in
-                computeTime(progress: progress)
-            }
-            .padding(.horizontal, 20)
+            Text(String.formattedTimelineInterval(timeDuration))
+                .font(.title)
+                .fontWeight(.semibold)
+                .contentTransition(.numericText(value: timeDuration))
+                .animation(.easeInOut, value: timeDuration)
+                .padding(.bottom, 24)
+
+            TimerSliderView(range: controlType.range, stride: controlType.stride, value: $timeDuration, type: controlType.type)
         }
-        .padding(.vertical, 32)
-    }
-    
-    
-    // MARK: - Compute Time
-    
-    private func computeTime(progress: CGFloat) {
-        let timeInDay: TimeInterval = bound.step
-        let time = progress * timeInDay
-        self.timeDuration = time.rounded(.up)
+        .padding(.top, 32)
+        .padding(.bottom, 12)
     }
 }
 
@@ -79,6 +93,6 @@ struct TimerSheetView: View {
 #Preview {
     @Previewable @State var time: TimeInterval = 15
     @Previewable @State var timeDay: TimeInterval = Date.now.timeIntervalSince(Date.now.startOfDay)
-    TimerSheetView(timeDuration: $timeDay, title: "Day", bound: .day)
-    TimerSheetView(timeDuration: $time, title: "Snoozing Duaration", bound: .hour)
+    TimerSheetView(timeDuration: $timeDay, controlType: .snoozeDuration)
+    TimerSheetView(timeDuration: $time, controlType: .remindMe)
 }

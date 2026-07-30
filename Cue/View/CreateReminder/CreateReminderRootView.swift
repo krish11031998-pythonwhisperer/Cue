@@ -66,7 +66,7 @@ struct CreateReminderRootView: View {
                     .transition(.blurReplace)
                     #endif
                 case .ai:
-                    CreateReminderWithCueAI(store: store)
+                    CueAIView(store: store)
                         .transition(.blurReplace)
                 }
             }

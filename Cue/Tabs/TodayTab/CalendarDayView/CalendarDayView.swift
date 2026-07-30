@@ -176,20 +176,20 @@ public struct CalendarDayView: View {
 
 extension CalendarDayView: PageContentView {
     
-    struct Model: Hashable {
+    public struct Model: Hashable {
         let store: Store
         let calendarDay: CalendarDay
         
-        func hash(into hasher: inout Hasher) {
+        public func hash(into hasher: inout Hasher) {
             hasher.combine(calendarDay)
         }
         
-        static func ==(lhs: Model, rhs: Model) -> Bool {
+        public static func ==(lhs: Model, rhs: Model) -> Bool {
             lhs.calendarDay == rhs.calendarDay
         }
     }
     
-    init(model: Model) {
+    public init(model: Model) {
         self.init(store: model.store, calendarDay: model.calendarDay)
     }
     

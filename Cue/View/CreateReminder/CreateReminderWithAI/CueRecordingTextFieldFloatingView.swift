@@ -34,8 +34,13 @@ struct CueRecordingTextFieldFloatingView: View {
     enum RecordingState {
         case startRecording
         case pauseRecording
+        case endRecording
         case idle
     }
+    
+    static let recordButtonID = "record"
+    static let waveformID = "waveform"
+    static let confirmID = "confirm"
     
     @State private var viewState: ViewState = .idle
     @State private var recordingState: RecordingState = .idle
@@ -74,38 +79,33 @@ struct CueRecordingTextFieldFloatingView: View {
            return .waveform
         case .pauseRecording:
             return .recordCircle
-        case .startRecording:
+        case .startRecording, .endRecording:
             return .pauseFill
         }
     }
     
     var body: some View {
-        HStack(spacing: 0) {
-            if viewState != .textField {
-                FloatingButton(symbol: voiceRecordingSymbol) {
-                    if viewState != .voiceRecording {
-                        viewState = .voiceRecording
+        GlassEffectContainer(spacing: 8) {
+            HStack(spacing: 8) {
+                if viewState == .voiceRecording {
+                    Button(action: recordButtonAction) {
+                        Image(systemSymbol: voiceRecordingSymbol)
                     }
-                    
-                    switch recordingState {
-                    case .startRecording:
-                        self.recordingState = .pauseRecording
-                    case .pauseRecording,  .idle:
-                        self.recordingState = .startRecording
-                    }
+                    .buttonStyle(.accessoryButton(size: .large, color: .clear))
+                    .glassEffectID(Self.recordButtonID, in: namespace)
                 }
-            }
-            
-            GlassEffectContainer(spacing: 8) {
-                HStack(alignment: .center, spacing: 8) {
-                    CueAITextField(viewState: $viewState, textFieldText: $textFieldText, textFieldIsInFocus: $textFieldIsInFocus, generating: generating, generateReminder: generateReminder)
-                        .glassEffectID("textField", in: namespace)
-                    if saveState != .idle {
-                        SaveButton(state: saveState) {
-                            // Save
-                        }
-                        .glassEffectID("saveButton", in: namespace)
+
+                CueAITextField(viewState: $viewState, textFieldText: $textFieldText, textFieldIsInFocus: $textFieldIsInFocus, generating: generating, generateReminder: generateReminder)
+                    .glassEffectID(Self.waveformID, in: namespace)
+                
+                if viewState == .voiceRecording {
+                    Button {
+                        viewState = .idle
+                    } label: {
+                        Image(systemSymbol: .checkmark)
                     }
+                    .buttonStyle(.accessoryButton(size: .large, color: .clear))
+                    .glassEffectID(Self.confirmID, in: namespace)
                 }
             }
         }
@@ -120,10 +120,19 @@ struct CueRecordingTextFieldFloatingView: View {
                 recordingAction(.resume)
             case .pauseRecording:
                 recordingAction(.pause)
+            case .endRecording:
+                recordingAction(.stop)
             case .idle:
                 break
             }
         }
+        .onChange(of: viewState, { oldValue, newValue in
+            if oldValue == .idle && newValue == .voiceRecording {
+                recordingState = .startRecording
+            } else if oldValue == .voiceRecording && newValue == .idle {
+                recordingState = .endRecording
+            }
+        })
         .onChange(of: canSaveGenerated) { _, newValue in
             withAnimation(.snappy) {
                 guard newValue else { return saveState = .idle }
@@ -133,29 +142,19 @@ struct CueRecordingTextFieldFloatingView: View {
     }
     
     
+    // MARK: - Action
     
-    // MARK: - FloatingButton
-    
-    struct FloatingButton: View {
-        
-        let symbol: SFSymbol
-        let action: Callback
-        
-        var body: some View {
-            Button(action: action) {
-                Image(systemSymbol: symbol)
-                    .contentTransition(.symbolEffect(.replace))
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44, alignment: .center)
-                    .glassEffect(.regular.tint(.proSky.baseColor), in: .circle)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .transition(.asymmetric(insertion: .popIn, removal: .move(edge: .leading)).animation(.easeInOut.delay(0.3)))
-            .padding(.trailing, 8)
+    private func recordButtonAction() {
+        switch recordingState {
+        case .startRecording:
+            self.recordingState = .pauseRecording
+        case .pauseRecording,  .idle:
+            self.recordingState = .startRecording
+        case .endRecording:
+            break
         }
     }
+    
     
     
     // MARK: - TextLimitIndicator
@@ -207,7 +206,7 @@ struct CueRecordingTextFieldFloatingView: View {
     
     struct CueAITextField: View {
         private static let maxCharacterLimit: Int = 100
-        
+        private static let staticTextString: String = "what would you like to plan?"
         @Binding var viewState: ViewState
         @Binding var textFieldText: String
         @State private var sizeOfIdleView: CGSize = .zero
@@ -228,14 +227,35 @@ struct CueRecordingTextFieldFloatingView: View {
         }
         
         private var cornerRadius: CGFloat {
-            guard viewState == .textField else { return min(24, sizeOfIdleView.smallDim.half) }
+            guard viewState == .textField else { return sizeOfIdleView.smallDim.half }
             return 24
         }
         
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
-                if viewState == .textField {
-                    TextField("Complete House Chores", text: $textFieldText, axis: .vertical)
+                switch viewState {
+                case .idle:
+                    HStack(alignment: .center, spacing: 8) {
+                        Button {
+                            self.viewState = .voiceRecording
+                        } label: {
+                            Image(systemSymbol: .waveform)
+                        }
+                        .buttonStyle(.accessoryButton(size: .small, color: .green))
+
+                        Text(Self.staticTextString)
+                            .font(.bitcountRegular(style: .subheadline))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                self.viewState = .textField
+                                self.textFieldIsInFocus.wrappedValue = true
+                            }
+                            .transition(.opacity)
+                    }
+                case .textField:
+                    TextField(Self.staticTextString, text: $textFieldText, axis: .vertical)
                         .focused(textFieldIsInFocus)
                         .textFieldStyle(.plain)
                         .submitLabel(.go)
@@ -245,40 +265,28 @@ struct CueRecordingTextFieldFloatingView: View {
                             self.viewState = .idle
                         }
                         .transition(.opacity)
-                }
-                HStack(alignment: .center, spacing: 8) {
-                    if viewState != .textField {
-                        Text("Complete House Chores")
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                self.viewState = .textField
-                                self.textFieldIsInFocus.wrappedValue = true
-                            }
-                            .transition(.opacity)
-                    } else if viewState == .textField {
-                        TextLimitIndicator(textFieldText: textFieldText)
-                    }
                     
-                    Button {
-                        generateReminder(textFieldText)
-                    } label: {
-                        Image(systemSymbol: .checkmark)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .opacity(generating ? 0 : 1)
-                            .overlay(alignment: .center) {
-                                if generating {
-                                    ProgressView()
-                                        .tint(Color.proSky.foregroundSecondary)
+                    HStack(alignment: .center, spacing: 8) {
+                        TextLimitIndicator(textFieldText: textFieldText)
+                        Button {
+                            generateReminder(textFieldText)
+                        } label: {
+                            Image(systemSymbol: .checkmark)
+                                .opacity(generating ? 0 : 1)
+                                .overlay(alignment: .center) {
+                                    if generating {
+                                        ProgressView()
+                                            .tint(Color.proSky.foregroundSecondary)
+                                    }
                                 }
-                            }
+                        }
+                        .buttonStyle(.accessoryButton(size: .small, color: Color.proSky.baseColor))
+                        .disabled(generateButtonDisabled)
+                        .frame(maxWidth: viewState == .textField ? .infinity: nil, alignment: .trailing)
                     }
-                    .tint(Color.proSky.baseColor)
-                    .buttonStyle(.glassProminent)
-                    .disabled(generateButtonDisabled)
-                    .frame(maxWidth: viewState == .textField ? .infinity: nil, alignment: .trailing)
+                case .voiceRecording:
+                    WaveformView()
+                        .frame(height: 36)
                 }
             }
             .padding(.init(top: 12, leading: 12, bottom: 12, trailing: 12))

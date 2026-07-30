@@ -162,16 +162,7 @@ struct PomodoroSessionEditorView: View {
                 .foregroundStyle(Color.primary)
                 .padding(.bottom, 12)
 
-                SegmentedSliderView<Element>(range: range,
-                                             strideValue: stride,
-                                             selectedItem: $value)
-                    .segmentType(type)
-                    .frame(height: 64)
-                
-                Image(systemSymbol: .triangleFill)
-                    .font(.title)
-                    .foregroundStyle(Color.proOrange.outlinePrimary)
-                    .padding(.top, 12)
+                TimerSliderView(range: range, stride: stride, value: $value, type: type)
             }
         }
         

@@ -16,20 +16,18 @@ class BufferConverter {
     }
     
     private var converter: AVAudioConverter?
-    func convertBuffer(_ buffer: AVAudioPCMBuffer, to format: AVAudioFormat) throws -> AVAudioPCMBuffer {
+    nonisolated static func convertBuffer(_ buffer: AVAudioPCMBuffer, to format: AVAudioFormat) throws -> AVAudioPCMBuffer {
         let inputFormat = buffer.format
         guard inputFormat != format else {
             return buffer
         }
         
-        if converter == nil || converter?.outputFormat != format {
-            converter = AVAudioConverter(from: inputFormat, to: format)
-            converter?.primeMethod = .none // Sacrifice quality of first samples in order to avoid any timestamp drift from source
-        }
+        let converter = AVAudioConverter(from: inputFormat, to: format)
         
         guard let converter else {
             throw Error.failedToCreateConverter
         }
+        converter.primeMethod = .none
         
         let sampleRateRatio = converter.outputFormat.sampleRate / converter.inputFormat.sampleRate
         let scaledInputFrameLength = Double(buffer.frameLength) * sampleRateRatio
