@@ -19,19 +19,15 @@ struct ReminderTagView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if tags.isEmpty {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Start adding some tags")
-                        .font(.bitcountMedium(style: .headline))
-                        .frame(maxWidth: .infinity, alignment: .center)
-                    Button(action: presentTags) {
-                        Label("Add a Tag", systemSymbol: .plus)
-                            .labelStyle(IconAndTitleLabelStyle())
-                            .frame(maxWidth: .infinity, minHeight: 28, alignment: .center)
-                    }
-                    .font(.headline)
-                    .tint(theme.baseColor)
-                    .buttonStyle(.glassProminent)
+                Button(action: presentTags) {
+                    Label("add a tag", systemSymbol: .plus)
+                        .font(.bitcountRegular(style: .body))
+                        .labelStyle(IconAndTitleLabelStyle())
+                        .frame(minHeight: 28, alignment: .center)
                 }
+                .tint(theme.baseColor)
+                .buttonStyle(.glassProminent)
+                .frame(maxWidth: .infinity, alignment: .center)
             } else {
                 OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 8) {
                     ForEach(tags) { tag in
@@ -51,9 +47,9 @@ struct ReminderTagView: View {
                 }
             }
         }
-        .padding(.vertical, 20)
-        .padding(.horizontal, 16)
-        .background(Color.white.opacity(0.25), in: .roundedRect(cornerRadius: 26))
+        .padding(.all, 15)
+        .modifier(RowBackground())
+        .clipShape(.roundedRect(cornerRadius: 26))
     }
 }
 

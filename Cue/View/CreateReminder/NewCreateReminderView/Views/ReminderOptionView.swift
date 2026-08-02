@@ -49,14 +49,10 @@ struct ReminderOptionView<InnerContent: View>: View {
     
     private let verticalPadding: CGFloat = 4
     private let horizontalPadding: CGFloat = 4
+    @Environment(\.colorScheme) var colorScheme
     
     let config: ReminderOptionConfig
     @ViewBuilder let innerContent: () -> InnerContent
-    
-    private var listBackground: some View {
-        Rectangle()
-            .fill(Color.white.opacity(0.25))
-    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -83,10 +79,9 @@ struct ReminderOptionView<InnerContent: View>: View {
                 .padding(.top, 12)
         }
         .padding(.init(top: 12, leading: 16, bottom: 12, trailing: 16))
-        .background(listBackground)
+        .modifier(RowBackground())
     }
 }
-
 
 extension ReminderOptionView where InnerContent == EmptyView {
     init(config: ReminderOptionConfig) {

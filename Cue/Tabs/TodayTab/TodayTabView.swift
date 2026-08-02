@@ -26,12 +26,20 @@ struct TodayTabView: View {
     private var presentCreateReminder: () -> Void
     @State private var viewModel: TodayViewModel = .init()
     @State private var topPadding: CGFloat = .zero
+    #if !NEW_CREATE_REMINDER
     private let scrollToTodayPublisher: VoidPublisher
+    #endif
     
+    #if NEW_CREATE_REMINDER
+    init(presentCreateReminder: @escaping () -> Void) {
+        self.presentCreateReminder = presentCreateReminder
+    }
+    #else
     init(scrollToTodayPublisher: VoidPublisher, presentCreateReminder: @escaping () -> Void) {
         self.scrollToTodayPublisher = scrollToTodayPublisher
         self.presentCreateReminder = presentCreateReminder
     }
+    #endif
     
     var id: Int {
         var hasher = Hasher()
@@ -95,11 +103,13 @@ struct TodayTabView: View {
         }
         .sheet(item: $viewModel.presentation, content: presentationContent(_:))
         .fullScreenCover(item: $viewModel.fullPresentation, content: fullScreenPresentationContent(_:))
+        #if !NEW_CREATE_REMINDER
         .onReceive(scrollToTodayPublisher) { _ in
             withAnimation(.easeInOut) {
                 self.viewModel.today = Date.now.startOfDay
             }
         }
+        #endif
     }
     
     
@@ -169,6 +179,24 @@ struct TodayTabView: View {
                 }
                 .disabled(true)
         })
+        #if NEW_CREATE_REMINDER
+        .safeAreaInset(edge: .bottom, content: {
+            if viewModel.todayCalendar?.date.startOfDay != viewModel.today.startOfDay {
+                Button {
+                    withAnimation(.easeInOut) {
+                        self.viewModel.today = Date.now.startOfDay
+                    }
+                } label: {
+                    Text("today")
+                        .font(.bitcountRegular(style: .body))
+                        .padding(.init(top: 8, leading: 10, bottom: 8, trailing: 10))
+                }
+                .buttonStyle(.glass)
+                .padding(.bottom, 12)
+            }
+        })
+        #endif
+        .environment(\.theme, .init(color: Color.cueItBackground))
     }
 
     

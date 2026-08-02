@@ -39,11 +39,11 @@ public class CalendarDay: Hashable, @unchecked Sendable {
             }
             
             // WeekInterval
-            if let intervalWeeks = schedule.intervalWeeks {
+            if let intervalWeeks = schedule.intervalWeeks, intervalWeeks > 0 {
                 guard let weekdays = schedule.weekdays,
                         checkIfDateIsInWeekInterval(startDate: startDate, intervalWeeks: intervalWeeks) else { return false }
                 return checkIfDateInWeekdays(weekDays: weekdays)
-            } else if let calendarDates = schedule.calendarDates {
+            } else if let calendarDates = schedule.calendarDates, !calendarDates.isEmpty {
                 return calendarDates.contains(Calendar.current.component(.day, from: date))
             } else if date.startOfDay == startDate.startOfDay {
                 return true

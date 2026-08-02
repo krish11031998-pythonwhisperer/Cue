@@ -15,17 +15,35 @@ public struct TagCellView: View {
     let backgroundShape: ListButtonBackgroundShape
     let selected: Bool
     let selectTag: (TagModel) -> Void
+    @Environment(\.colorScheme) var colorScheme
+    
+    var rowColor: Color {
+        switch colorScheme {
+        case .dark:
+            Color.white.opacity(0.05)
+        case .light:
+            Color.white.opacity(0.25)
+        default:
+            Color.white.opacity(0.25)
+        }
+    }
     
     public var body: some View {
-        ListButton(backgroundColor: .systemBackground,
+        ListButton(backgroundColor: rowColor,
                    shouldHighlight: false,
                    backgroundShape: backgroundShape) {
             selectTag(tag)
         } label: {
             HStack(alignment: .center, spacing: 8) {
+                #if NEW_CREATE_REMINDER
+                Image(systemSymbol: .tagFill)
+                    .foregroundStyle(tag.color)
+                    .font(.headline)
+                #else
                 Circle()
                     .fill(tag.color)
                     .frame(width: 24, height: 24, alignment: .center)
+                #endif
                 
                 Text(tag.name)
                     .font(.headline)

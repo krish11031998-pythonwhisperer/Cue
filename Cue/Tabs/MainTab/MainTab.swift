@@ -83,10 +83,17 @@ struct MainTab: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab(value: Tabs.home) {
+                #if NEW_CREATE_REMINDER
+                TodayTabView {
+                    self.presentCreateReminder = true
+                }
+                .ignoresSafeArea(edges: .bottom)
+                #else
                 TodayTabView(scrollToTodayPublisher: todayPublisher.eraseToAnyPublisher()) {
                     self.presentCreateReminder = true
                 }
                 .ignoresSafeArea(edges: .bottom)
+                #endif
             } label: {
                 Image(systemSymbol: .checkmarkCircleFill)
                     .font(.body)

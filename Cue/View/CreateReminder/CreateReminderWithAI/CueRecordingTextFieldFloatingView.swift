@@ -255,7 +255,7 @@ struct CueRecordingTextFieldFloatingView: View {
                             .transition(.opacity)
                     }
                 case .textField:
-                    TextField(Self.staticTextString, text: $textFieldText, axis: .vertical)
+                    TextField("", text: $textFieldText, axis: .vertical)
                         .focused(textFieldIsInFocus)
                         .textFieldStyle(.plain)
                         .submitLabel(.go)

@@ -11,12 +11,12 @@ import CoreData
 public struct ReminderTaskModel: Hashable, Sendable {
     public let title: String
     public let icon: CueIcon
-    public let objectId: NSManagedObjectID
+    public let objectId: NSManagedObjectID!
     
-    public init(objectId: NSManagedObjectID, title: String, icon: CueIcon) {
+    public init(title: String, icon: CueIcon) {
         self.title = title
         self.icon = icon
-        self.objectId = objectId
+        self.objectId = nil
     }
     
     public init(from reminderTask: ReminderTask) {

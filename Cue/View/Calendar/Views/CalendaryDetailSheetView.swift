@@ -50,7 +50,8 @@ public struct CalendaryDetailSheetView: View {
                     ForEach(calendarDay.loggedReminders, id: \.hashValue) { loggedReminder in
                         ReminderView(model: .init(title: loggedReminder.reminder.title,
                                                   icon: iconForCueIcon(loggedReminder.reminder.icon),
-                                                  theme: Color.proSky,
+                                                  lightColor: loggedReminder.reminder.color.resolved(for: .light),
+                                                  darkColor: loggedReminder.reminder.color.resolved(for: .dark),
                                                   time: loggedReminder.reminder.date,
                                                   state: .calendarDetailView(true),
                                                   tags: loggedReminder.reminder.tags.map { .init(name: $0.name, color: $0.color) }, logReminder: nil,
@@ -72,7 +73,8 @@ public struct CalendaryDetailSheetView: View {
                     ForEach(notLoggedReminder, id: \.hashValue) { reminder in
                         ReminderView(model: .init(title: reminder.title,
                                                   icon: iconForCueIcon(reminder.icon),
-                                                  theme: Color.proSky,
+                                                  lightColor: reminder.color.resolved(for: .light),
+                                                  darkColor: reminder.color.resolved(for: .dark),
                                                   time: reminder.date,
                                                   state: .calendarDetailView(false),
                                                   tags: reminder.tags.map { .init(name: $0.name, color: $0.color) },

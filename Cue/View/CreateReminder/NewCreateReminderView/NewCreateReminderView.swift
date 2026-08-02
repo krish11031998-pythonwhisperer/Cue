@@ -59,30 +59,31 @@ struct NewCreateReminderView: View {
                 .padding(.top, viewModel.edittingMode ? 24 : 0)
                 
                 VStack(alignment: .center, spacing: 6) {
-                    ForEach(ReminderEditField.allCases) { editFeild in
-                        switch editFeild {
+                    ForEach(ReminderEditField.allCases) { editField in
+                        switch editField {
                         case .date, .time, .repeat:
-                            ReminderOptionView(config: editFeild.config(viewModel))
+                            ReminderOptionView(config: editField.config(viewModel))
                         case .alarm:
-                            ReminderOptionView(config: editFeild.config(viewModel)) {
-                                if viewModel.alarmIsOn {
-                                    OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 8) {
-                                        ActionButtonListRow(config: .init(symbol: .zzz, label: String.formattedTimelineInterval(viewModel.snoozeDuration), action: {
-                                            viewModel.presentation = .snoozeDuration
-                                        }))
-                                        ActionButtonListRow(config: .init(symbol: .clockArrowTriangleheadCounterclockwiseRotate90, label: String.formattedTimelineInterval(viewModel.remindMeBefore), action: {
-                                            viewModel.presentation = .remindMeDuration
-                                        }))
-                                    }
-                                }
-                            }
-                            .animation(.easeInOut, value: viewModel.alarmIsOn)
+                            AlarmRowView(field: editField, viewModel: viewModel)
                         }
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 26))
                 .padding(.top, 14)
                 .padding(.bottom, 14)
+                
+                
+                CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions,
+                                        isLoadingSuggestions: viewModel.isLoadingSuggestions,
+                                        taskViewModels: viewModel.taskViewModels){ [weak viewModel] taskName in
+                    withAnimation(.easeInOut) {
+                        textFieldIsFocused = false
+                        viewModel?.addTask(title: taskName)
+                    }
+                } generateTasks: { [weak viewModel] in
+                    textFieldIsFocused = false
+                    viewModel?.suggestionSubtasks()
+                }
                 
                 Section {
                     ReminderTagView(tags: viewModel.tags) {
@@ -96,22 +97,16 @@ struct NewCreateReminderView: View {
                         .padding(.top, 14)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                
-                CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions,
-                                        isLoadingSuggestions: viewModel.isLoadingSuggestions,
-                                        taskViewModels: viewModel.taskViewModels){ [weak viewModel] taskName in
-                    withAnimation(.easeInOut) {
-                        textFieldIsFocused = false
-                        viewModel?.addTask(title: taskName)
-                    }
-                } generateTasks: { [weak viewModel] in
-                    textFieldIsFocused = false
-                    viewModel?.suggestionSubtasks()
-                }
             }
             .padding(.horizontal, 20)
         }
         .animation(.easeInOut, value: viewModel.taskViewModels)
+        .onChange(of: textFieldIsFocused, { oldValue, newValue in
+            guard newValue else { return }
+            if self.viewModel.presentation != nil {
+                self.viewModel.presentation = nil
+            }
+        })
         #if NEW_CREATE_REMINDER
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -146,7 +141,7 @@ struct NewCreateReminderView: View {
                                controlType: .remindMe)
                     .fittedPresentationDetent()
             case .timeSheet:
-                DatePickerView.time("Remind me at", date: $viewModel.timeDate, notification: $viewModel.reminderNotification)
+                DatePickerView.time("Remind me at", date: $viewModel.timeDate)
                     .fittedPresentationDetent()
             case .tag:
                 TagView(preSelected: viewModel.tags) { [weak viewModel] in
@@ -231,7 +226,7 @@ extension NewCreateReminderView {
                     viewModel.presentation = .timeSheet
                 }
                 
-                return .init(title: "Time", actions: [.button(startTime)])
+                return .init(title: "Scheduled", actions: [.button(startTime)])
             case .repeat:
                 let repeatAction = ActionButtonListRow.Config(symbol: .arrow2Squarepath, label: viewModel.scheduleString) {
                     // Present `Repeat Sheet`
@@ -246,6 +241,36 @@ extension NewCreateReminderView {
             }
         }
     }
+}
+
+
+// MARK: - Alarm Options View
+
+extension NewCreateReminderView {
+    
+    struct AlarmRowView: View {
+        
+        let field: ReminderEditField
+        let viewModel: NewCreateReminderViewModel
+        
+        var body: some View {
+            ReminderOptionView(config: field.config(viewModel)) {
+                if viewModel.alarmIsOn {
+                    OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 8) {
+                        ActionButtonListRow(config: .init(symbol: .zzz, label: String.formattedTimelineInterval(viewModel.snoozeDuration), action: {
+                            viewModel.presentation = .snoozeDuration
+                        }))
+                        ActionButtonListRow(config: .init(symbol: .clockArrowTriangleheadCounterclockwiseRotate90, label: String.formattedTimelineInterval(viewModel.remindMeBefore), action: {
+                            viewModel.presentation = .remindMeDuration
+                        }))
+                    }
+                }
+            }
+            .animation(.easeInOut, value: viewModel.alarmIsOn)
+        }
+        
+    }
+    
 }
 
 #Preview {
