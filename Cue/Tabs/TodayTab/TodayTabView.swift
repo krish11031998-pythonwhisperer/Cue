@@ -169,6 +169,7 @@ struct TodayTabView: View {
                 }
                 .disabled(true)
         })
+        .environment(\.theme, .init(color: Color.cueItBackground))
     }
 
     

@@ -149,7 +149,8 @@ struct CueAIView: View {
         
         var body: some View {
             ReminderView(model: .init(title: reminder.title, icon: .init(reminder.icon)!,
-                                      theme: .init(color: reminder.color),
+                                      lightColor: reminder.color.resolved(for: .light),
+                                      darkColor: reminder.color.resolved(for: .dark),
                                       time: reminder.schedule?.timeScheduled ?? reminder.date,
                                       state: .showDisplayOptions(delete: remove, edit: edit), tags: [], logReminder: nil, deleteReminder: nil))
             .padding(.horizontal, 20)

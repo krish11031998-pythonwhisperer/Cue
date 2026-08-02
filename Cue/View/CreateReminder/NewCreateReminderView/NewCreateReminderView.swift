@@ -84,18 +84,6 @@ struct NewCreateReminderView: View {
                 .padding(.top, 14)
                 .padding(.bottom, 14)
                 
-                Section {
-                    ReminderTagView(tags: viewModel.tags) {
-                        viewModel.presentation = .tag
-                    }
-                    .padding(.bottom, 14)
-                } header: {
-                    Text("Tags")
-                        .font(.headline)
-                        .fontWeight(.medium)
-                        .padding(.top, 14)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
                 
                 CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions,
                                         isLoadingSuggestions: viewModel.isLoadingSuggestions,
@@ -107,6 +95,19 @@ struct NewCreateReminderView: View {
                 } generateTasks: { [weak viewModel] in
                     textFieldIsFocused = false
                     viewModel?.suggestionSubtasks()
+                }
+                
+                Section {
+                    ReminderTagView(tags: viewModel.tags) {
+                        viewModel.presentation = .tag
+                    }
+                    .padding(.bottom, 14)
+                } header: {
+                    Text("Tags")
+                        .font(.headline)
+                        .fontWeight(.medium)
+                        .padding(.top, 14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .padding(.horizontal, 20)

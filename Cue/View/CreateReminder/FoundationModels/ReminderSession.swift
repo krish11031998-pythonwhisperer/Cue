@@ -242,7 +242,15 @@ fileprivate struct TestView: View {
                 
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(reminders) { reminder in
-                        ReminderView(model: .init(title: reminder.title, icon: .init(reminder.icon)!, theme: Color.proSky, time: reminder.schedule?.timeScheduled ?? .now, state: .display, tags: [], logReminder: nil, deleteReminder: nil))
+                        ReminderView(model: .init(title: reminder.title,
+                                                  icon: .init(reminder.icon)!,
+                                                  lightColor: Color("sky").resolved(for: .light),
+                                                  darkColor: Color("sky").resolved(for: .dark),
+                                                  time: reminder.schedule?.timeScheduled ?? .now,
+                                                  state: .display,
+                                                  tags: [],
+                                                  logReminder: nil,
+                                                  deleteReminder: nil))
                     }
                 }
             }

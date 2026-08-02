@@ -10,7 +10,7 @@ import VanorUI
 
 struct IconAndTitleLabelStyle: LabelStyle {
     func makeBody(configuration: Configuration) -> some View {
-        HStack(alignment: .center, spacing: 4) {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
             configuration.icon
             configuration.title
         }
@@ -31,7 +31,7 @@ struct CreateReminderSectionHeaderView: View {
     
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
-            Text("Add Tasks")
+            Text("Subtasks")
                 .font(.headline)
                 .fontWeight(.medium)
             
@@ -46,8 +46,13 @@ struct CreateReminderSectionHeaderView: View {
                             .controlSize(.small)
                             .tint(Color.proSky.foregroundPrimary)
                     } else {
+                        #if NEW_CREATE_REMINDER
+                        Text("suggest")
+                            .font(.bitcountRegular(style: .subheadline))
+                        #else
                         Text("suggest")
                             .font(.bitcountRegular(style: .footnote))
+                        #endif
                     }
                 }
                 .transition(.opacity)
