@@ -34,10 +34,35 @@ struct DatePickerView: View {
     }
     
     @Binding var date: Date
+    #if !NEW_CREATE_REMINDER
     #warning("Make this a seperate enum!")
     @Binding var notification: ReminderNotification
+    #endif
     let viewType: ViewType
     
+    #if NEW_CREATE_REMINDER
+    init(date: Binding<Date>, viewType: ViewType) {
+        self._date = date
+        self.viewType = viewType
+    }
+    #else
+    init(date: Binding<Date>, notification: Binding<ReminderNotification>, viewType: ViewType) {
+        self.date = date
+        self.notification = notification
+        self.viewType = viewType
+    }
+    #endif
+    
+    
+    #if NEW_CREATE_REMINDER
+    static func time(_ title: String, date: Binding<Date>) -> DatePickerView {
+        .init(date: date, viewType: .time(title, .alarmWavesLeftAndRightFill))
+    }
+    
+    static func date(_ title: String, date: Binding<Date>) -> DatePickerView {
+        .init(date: date, viewType: .date(title, .calendar))
+    }
+    #else
     static func time(_ title: String, date: Binding<Date>, notification: Binding<ReminderNotification>) -> DatePickerView {
         .init(date: date, notification: notification, viewType: .time(title, notification.wrappedValue == .alarm ? .alarmWavesLeftAndRightFill : .bellAndWavesLeftAndRightFill))
     }
@@ -45,13 +70,17 @@ struct DatePickerView: View {
     static func date(_ title: String, date: Binding<Date>) -> DatePickerView {
         .init(date: date, notification: .constant(.alarm), viewType: .date(title, .calendar))
     }
-    
+    #endif
     var body: some View {
         VStack(alignment: .center, spacing: 16) {
             VStack(alignment: .center, spacing: 6) {
                 Label(viewType.title, systemSymbol: viewType.symbol)
                     .font(.subheadline)
                     .fontWeight(.semibold)
+                #if NEW_CREATE_REMINDER
+                Text("You will receive an notification to remind you")
+                    .font(.caption2)
+                #else
                 Group {
                     switch notification {
                     case .alarm:
@@ -63,10 +92,12 @@ struct DatePickerView: View {
                     }
                 }
                 .font(.caption2)
+                #endif
             }
             .foregroundStyle(.secondary)
             .padding(.top, 32)
             
+            #if !NEW_CREATE_REMINDER
             if case .time = viewType {
                 Picker("Notification type", selection: $notification) {
                     Text("Notification")
@@ -77,6 +108,7 @@ struct DatePickerView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
             }
+            #endif
             
             Group {
                 switch viewType {

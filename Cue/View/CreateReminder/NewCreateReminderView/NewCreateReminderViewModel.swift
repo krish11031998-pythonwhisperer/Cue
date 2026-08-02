@@ -94,7 +94,7 @@ class NewCreateReminderViewModel: CreateReminderManager {
     var tags: [TagModel] = []
     var tasks: [CreateReminderTask] = []
     var scheduleBuilder: Reminder.ScheduleBuilder = .init(.now)
-    var icon: Icon = .symbol(SFSymbol.allSymbols.randomElement()!)
+    var icon: Icon
     var colorModel: ColorModel = .init(color: .sky, colorName: "sky")
     var remindMeBefore: TimeInterval = 10 * 60
     var isLoadingSuggestions: Bool = false
@@ -121,7 +121,7 @@ class NewCreateReminderViewModel: CreateReminderManager {
         switch mode {
         case .create:
             let colorModel = ColorModel(color: .sky, colorName: "sky")
-            self.init(store: store, mode: mode, edittingMode: false, reminderTitle: "", snoozeDuration: 15 * 60, reminderNotification: .notification, date: .now, timeDate: .now, tasks: [], tags: [], scheduleBuilder: .init(.now), icon: .symbol(SFSymbol.allSymbols.randomElement()!), colorModel: colorModel)
+            self.init(store: store, mode: mode, edittingMode: false, reminderTitle: "", snoozeDuration: 15 * 60, reminderNotification: .notification, date: .now, timeDate: .now, tasks: [], tags: [], scheduleBuilder: .init(.now), icon:  .emoji(Emoji.all.randomElement()!), colorModel: colorModel)
         case .edit(let reminderModel), .editFromAI(let reminderModel, _):
             let timeDate: Date
             let scheduleBuilder: Reminder.ScheduleBuilder
@@ -146,7 +146,7 @@ class NewCreateReminderViewModel: CreateReminderManager {
     
     func reminderFromViewModel() -> ReminderModel {
         let icon: CueIcon = .from(icon)
-        let tasks: [ReminderTaskModel] = [] 
+        let tasks: [ReminderTaskModel] = tasks.map { .init(title: $0.title, icon: .from($0.icon)) }
         let schedule: ReminderSchedule = .init(hour: timeDate.hours, minute: timeDate.minutes, intervalWeeks: scheduleBuilder.intervalWeek, weekdays: scheduleBuilder.weekdays, calendarDates: scheduleBuilder.weekdays)
         
             return .init(notificationType: .notification,

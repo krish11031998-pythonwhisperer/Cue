@@ -12,6 +12,7 @@ import Model
 struct CueAIView: View {
     
     @Environment(\.dismiss) var dismiss
+    @Environment(\.colorScheme) var colorScheme
     @State private var viewModel: CueAIViewModel
     @State private var size: CGSize = .zero
     @State private var circleCount: Int = .zero
@@ -21,10 +22,26 @@ struct CueAIView: View {
         self.viewModel = .init(store: store)
     }
     
+    var gradientStops: [Gradient.Stop] {
+        let colors: [Color]
+        let stops: [CGFloat]
+        if colorScheme == .light {
+            colors = [.waveformColorOne, .waveformColorTwo, .waveformColorThree]
+            stops = [0.17, 0.58, 1]
+        } else {
+            colors = [.waveformDarkColorOne.opacity(0.75), .waveformDarkColorTwo, .waveformDarkColorThree, .waveformDarkColorFour]
+            stops = [0.14, 0.37, 0.72, 1]
+        }
+        
+        return zip(colors, stops).map {
+            Gradient.Stop(color: $0, location: $1)
+        }
+    }
+    
     var body: some View {
         ZStack(alignment: .center) {
             
-            WaveformBubbleView(colors: [.waveformColorOne, .waveformColorTwo, .waveformColorThree])
+            WaveformBubbleView(gradientStops: gradientStops)
                 .ignoresSafeArea(edges: .all)
             
             VStack(alignment: .leading, spacing: 10) {
@@ -42,9 +59,10 @@ struct CueAIView: View {
             }
             
             if textFieldIsInFocus {
-                Color.clear
+                Color.red.opacity(0.2)
                     .ignoresSafeArea(edges: .all)
                     .onTapGesture {
+                        self.textFieldIsInFocus = false
                     }
             }
         }

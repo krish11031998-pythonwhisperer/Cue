@@ -229,7 +229,12 @@ class CueAIViewModel: Sendable {
                         }
                         try Task.checkCancellation()
                         #warning("Need to fix this before saving")
-                        self?.store.createReminder(title: reminder.title, icon: reminder.icon, date: reminder.date, colorName: "sky", snoozeDuration: reminder.snoozeDuration, scheduleBuilder: schedule, tasks: reminder.tasks, reminderNotification: .notification, tags: reminder.tags)
+                        
+                        // MARK: - Create Reminder Subtasks
+                        
+                        let reminderTasks = await self?.createReminderSubTasks(reminder.tasks) ?? []
+                        
+                        self?.store.createReminder(title: reminder.title, icon: reminder.icon, date: reminder.date, colorName: reminder.colorName, snoozeDuration: reminder.snoozeDuration, scheduleBuilder: schedule, tasks: reminderTasks, reminderNotification: .notification, tags: reminder.tags)
                     }
                 }
                 
@@ -241,6 +246,24 @@ class CueAIViewModel: Sendable {
         activityIndicator = false
     }
     
+    
+    private func createReminderSubTasks(_ tasks: [ReminderTaskModel]) async -> [ReminderTaskModel] {
+        return await withTaskGroup(of: ReminderTaskModel?.self) { [weak self] group in
+            for task in tasks {
+                group.addTask { @MainActor in
+                    guard let task = self?.store.createReminderTask(title: task.title, icon: task.icon) else { return nil }
+                    return .init(from: task)
+                }
+            }
+            
+            var createdTasks: [ReminderTaskModel] = []
+            for await createdTask in group where createdTask != nil  {
+                createdTasks.append(createdTask!)
+            }
+            
+            return createdTasks
+        }
+    }
     
     // MARK: - VoiceRecorder
     
