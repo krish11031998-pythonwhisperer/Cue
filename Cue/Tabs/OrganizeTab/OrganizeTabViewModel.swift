@@ -87,7 +87,9 @@ class OrganizeTabViewModel {
             }
             let cellViewModel = ReminderView.Model(title: reminder.title,
                                                    icon: icon,
-                                                   theme: Color.proSky,
+//                                                   theme: Color.proSky,
+                                                   lightColor: Color.aqua.resolved(for: .light),
+                                                   darkColor: Color.aqua.resolved(for: .dark),
                                                    time: reminder.date,
                                                    state: .display,
                                                    tags: reminder.tags.map{ .init(name: $0.name, color: $0.color) },

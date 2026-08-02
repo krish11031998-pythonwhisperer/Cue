@@ -59,8 +59,8 @@ public struct ReminderModel: Hashable, Sendable {
 
     public static func exampleThree() -> ReminderModel {
         let tasks: [ReminderTaskModel] = [
-            .init(objectId: .init(), title: "Milk", icon: .init(symbol: nil, emoji: "🥛")),
-            .init(objectId: .init(), title: "Bread", icon: .init(symbol: nil, emoji: "🥖"))
+            .init(title: "Milk", icon: .init(symbol: nil, emoji: "🥛")),
+            .init(title: "Bread", icon: .init(symbol: nil, emoji: "🥖"))
         ]
         
         return .init(notificationType: .notification, title: "Grocery List", icon: .init(symbol: nil, emoji:  "🛒"), date: .now, snoozeDuration: 0, tasks: tasks, tags: [], schedule: nil, colorName: "sky")

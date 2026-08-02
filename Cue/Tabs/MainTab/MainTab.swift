@@ -28,7 +28,7 @@ struct MainTab: View {
     
     enum Presentation: Int, Identifiable {
         case createReminder = 0
-        case paywall
+        case createReminderWithAI
         
         var id: Int { rawValue }
     }
@@ -45,7 +45,9 @@ struct MainTab: View {
     private let hasShowOnboarding: Bool
     @State private var selectedTab: Tabs = .home
     @State private var presentCreateReminder: Bool = false
+    @State private var presentFloatingMenu: Bool = false
     @State private var fullScreenPresentation: FullScreenPresentation? = nil
+    @State private var presentation: Presentation? = nil
     @State private var presentPayWall: Bool = false
     private let presentPayWallAfterFirstOnboarding: Bool
     private let todayPublisher: PassthroughSubject<Void, Never> = .init()
@@ -67,7 +69,7 @@ struct MainTab: View {
     }
     
     var bottomTabAccessories: Set<Tabs> {
-        #if AI_TAB
+        #if AI_TAB || NEW_CREATE_REMINDER
         return [.focus]
         #else
         return [.focus]
@@ -77,10 +79,17 @@ struct MainTab: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab(value: Tabs.home) {
+                #if NEW_CREATE_REMINDER
+                TodayTabView {
+                    self.presentCreateReminder = true
+                }
+                .ignoresSafeArea(edges: .bottom)
+                #else
                 TodayTabView(scrollToTodayPublisher: todayPublisher.eraseToAnyPublisher()) {
                     self.presentCreateReminder = true
                 }
                 .ignoresSafeArea(edges: .bottom)
+                #endif
             } label: {
                 Image(systemSymbol: .checkmarkCircleFill)
                     .font(.body)
@@ -147,8 +156,14 @@ struct MainTab: View {
         .onChange(of: selectedTab) { oldValue, newValue in
             print("(DEBUG) Change in selectedTab: ", selectedTab)
             if newValue == .create {
-                self.presentCreateReminder = true
-                self.selectedTab = oldValue
+                withAnimation(nil) {
+                    #if NEW_CREATE_REMINDER
+                    self.presentFloatingMenu = true
+                    #else
+                    self.presentCreateReminder = true
+                    #endif
+                    self.selectedTab = oldValue
+                }
             }
         }
         #endif
@@ -157,6 +172,28 @@ struct MainTab: View {
                 self.presentCreateReminder = true
             }
         })
+        #if NEW_CREATE_REMINDER
+        .overlay(alignment: .bottom) {
+            if presentFloatingMenu {
+                CreationFloatingView(presentation: $presentation, presentFloatingMenu: $presentFloatingMenu)
+            }
+        }
+        .sheet(item: $presentation, onDismiss: {
+            if presentPayWallAfterFirstOnboarding {
+                presentPayWall = true
+            }
+        }, content: { presentation in
+            NavigationView {
+                switch presentation {
+                case .createReminder:
+                    NewCreateReminderView(mode: .create, store: store)
+                case .createReminderWithAI:
+                    CueAIView(store: store)
+                }
+            }
+            .presentationDetents([.fraction(1)])
+        })
+        #else
         .sheet(isPresented: $presentCreateReminder, onDismiss: {
             if presentPayWallAfterFirstOnboarding {
                 presentPayWall = true
@@ -166,6 +203,7 @@ struct MainTab: View {
                 .presentationDetents([.fraction(1)])
                 .interactiveDismissDisabled(true)
         }
+        #endif
         .sheet(isPresented: $presentPayWall) {
             CuePaywallView()
                 .presentationDetents([.fraction(1)])

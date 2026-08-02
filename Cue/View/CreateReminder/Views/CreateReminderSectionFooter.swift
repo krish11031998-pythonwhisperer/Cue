@@ -15,6 +15,7 @@ struct CreateReminderSectionFooterView: View {
     let action: (String) -> Void
     @State private var taskName: String = ""
     @Environment(\.createReminderStyle) var createReminderStyle
+    @Environment(\.colorScheme) var colorScheme
     
     init( action: @escaping (String) -> Void) {
         self.action = action
@@ -27,7 +28,7 @@ struct CreateReminderSectionFooterView: View {
                 .background(Color.secondarySystemBackground, in: .capsule)
         case .list:
             TextField(taskName: $taskName, action: action)
-                .glassEffect(.clear.interactive(false), in: .capsule)
+                .glassEffect(.regular.tint(Color.cueItBackground).interactive(false), in: .capsule)
         }
     }
     

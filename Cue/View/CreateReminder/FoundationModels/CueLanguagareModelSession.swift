@@ -27,7 +27,7 @@ class CueLanguagareModelSession {
     }
     
     #warning("Should make it `async throws -> T?`")
-    @MainActor
+    @concurrent
     func generate<T: FoundationModels.Generable>(for prompt: String) async -> T? {
         guard !Task.isCancelled else { return nil }
         let result: Result<T>
@@ -38,7 +38,7 @@ class CueLanguagareModelSession {
         case .generatedResponse(let response):
             return response
         case .createNewSession:
-            createNewContextualSession()
+            await createNewContextualSession()
             return await generate(for: prompt)
         case .error(let error):
             print("(ERROR) \(#function): ", error.localizedDescription)

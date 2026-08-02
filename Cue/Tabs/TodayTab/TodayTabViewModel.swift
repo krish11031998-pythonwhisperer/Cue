@@ -37,6 +37,7 @@ class TodayViewModel {
     }
     
     var calendarDay: [CalendarDay] = []
+    var calendarDayModels: [CalendarDayView.Model] = []
     var loggedReminders: [Reminder] = []
     var today: Date = Date.now.startOfDay
     var todayCalendar: CalendarDay? = nil

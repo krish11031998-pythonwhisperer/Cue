@@ -26,12 +26,20 @@ struct TodayTabView: View {
     private var presentCreateReminder: () -> Void
     @State private var viewModel: TodayViewModel = .init()
     @State private var topPadding: CGFloat = .zero
+    #if !NEW_CREATE_REMINDER
     private let scrollToTodayPublisher: VoidPublisher
+    #endif
     
+    #if NEW_CREATE_REMINDER
+    init(presentCreateReminder: @escaping () -> Void) {
+        self.presentCreateReminder = presentCreateReminder
+    }
+    #else
     init(scrollToTodayPublisher: VoidPublisher, presentCreateReminder: @escaping () -> Void) {
         self.scrollToTodayPublisher = scrollToTodayPublisher
         self.presentCreateReminder = presentCreateReminder
     }
+    #endif
     
     var id: Int {
         var hasher = Hasher()
@@ -95,11 +103,13 @@ struct TodayTabView: View {
         }
         .sheet(item: $viewModel.presentation, content: presentationContent(_:))
         .fullScreenCover(item: $viewModel.fullPresentation, content: fullScreenPresentationContent(_:))
+        #if !NEW_CREATE_REMINDER
         .onReceive(scrollToTodayPublisher) { _ in
             withAnimation(.easeInOut) {
                 self.viewModel.today = Date.now.startOfDay
             }
         }
+        #endif
     }
     
     
@@ -144,21 +154,24 @@ struct TodayTabView: View {
         }
     }
     
+    @ViewBuilder
     private func tabView() -> some View {
-        TabView(selection: $viewModel.today) {
-            ForEach(viewModel.calendarDay, id: \.date) { calendarDay in
-                CalendarDayView(store: store, calendarDay: calendarDay, presentCreateReminder: presentCreateReminder)
-                    .scrollEdgeEffectStyle(.soft, for: .all)
-                    .tag(calendarDay.date)
-            }
+        let current: Binding<CalendarDayView.Model?> = .init {
+            guard let todayCalendar = viewModel.todayInCalendar else { return nil }
+            return .init(store: store, calendarDay: todayCalendar)
+        } set: { model in
+            guard let calendarDate = model?.calendarDay.date else { return }
+            viewModel.today = calendarDate
         }
+    
+        PageView<CalendarDayView>(models: viewModel.calendarDay.map { .init(store: store, calendarDay: $0) },
+                                  current: current)
         .environment(\.screenPadding, .init(topPadding: topPadding, bottomPadding: 83))
         .tabViewStyle(.page(indexDisplayMode: .never))
         .indexViewStyle(.page(backgroundDisplayMode: .never))
         .ignoresSafeArea(edges: .all)
         .safeAreaBar(edge: .top, alignment: .center, spacing: 0, content: {
             CalendarDateCarousel(dateElements: viewModel.calendarDay, selectedDate: viewModel.todayInCalendar)
-                .background(Color.clear)
                 .scrollIndicators(.hidden)
                 .fixedSize(horizontal: false, vertical: true)
                 .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newValue in
@@ -166,8 +179,26 @@ struct TodayTabView: View {
                 }
                 .disabled(true)
         })
+        #if NEW_CREATE_REMINDER
+        .safeAreaInset(edge: .bottom, content: {
+            if viewModel.todayCalendar?.date.startOfDay != viewModel.today.startOfDay {
+                Button {
+                    withAnimation(.easeInOut) {
+                        self.viewModel.today = Date.now.startOfDay
+                    }
+                } label: {
+                    Text("today")
+                        .font(.bitcountRegular(style: .body))
+                        .padding(.init(top: 8, leading: 10, bottom: 8, trailing: 10))
+                }
+                .buttonStyle(.glass)
+                .padding(.bottom, 12)
+            }
+        })
+        #endif
+        .environment(\.theme, .init(color: Color.cueItBackground))
     }
-    
+
     
     // MARK: - DescriptionText
     

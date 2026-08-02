@@ -24,6 +24,7 @@ struct TagView: View {
     var body: some View {
         NavigationView {
             ZStack {
+                Color.cueItBackground.ignoresSafeArea(edges: .all)
                 if viewModel.sectionedTags.isEmpty {
                     noTagsView
                 } else {
@@ -46,13 +47,14 @@ struct TagView: View {
                                 }
                             } header: {
                                 Text(section.element.initial.uppercased())
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
+                                    .font(.bitcountRegular(style: .headline))
+                                    .foregroundStyle(.primary)
                             }
                         }
                     }
                     .animation(.easeInOut, value: viewModel.sectionedTags)
                     .environment(\.defaultMinListRowHeight, 66)
+                    .scrollContentBackground(.hidden)
                 }
             }
             .navigationTitle("Tags")

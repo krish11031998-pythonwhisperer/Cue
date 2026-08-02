@@ -1,5 +1,5 @@
 //
-//  CreateReminderWithCueAI.swift
+//  CueAIView.swift
 //  Cue
 //
 //  Created by Krishna Venkatramani on 02/03/2026.
@@ -9,10 +9,11 @@ import SwiftUI
 import VanorUI
 import Model
 
-struct CreateReminderWithCueAI: View {
+struct CueAIView: View {
     
     @Environment(\.dismiss) var dismiss
-    @State private var viewModel: CueReminderGeneratorViewModel
+    @Environment(\.colorScheme) var colorScheme
+    @State private var viewModel: CueAIViewModel
     @State private var size: CGSize = .zero
     @State private var circleCount: Int = .zero
     @State private var textFieldIsInFocus: Bool = false
@@ -21,54 +22,47 @@ struct CreateReminderWithCueAI: View {
         self.viewModel = .init(store: store)
     }
     
+    var gradientStops: [Gradient.Stop] {
+        let colors: [Color]
+        let stops: [CGFloat]
+        if colorScheme == .light {
+            colors = [.waveformColorOne, .waveformColorTwo, .waveformColorThree]
+            stops = [0.17, 0.58, 1]
+        } else {
+            colors = [.waveformDarkColorOne.opacity(0.75), .waveformDarkColorTwo, .waveformDarkColorThree, .waveformDarkColorFour]
+            stops = [0.14, 0.37, 0.72, 1]
+        }
+        
+        return zip(colors, stops).map {
+            Gradient.Stop(color: $0, location: $1)
+        }
+    }
+    
     var body: some View {
         ZStack(alignment: .center) {
-            AnimatedDotView(bubbleAnimation: viewModel.bubbleAnimation)
-            switch viewModel.recorderState {
-            case .resume, .pause:
-                ScrollView(.vertical) {
-                    LazyVStack(alignment: .leading, spacing: 8) {
-                        Text(viewModel.transribedString + viewModel.volatileTranscribedText)
-                            .contentTransition(.opacity)
-                            .animation(.easeInOut, value: viewModel.transribedString + viewModel.volatileTranscribedText)
-                            .padding(.horizontal, 20)
-                        ForEach(Array(viewModel.reminders), id: \.self) { reminder in
-                            ReminderCard(reminder: reminder) {
-                                viewModel.remove(reminder)
-                            } add: {
-                                viewModel.addReminder(reminder)
-                            } edit: {
-                                viewModel.edit(reminder)
-                            }
-                        }
-                    }
-                    .padding(.top, 24)
+            
+            WaveformBubbleView(gradientStops: gradientStops)
+                .ignoresSafeArea(edges: .all)
+            
+            VStack(alignment: .leading, spacing: 10) {
+                switch viewModel.recorderState {
+                case .resume, .pause:
+                    Text(viewModel.transribedString + viewModel.volatileTranscribedText)
+                        .contentTransition(.opacity)
+                        .animation(.easeInOut, value: viewModel.transribedString + viewModel.volatileTranscribedText)
+                        .padding(.horizontal, 20)
+                case .idle, .stop:
+                    EmptyView()
                 }
-            case .stop, .idle:
-                if viewModel.reminders.isEmpty {
-                    emptyView
-                } else {
-                    ScrollView(.vertical) {
-                        VStack(alignment: .center, spacing: 12) {
-                            ForEach(Array(viewModel.reminders), id: \.self) { reminder in
-                                ReminderCard(reminder: reminder) {
-                                    viewModel.remove(reminder)
-                                } add: {
-                                    viewModel.addReminder(reminder)
-                                } edit: {
-                                    viewModel.edit(reminder)
-                                }
-                            }
-                        }
-                        .padding(.top, 24)
-                    }
-                }
+                
+                ReminderScrollView(viewModel: viewModel)
             }
             
             if textFieldIsInFocus {
-                Color.clear
+                Color.red.opacity(0.2)
                     .ignoresSafeArea(edges: .all)
                     .onTapGesture {
+                        self.textFieldIsInFocus = false
                     }
             }
         }
@@ -98,6 +92,12 @@ struct CreateReminderWithCueAI: View {
         })
         #if !AI_TAB
         .toolbar(content: {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("", systemSymbol: .xmark) {
+                    dismiss()
+                }
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 Button("", systemSymbol: .checkmark) {
                     Task { @MainActor in
@@ -123,26 +123,62 @@ struct CreateReminderWithCueAI: View {
             #if AI_TAB
             .padding(.bottom, 20)
             #endif
-
         }
+        .sheet(item: $viewModel.presentation, content: { presentation in
+            switch presentation {
+            case .editReminder(let reminderModel, let editAction):
+                NewCreateReminderView(mode: .editFromAI(reminderModel, editAction), store: viewModel.store)
+            }
+        })
+        .environment(viewModel.voiceTranscriber.audioWaveformManager)
     }
     
     
+    // MARK: - ReminderScrollView
+    
+    struct ReminderScrollView: View {
+        var viewModel: CueAIViewModel
+
+        var body: some View {
+            ScrollView(.vertical) {
+                LazyVStack(alignment: .leading, spacing: 8) {
+                    ForEach(viewModel.reminders, id: \.id) { reminderModel in
+                        ReminderCard(id: reminderModel.id, reminder: reminderModel.reminder) {
+                            viewModel.remove(reminderModel)
+                        } edit: {
+                            viewModel.edit(reminderModel)
+                        }
+                    }
+                }
+                .padding(.top, 24)
+            }
+            .scrollEdgeEffectStyle(.soft, for: .bottom)
+        }
+    }
+    
     // MARK: - View Builder
     
-    struct ReminderCard: View {
+    struct ReminderCard: View, Equatable {
         
+        let id: UUID
         let reminder: ReminderModel
         let remove: () -> Void
-        let add: () -> Bool
         let edit: () -> Void
         
         var body: some View {
-            ReminderView(model: .init(title: reminder.title, icon: .init(reminder.icon)!, theme: Color.proSky, time: reminder.date, state: .showDisplayOptions(add: add, delete: remove, edit: edit), tags: [], logReminder: nil, deleteReminder: nil))
+            ReminderView(model: .init(title: reminder.title, icon: .init(reminder.icon)!,
+                                      lightColor: reminder.color.resolved(for: .light),
+                                      darkColor: reminder.color.resolved(for: .dark),
+                                      time: reminder.schedule?.timeScheduled ?? reminder.date,
+                                      state: .showDisplayOptions(delete: remove, edit: edit), tags: [], logReminder: nil, deleteReminder: nil))
             .padding(.horizontal, 20)
-            .id(reminder.title)
-            .popInContainer(angle: .random(in: -10..<10),
+            .id(reminder)
+            .popInContainer(angle: .random(in: -0.5..<0.5),
                             animation: .snappy)
+        }
+        
+        static func == (lhs: Self, rhs: Self) -> Bool {
+            lhs.reminder == rhs.reminder
         }
         
     }
@@ -165,6 +201,6 @@ struct CreateReminderWithCueAI: View {
 }
 
 #Preview {
-    CreateReminderWithCueAI(store: .init())
+    CueAIView(store: .init())
 //        .environment(Store())
 }

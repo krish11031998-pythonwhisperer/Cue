@@ -17,6 +17,20 @@ class NewCreateReminderViewModel: CreateReminderManager {
     enum Mode: Equatable {
         case create
         case edit(ReminderModel)
+        case editFromAI(ReminderModel, (ReminderModel) -> Void)
+        
+        static func ==(lhs: Self, rhs: Self) -> Bool {
+            switch (lhs, rhs) {
+            case (.create, .create):
+                return true
+            case (.edit(let lhsReminder), .edit(let rhsReminder)):
+                return lhsReminder == rhsReminder
+            case (.editFromAI(let lhsReminder, _), editFromAI(let rhsReminder, _)):
+                return lhsReminder == rhsReminder
+            default:
+                return false
+            }
+        }
     }
     
     enum Presentation: Identifiable {
@@ -24,6 +38,7 @@ class NewCreateReminderViewModel: CreateReminderManager {
         case calendar
         case scheduleBuilder
         case snoozeDuration
+        case remindMeDuration
         case timeSheet
         case tag
         
@@ -37,6 +52,8 @@ class NewCreateReminderViewModel: CreateReminderManager {
                 return "scheduleBuilder"
             case .snoozeDuration:
                 return "snoozeDuration"
+            case .remindMeDuration:
+                return "remindMeDuration"
             case .timeSheet:
                 return "timeSheet"
             case .tag:
@@ -45,6 +62,8 @@ class NewCreateReminderViewModel: CreateReminderManager {
         }
     }
     
+    @ObservationIgnored
+    let mode: Mode
     @ObservationIgnored
     var store: Store
     @ObservationIgnored
@@ -75,11 +94,13 @@ class NewCreateReminderViewModel: CreateReminderManager {
     var tags: [TagModel] = []
     var tasks: [CreateReminderTask] = []
     var scheduleBuilder: Reminder.ScheduleBuilder = .init(.now)
-    var icon: Icon = .symbol(SFSymbol.allSymbols.randomElement()!)
+    var icon: Icon
     var colorModel: ColorModel = .init(color: .sky, colorName: "sky")
+    var remindMeBefore: TimeInterval = 10 * 60
     var isLoadingSuggestions: Bool = false
     
-    private init(store: Store, suggestionTask: Task<Void, Never>? = nil, edittingMode: Bool, reminderID: NSManagedObjectID? = nil, reminderTitle: String, snoozeDuration: Double, reminderNotification: ReminderNotification, date: Date, timeDate: Date, tasks: [CreateReminderTask], tags: [TagModel], scheduleBuilder: Reminder.ScheduleBuilder, icon: Icon, colorModel: ColorModel) {
+    private init(store: Store, mode: Mode, suggestionTask: Task<Void, Never>? = nil, edittingMode: Bool, reminderID: NSManagedObjectID? = nil, reminderTitle: String, snoozeDuration: Double, reminderNotification: ReminderNotification, date: Date, timeDate: Date, tasks: [CreateReminderTask], tags: [TagModel], scheduleBuilder: Reminder.ScheduleBuilder, icon: Icon, colorModel: ColorModel) {
+        self.mode = mode
         self.store = store
         self.suggestionTask = suggestionTask
         self.edittingMode = edittingMode
@@ -100,8 +121,8 @@ class NewCreateReminderViewModel: CreateReminderManager {
         switch mode {
         case .create:
             let colorModel = ColorModel(color: .sky, colorName: "sky")
-            self.init(store: store, edittingMode: false, reminderTitle: "", snoozeDuration: 15 * 60, reminderNotification: .notification, date: .now, timeDate: .now, tasks: [], tags: [], scheduleBuilder: .init(.now), icon: .symbol(SFSymbol.allSymbols.randomElement()!), colorModel: colorModel)
-        case .edit(let reminderModel):
+            self.init(store: store, mode: mode, edittingMode: false, reminderTitle: "", snoozeDuration: 15 * 60, reminderNotification: .notification, date: .now, timeDate: .now, tasks: [], tags: [], scheduleBuilder: .init(.now), icon:  .emoji(Emoji.all.randomElement()!), colorModel: colorModel)
+        case .edit(let reminderModel), .editFromAI(let reminderModel, _):
             let timeDate: Date
             let scheduleBuilder: Reminder.ScheduleBuilder
             if let schedule = reminderModel.schedule {
@@ -118,9 +139,25 @@ class NewCreateReminderViewModel: CreateReminderManager {
             }
             let tags = reminderModel.tags
             let colorModel = ColorModel(color: reminderModel.color, colorName: reminderModel.colorName)
-            self.init(store: store, edittingMode: true, reminderID: reminderModel.objectId, reminderTitle: reminderModel.title, snoozeDuration: reminderModel.snoozeDuration, reminderNotification: reminderModel.notificationType, date: reminderModel.date, timeDate: timeDate, tasks: reminderTasks, tags: tags, scheduleBuilder: scheduleBuilder, icon: icon, colorModel: colorModel)
+            self.init(store: store, mode: mode, edittingMode: true, reminderID: reminderModel.objectId, reminderTitle: reminderModel.title, snoozeDuration: reminderModel.snoozeDuration, reminderNotification: reminderModel.notificationType, date: reminderModel.date, timeDate: timeDate, tasks: reminderTasks, tags: tags, scheduleBuilder: scheduleBuilder, icon: icon, colorModel: colorModel)
             self.alarmIsOn = reminderModel.notificationType == .alarm
         }
+    }
+    
+    func reminderFromViewModel() -> ReminderModel {
+        let icon: CueIcon = .from(icon)
+        let tasks: [ReminderTaskModel] = tasks.map { .init(title: $0.title, icon: .from($0.icon)) }
+        let schedule: ReminderSchedule = .init(hour: timeDate.hours, minute: timeDate.minutes, intervalWeeks: scheduleBuilder.intervalWeek, weekdays: scheduleBuilder.weekdays, calendarDates: scheduleBuilder.weekdays)
+        
+            return .init(notificationType: .notification,
+                         title: reminderTitle,
+                         icon: icon,
+                         date: date,
+                         snoozeDuration: snoozeDuration,
+                         tasks: tasks,
+                         tags: tags,
+                         schedule: schedule,
+                         colorName: colorModel.colorName)
     }
     
     var theme: LCHColor {

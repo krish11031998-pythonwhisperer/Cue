@@ -128,10 +128,10 @@ struct CreateReminderView: View {
             Group {
                 switch sheet {
                 case .alarmAt:
-                    DatePickerView.time("Remind me at", date: $viewModel.timeDate, notification: $viewModel.reminderNotification)
+                    DatePickerView.time("Remind me at", date: $viewModel.timeDate)
                         .fittedPresentationDetent()
                 case .duration:
-                    TimerSheetView(timeDuration: $viewModel.snoozeDuration, title: "Snooze Duration", bound: .hour)
+                    TimerSheetView(timeDuration: $viewModel.snoozeDuration, controlType: .snoozeDuration)
                         .fittedPresentationDetent()
                 case .date:
                     DatePickerView.date("Reminder Start Date", date: $viewModel.date)
