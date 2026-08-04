@@ -12,6 +12,7 @@ import Combine
 internal protocol NotificationSchedulerDelegate: NSObject {
     var authorizationStatus: UNAuthorizationStatus { get }
     func removePendingNotificationRequests(withIdentifiers: [String])
+    func pendingNotifications() async -> [UNNotificationRequest]
     func add(_ request: UNNotificationRequest, completion: @escaping (Error?) -> Void)
     func removeAllPendingNotificationRequests()
 }
@@ -34,30 +35,63 @@ public class NotificationScheduler: NSObject, UNUserNotificationCenterDelegate {
     }
     
     public func scheduleNotificationForReminder(reminder: ReminderModel) {
-    
         guard let authorization = delegate?.authorizationStatus,
                 authorization == .authorized else { return }
+
+        removePendingNotificationIdentifiers(for: reminder)
         
+        let triggersWithId = triggersWithId(for: reminder)
         
+        triggersWithId.forEach { id, trigger in
+            let notifiationContent = UNMutableNotificationContent()
+            notifiationContent.title = reminder.title
+            notifiationContent.sound = .default
+            let notificationRequest = UNNotificationRequest(identifier: id, content: notifiationContent, trigger: trigger)
+            delegate?.add(notificationRequest) { error in
+                if let error {
+                    print("(ERROR) Adding Notification for the Reminder: \(reminder.title): \(error.localizedDescription)")
+                } else {
+                    print("(DEBUG) added a notification for \(notificationRequest.identifier) - \((notificationRequest.trigger as? UNCalendarNotificationTrigger)?.nextTriggerDate())")
+                }
+            }
+        }
+    }
+
+    public func removeNotifications(for reminder: ReminderModel) {
+        removePendingNotificationIdentifiers(for: reminder)
+    }
+
+    private func removePendingNotificationIdentifiers(for reminder: ReminderModel) {
+        let notificationId = reminder.notificationID.uuidString
+        
+        Task { [weak self] in
+            var notificationIds: [String] = []
+            let pendingNotifications = await self?.delegate?.pendingNotifications()
+            pendingNotifications?.forEach { request in
+                if request.identifier.contains(notificationId) {
+                    notificationIds.append(request.identifier)
+                }
+            }
+            self?.delegate?.removePendingNotificationRequests(withIdentifiers: notificationIds)
+        }
+        
+    }
+    
+    private func triggersWithId(for reminder: ReminderModel) -> [(String, UNCalendarNotificationTrigger)] {
         let id = reminder.notificationID.uuidString
-        var identifiers: [String] = []
-        var notificationRequests: [UNNotificationRequest] = []
-  
-        guard let reminderSchedule = reminder.schedule else { return }
-        let triggersWithId: [(String, UNCalendarNotificationTrigger)]
+        guard let reminderSchedule = reminder.schedule else { return [] }
+
         // Weekly
         if let weekInterval = reminderSchedule.intervalWeeks,
-           let weekdays = reminderSchedule.weekdays
-        {
-            triggersWithId = triggers(startDate: reminder.date,
-                                      hour: reminderSchedule.hour,
-                                      minute: reminderSchedule.minute,
-                                      for: Array(weekdays),
-                                      intervalWeeks: weekInterval,
-                                      prefixID: id)
-            
+           let weekdays = reminderSchedule.weekdays {
+            return triggers(startDate: reminder.date,
+                             hour: reminderSchedule.hour,
+                             minute: reminderSchedule.minute,
+                             for: Array(weekdays),
+                             intervalWeeks: weekInterval,
+                             prefixID: id)
         } else if let calendarDates = reminderSchedule.calendarDates {
-            triggersWithId = triggersForCalendarDate(startDate: reminder.date, hour: reminderSchedule.hour, minute: reminderSchedule.minute, calendarDates: Array(calendarDates), prefixID: id)
+            return triggersForCalendarDate(startDate: reminder.date, hour: reminderSchedule.hour, minute: reminderSchedule.minute, calendarDates: Array(calendarDates), prefixID: id)
         } else {
             var dateComponents = DateComponents()
             dateComponents.day = reminder.date.day
@@ -68,29 +102,7 @@ public class NotificationScheduler: NSObject, UNUserNotificationCenterDelegate {
             dateComponents.minute = reminderSchedule.minute
             dateComponents.calendar = .autoupdatingCurrent
             let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
-            triggersWithId = [("\(id)_\(dateComponents)", trigger)]
-        }
-        
-        for (id, trigger) in triggersWithId {
-            identifiers.append(id)
-            let notifiationContent = UNMutableNotificationContent()
-            notifiationContent.title = reminder.title
-            notifiationContent.sound = .default
-            notificationRequests.append(.init(identifier: id,
-                                              content: notifiationContent,
-                                              trigger: trigger))
-        }
-        
-        delegate?.removePendingNotificationRequests(withIdentifiers: identifiers)
-        
-        notificationRequests.forEach { notificationRequest in
-            delegate?.add(notificationRequest) { error in
-                if let error {
-                    print("(ERROR) Adding Notification for the Reminder: \(reminder.title): \(error.localizedDescription)")
-                } else {
-                    print("(DEBUG) added a notification for \(notificationRequest.identifier) - \((notificationRequest.trigger as? UNCalendarNotificationTrigger)?.nextTriggerDate())")
-                }
-            }
+            return [("\(id)_\(dateComponents)", trigger)]
         }
     }
     

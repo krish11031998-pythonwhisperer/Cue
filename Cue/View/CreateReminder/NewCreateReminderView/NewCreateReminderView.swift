@@ -62,9 +62,9 @@ struct NewCreateReminderView: View {
                     ForEach(ReminderEditField.allCases) { editField in
                         switch editField {
                         case .date, .time, .repeat:
-                            ReminderOptionView(config: editField.config(viewModel))
+                            DefaultReminderOptionRow(config: editField.config(viewModel))
                         case .alarm:
-                            AlarmRowView(field: editField, viewModel: viewModel)
+                            AlarmRowView(viewModel: viewModel)
                         }
                     }
                 }
@@ -157,12 +157,10 @@ struct NewCreateReminderView: View {
         .safeAreaInset(edge: .bottom, alignment: .center, spacing: 0, content: {
             HStack(alignment: .center, spacing: 12) {
                 Button {
-                    if case .editFromAI(_, let action) = viewModel.mode {
-                        action(viewModel.reminderFromViewModel())
-                    } else {
-                        viewModel.createReminder()                        
+                    Task { @MainActor in
+                        await viewModel.saveReminder()
+                        dismissSheet()
                     }
-                    dismissSheet()
                 } label: {
                     Image(systemSymbol: .checkmark)
                         .font(.title2.weight(.semibold))
@@ -235,7 +233,7 @@ extension NewCreateReminderView {
                 return .init(title: "Repeat", actions: [.button(repeatAction)])
             case .alarm:
                 let alarm = ActionToggleListRow.Config(content: viewModel.alarmIsOn) { newValue in
-                    viewModel.alarmIsOn = newValue
+//                    viewModel.alarmIsOn = newValue
                 }
                 return .init(title: "Alarm", actions: [.toggle(alarm)])
             }
@@ -250,11 +248,37 @@ extension NewCreateReminderView {
     
     struct AlarmRowView: View {
         
-        let field: ReminderEditField
-        let viewModel: NewCreateReminderViewModel
+        @Environment(\.theme) var theme
+        @Bindable var viewModel: NewCreateReminderViewModel
+        let buttonSize: CGSize = .init(squared: 48)
         
         var body: some View {
-            ReminderOptionView(config: field.config(viewModel)) {
+            ReminderOptionRow(title: "Nudge") {
+                Picker("", selection: $viewModel.reminderNotification) {
+                    Image(systemSymbol: .alarm)
+                        .animation(.easeInOut, body: { content in
+                            content
+                                .symbolEffect(.wiggle, options: .default, isActive: viewModel.reminderNotification == .alarm)
+                        })
+                        .font(.body)
+                        .tint(viewModel.reminderNotification == .alarm ? theme.baseColor : .primary)
+                        .frame(width: buttonSize.width, height: buttonSize.height, alignment: .center)
+                        .tag(ReminderNotification.alarm)
+                    
+                    Image(systemSymbol: .bell)
+                        .font(.body)
+                        .symbolEffect(.wiggle, value: viewModel.reminderNotification == .notification)
+                        .foregroundStyle(viewModel.reminderNotification == .notification ? theme.baseColor : .primary)
+                        .frame(width: buttonSize.width, height: buttonSize.height, alignment: .center)
+                        .tag(ReminderNotification.notification)
+                    
+                }
+                .pickerStyle(.segmented)
+                .frame(width: buttonSize.width * 2.5, height: buttonSize.height)
+                .tint(theme.baseColor)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .animation(.default, value: viewModel.reminderNotification)
+            } innerContent: {
                 if viewModel.alarmIsOn {
                     OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 8) {
                         ActionButtonListRow(config: .init(symbol: .zzz, label: String.formattedTimelineInterval(viewModel.snoozeDuration), action: {
