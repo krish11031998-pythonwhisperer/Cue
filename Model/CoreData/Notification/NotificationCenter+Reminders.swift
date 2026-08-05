@@ -12,3 +12,15 @@ public extension Notification.Name {
     static let deletedReminder: Notification.Name = .init("deletedReminder")
     static let updatedReminder: Notification.Name = .init("updatedReminder")
 }
+
+public extension Notification {
+    private static let reminderModelKey = "reminderModel"
+
+    init(reminderEvent name: Notification.Name, reminder: ReminderModel) {
+        self.init(name: name, object: nil, userInfo: [Self.reminderModelKey: reminder])
+    }
+
+    var reminderModel: ReminderModel? {
+        userInfo?[Self.reminderModelKey] as? ReminderModel
+    }
+}

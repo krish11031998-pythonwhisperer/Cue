@@ -76,13 +76,11 @@ class NewCreateReminderViewModel: CreateReminderManager {
     var edittingMode: Bool = false
     @ObservationIgnored
     var reminderID: NSManagedObjectID?
-    @ObservationIgnored
+    
     var reminderNotification: ReminderNotification = .notification
     
-    var alarmIsOn: Bool = false {
-        didSet {
-            reminderNotification = alarmIsOn ? .alarm : .notification
-        }
+    var alarmIsOn: Bool {
+        reminderNotification == .alarm
     }
     
     var imageFrame: CGRect = .zero
@@ -140,7 +138,6 @@ class NewCreateReminderViewModel: CreateReminderManager {
             let tags = reminderModel.tags
             let colorModel = ColorModel(color: reminderModel.color, colorName: reminderModel.colorName)
             self.init(store: store, mode: mode, edittingMode: true, reminderID: reminderModel.objectId, reminderTitle: reminderModel.title, snoozeDuration: reminderModel.snoozeDuration, reminderNotification: reminderModel.notificationType, date: reminderModel.date, timeDate: timeDate, tasks: reminderTasks, tags: tags, scheduleBuilder: scheduleBuilder, icon: icon, colorModel: colorModel)
-            self.alarmIsOn = reminderModel.notificationType == .alarm
         }
     }
     
@@ -165,5 +162,22 @@ class NewCreateReminderViewModel: CreateReminderManager {
     }
     
     func presentIconSheet() {
+    }
+    
+    func saveReminder() async {
+        switch reminderNotification {
+        case .alarm:
+            // Need to do the same for Alarm.
+            await store.alarmManager.requestForAuthortization()
+        case .notification:
+            await store.notificationManager.requestForAuthorizationAfterCheckingNotificationSettings()
+        default:
+            break
+        }
+        if case .editFromAI(_, let action) = mode {
+            action(reminderFromViewModel())
+        } else {
+            createReminder()
+        }
     }
 }

@@ -39,6 +39,7 @@ protocol AlarmManagerDelegate {
     func updateAlarmSettings(_ authorizationStatus: AlarmManager.AuthorizationState)
 }
 
+@MainActor
 public class CueAlarmManager {
     
     public private(set) var authorizationState: AlarmManager.AuthorizationState = .notDetermined {
@@ -213,19 +214,25 @@ public class CueAlarmManager {
     }
     
     func observeReminderToSetAlarm() {
-        let addedReminder = NotificationCenter.default.publisher(for: .addedReminder).map { _ in  () }.eraseToAnyPublisher()
-        let updatedReminder = NotificationCenter.default.publisher(for: .updatedReminder).map { _ in  () }.eraseToAnyPublisher()
-        let deletedReminder = NotificationCenter.default.publisher(for: .deletedReminder).map { _ in  () }.eraseToAnyPublisher()
-    
-        
-        Publishers.Merge3(addedReminder, updatedReminder, deletedReminder)
-            .compactMap { [weak self] _ -> [ReminderModel]? in
-                guard let self else { return nil }
-                let reminders = Reminder.fetchRemindersWithAlarm(context: self.context)
-                return reminders.map { .init(from: $0) }
+        Publishers.Merge(
+            NotificationCenter.default.publisher(for: .addedReminder),
+            NotificationCenter.default.publisher(for: .updatedReminder)
+        )
+        .compactMap(\.reminderModel)
+        .sink { [weak self] reminder in
+            guard let self else { return }
+            if reminder.notificationType == .alarm {
+                scheduleAlarm(for: reminder)
+            } else {
+                removeAlarm(for: reminder)
             }
-            .sink { [weak self] reminders in
-                self?.scheduleAlarmForReminder(reminders)
+        }
+        .store(in: &subscribers)
+
+        NotificationCenter.default.publisher(for: .deletedReminder)
+            .compactMap(\.reminderModel)
+            .sink { [weak self] reminder in
+                self?.removeAlarm(for: reminder)
             }
             .store(in: &subscribers)
     }
@@ -293,8 +300,36 @@ public class CueAlarmManager {
         }
     }
     
+    private func scheduleAlarm(for reminder: ReminderModel) {
+        if let existingAlarm = alarmsMap[reminder.notificationID] {
+            if let schedule = existingAlarm.schedule,
+               let reminderSchedule = reminder.schedule,
+               checkAlarmIsvalidForReminderSchedule(reminderSchedule, schedule: schedule) {
+                // Existing alarm already matches this reminder's schedule - nothing to do
+                return
+            }
+            cancelAlarms([reminder.notificationID])
+        }
+
+        createAlarm(for: reminder)
+    }
+
+    private func createAlarm(for reminder: ReminderModel) {
+        Task { [weak self] in
+            guard let (_, alarm) = await Self.scheduleAnAlarm(reminder: reminder) else { return }
+            await MainActor.run {
+                self?.alarmsMap[alarm.id] = alarm
+                self?.cleanUpAlarms()
+            }
+        }
+    }
+
+    private func removeAlarm(for reminder: ReminderModel) {
+        cancelAlarms([reminder.notificationID])
+    }
+
     private func scheduleAlarmForReminder(_ reminders: [ReminderModel]) {
-        
+
         let alarmsIDsFromReminders = reminders.map(\.notificationID)
         
         // Alarms which should be deleted sinc the reminders are deleted
