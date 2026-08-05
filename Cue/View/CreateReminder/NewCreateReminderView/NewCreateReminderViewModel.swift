@@ -168,9 +168,11 @@ class NewCreateReminderViewModel: CreateReminderManager {
         switch reminderNotification {
         case .alarm:
             // Need to do the same for Alarm.
-            break
+            await store.alarmManager.requestForAuthortization()
         case .notification:
             await store.notificationManager.requestForAuthorizationAfterCheckingNotificationSettings()
+        default:
+            break
         }
         if case .editFromAI(_, let action) = mode {
             action(reminderFromViewModel())
