@@ -130,22 +130,23 @@ import UIKit
         }
         
         reminder.updateTags(tags)
-        
+
         viewContext.saveContext()
-        NotificationCenter.default.post(name: .addedReminder, object: nil)
+        NotificationCenter.default.post(.init(reminderEvent: .addedReminder, reminder: .init(from: reminder)))
         return reminder
     }
-    
+
     public func deleteReminder(reminderID: NSManagedObjectID) {
         let reminder = Reminder.fetch(context: viewContext, for: reminderID)
+        let reminderModel = ReminderModel(from: reminder)
         reminder.delete(context: viewContext)
-        NotificationCenter.default.post(name: .deletedReminder, object: nil)
+        NotificationCenter.default.post(.init(reminderEvent: .deletedReminder, reminder: reminderModel))
     }
-    
+
     public func updateReminder(for id: NSManagedObjectID, transform: (Reminder) -> Void) {
         let reminder = Reminder.fetch(context: viewContext, for: id)
         reminder.update(context: viewContext, transform: transform)
-        NotificationCenter.default.post(name: .updatedReminder , object: nil)
+        NotificationCenter.default.post(.init(reminderEvent: .updatedReminder, reminder: .init(from: reminder)))
     }
     
     public func updateTasksInReminder(reminder: Reminder, reminderTasks: [ReminderTaskModel], save: Bool) {

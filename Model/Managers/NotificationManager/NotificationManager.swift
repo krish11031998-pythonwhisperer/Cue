@@ -75,6 +75,30 @@ public class NotificationManager: NSObject, NotificationSchedulerDelegate {
         }
     }
     
+    @MainActor
+    @discardableResult
+    public func requestForAuthorizationAfterCheckingNotificationSettings() async -> Bool {
+        let settings = await notificationCenter.notificationSettings()
+        print("(DEBUG) \(#function) settings: \(settings.authorizationStatus)")
+        switch settings.authorizationStatus {
+        case .authorized, .denied:
+            self.notificationSetting = settings
+            return true
+        case .notDetermined:
+            do {
+                try await notificationCenter.requestAuthorization(options: [.sound, .badge, .sound])
+                return await self.requestForAuthorizationAfterCheckingNotificationSettings()
+            } catch {
+                print("(ERROR) Error while reqeusting for notification authorization: \(error.localizedDescription)")
+                return false
+            }
+        case .ephemeral, .provisional:
+            return false
+        @unknown default:
+            fatalError()
+        }
+    }
+    
     public func requestForAuthorization(completion: NotificationSettingsCompletion? = nil) {
         notificationCenter.requestAuthorization(options: [.sound, .badge, .alert]) { [weak self] granted, error in
             if let error {
@@ -118,21 +142,25 @@ public class NotificationManager: NSObject, NotificationSchedulerDelegate {
     // MARK: - observe
     
     private func observe() {
-        let deleteReminder = NotificationCenter.default.publisher(for: .deletedReminder).map { _ in () }.eraseToAnyPublisher()
-        let updatedReminder = NotificationCenter.default.publisher(for: .updatedReminder).map { _ in () }.eraseToAnyPublisher()
-        let addedReminder = NotificationCenter.default.publisher(for: .addedReminder).map { _ in () }.eraseToAnyPublisher()
-
-        let changePublisher = Publishers.Merge3(deleteReminder, updatedReminder, addedReminder).eraseToAnyPublisher()
-        
-        let appOpen = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification).map { _ in () }.eraseToAnyPublisher()
-
-        changePublisher
-            .map { _ in
-                let reminders = Reminder.fetchRemindersWithNotification(context: self.context).map { ReminderModel(from: $0) }
-                return reminders
+        Publishers.Merge(
+            NotificationCenter.default.publisher(for: .addedReminder),
+            NotificationCenter.default.publisher(for: .updatedReminder)
+        )
+        .compactMap(\.reminderModel)
+        .sink { [weak self] reminder in
+            guard let self else { return }
+            if reminder.notificationType == .notification {
+                scheduler.scheduleNotificationForReminder(reminder: reminder)
+            } else {
+                scheduler.removeNotifications(for: reminder)
             }
-            .sink { [weak self] reminders in
-                self?.setupReminders(reminders: reminders)
+        }
+        .store(in: &subscribers)
+
+        NotificationCenter.default.publisher(for: .deletedReminder)
+            .compactMap(\.reminderModel)
+            .sink { [weak self] reminder in
+                self?.scheduler.removeNotifications(for: reminder)
             }
             .store(in: &subscribers)
     }
@@ -163,6 +191,10 @@ public class NotificationManager: NSObject, NotificationSchedulerDelegate {
     
     func removePendingNotificationRequests(withIdentifiers: [String]) {
         notificationCenter.removePendingNotificationRequests(withIdentifiers: withIdentifiers)
+    }
+    
+    func pendingNotifications() async -> [UNNotificationRequest] {
+        await notificationCenter.pendingNotificationRequests()
     }
     
     func add(_ request: UNNotificationRequest, completion: @escaping ((any Error)?) -> Void) {
