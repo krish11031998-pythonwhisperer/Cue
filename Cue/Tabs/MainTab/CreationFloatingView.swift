@@ -10,7 +10,9 @@ import VanorUI
 
 struct CreationFloatingView: View {
     
-    @Binding var presentation: MainTab.Presentation?
+    typealias Presentation = MainTabViewModel.Presentation
+    
+    @Binding var presentation: Presentation?
     @Binding var presentFloatingMenu: Bool
     
     var body: some View {

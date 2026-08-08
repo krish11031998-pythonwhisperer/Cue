@@ -18,51 +18,15 @@ struct IsTodayPreferenceKey: PreferenceKey {
 
 struct MainTab: View {
     
-    enum Tabs: Hashable {
-        case home
-        case organize
-        case calendar
-        case focus
-        case create
-    }
+    typealias Tabs = MainTabViewModel.Tabs
     
-    enum Presentation: Int, Identifiable {
-        case createReminder = 0
-        case createReminderWithAI
-        
-        var id: Int { rawValue }
-    }
-    
-    enum FullScreenPresentation: String, Identifiable {
-        case onboarding
-        
-        var id: String { rawValue }
-    }
-    
-    @State private var isToday: Bool = true
     @Environment(Store.self) var store
     @Environment(SubscriptionManager.self) var subscriptionManager
-    private let hasShowOnboarding: Bool
-    @State private var selectedTab: Tabs = .home
-    @State private var presentCreateReminder: Bool = false
-    @State private var presentFloatingMenu: Bool = false
-    @State private var fullScreenPresentation: FullScreenPresentation? = nil
-    @State private var presentation: Presentation? = nil
-    @State private var presentPayWall: Bool = false
-    private let presentPayWallAfterFirstOnboarding: Bool
-    private let todayPublisher: PassthroughSubject<Void, Never> = .init()
     @State private var tabAccessorySize: CGSize = .zero
     
     // MARK:  FocusTabBottomAccessoryControl
     @Namespace var focusTimerTabNamespace: Namespace.ID
-    @State private var focusTimerCoordinator: FocusTimerLaunchControlCoordinator! = nil
-    let focusAlarmManager: FocusAlarmManager = .init()
-    
-    init() {
-        self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
-        presentPayWallAfterFirstOnboarding = !hasShowOnboarding
-        self._focusTimerCoordinator = .init(initialValue: .init(alarmCoordinator: focusAlarmManager))
-    }
+    @State private var viewModel: MainTabViewModel = .init()
     
     var createTabRole: TabRole {
         if #available(iOS 27.0, *) {
@@ -72,7 +36,7 @@ struct MainTab: View {
         }
     }
     
-    var bottomTabAccessories: Set<Tabs> {
+    var bottomTabAccessories: Set<MainTabViewModel.Tabs> {
         #if AI_TAB || NEW_CREATE_REMINDER
         return [.focus]
         #else
@@ -81,11 +45,11 @@ struct MainTab: View {
     }
     
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $viewModel.selectedTab) {
             Tab(value: Tabs.home) {
                 #if NEW_CREATE_REMINDER
                 TodayTabView {
-                    self.presentCreateReminder = true
+                    self.viewModel.presentCreateReminder = true
                 }
                 .ignoresSafeArea(edges: .bottom)
                 #else
@@ -102,7 +66,7 @@ struct MainTab: View {
             
             Tab(value: .calendar) {
                 CalendarView {
-                    self.presentCreateReminder = true
+                    self.viewModel.presentCreateReminder = true
                 }
             } label: {
                 Image(systemSymbol: .calendar)
@@ -111,7 +75,7 @@ struct MainTab: View {
             }
             
             Tab(value: .focus) {
-                FocusTimerTabView(coordinator: focusTimerCoordinator)
+                FocusTimerTabView(coordinator: viewModel.focusTimerCoordinator)
             } label: {
                 Image(systemSymbol: .hourglass)
                     .font(.body)
@@ -141,91 +105,63 @@ struct MainTab: View {
                     .font(.body)
             }
         }
-        .optionalBottomAccessoryView(selectedTab: selectedTab, enabledTabs: bottomTabAccessories) { selectedTab in
+        .optionalBottomAccessoryView(selectedTab: viewModel.selectedTab, enabledTabs: bottomTabAccessories) { selectedTab in
             switch selectedTab {
             case .home:
-                TodayTabBarAccessoryView(isToday: isToday, todayPublisher: todayPublisher)
+                TodayTabBarAccessoryView(isToday: viewModel.isToday, todayPublisher: viewModel.todayPublisher)
             case .focus:
-                FocusTabBottomAccessoryView(coordinator: focusTimerCoordinator)
+                FocusTabBottomAccessoryView(coordinator: viewModel.focusTimerCoordinator)
             default:
                 EmptyView()
             }
         }
         .onPreferenceChange(IsTodayPreferenceKey.self, perform: {
-            self.isToday = $0
+            self.viewModel.isToday = $0
         })
         .tabBarMinimizeBehavior(.onScrollDown)
         .ignoresSafeArea(edges: .bottom)
         #if !AI_TAB
-        .onChange(of: selectedTab) { oldValue, newValue in
-            print("(DEBUG) Change in selectedTab: ", selectedTab)
+        .onChange(of: viewModel.selectedTab) { oldValue, newValue in
+            print("(DEBUG) Change in selectedTab: ", viewModel.selectedTab)
             if newValue == .create {
                 withAnimation(nil) {
                     #if NEW_CREATE_REMINDER
-                    self.presentFloatingMenu = true
+                    self.viewModel.presentFloatingMenu = true
                     #else
                     self.presentCreateReminder = true
                     #endif
-                    self.selectedTab = oldValue
+                    self.viewModel.selectedTab = oldValue
                 }
             }
         }
         #endif
-        .onChange(of: fullScreenPresentation, initial: false, { oldValue, newValue in
-            if oldValue == .onboarding {
-                self.presentCreateReminder = true
-            }
-        })
         #if NEW_CREATE_REMINDER
         .overlay(alignment: .bottom) {
-            if presentFloatingMenu {
-                CreationFloatingView(presentation: $presentation, presentFloatingMenu: $presentFloatingMenu)
+            if viewModel.presentFloatingMenu {
+                CreationFloatingView(presentation: $viewModel.presentation, presentFloatingMenu: $viewModel.presentFloatingMenu)
             }
-        }
-        .sheet(item: $presentation, onDismiss: {
-            if presentPayWallAfterFirstOnboarding {
-                presentPayWall = true
-            }
-        }, content: { presentation in
-            NavigationView {
-                switch presentation {
-                case .createReminder:
-                    NewCreateReminderView(mode: .create, store: store)
-                case .createReminderWithAI:
-                    CueAIView(store: store)
-                }
-            }
-            .presentationDetents([.fraction(1)])
-        })
-        #else
-        .sheet(isPresented: $presentCreateReminder, onDismiss: {
-            if presentPayWallAfterFirstOnboarding {
-                presentPayWall = true
-            }
-        }) {
-            CreateReminderRootView(store: store)
-                .presentationDetents([.fraction(1)])
-                .interactiveDismissDisabled(true)
         }
         #endif
-        .sheet(isPresented: $presentPayWall) {
-            CuePaywallView()
+        .cuePresentation(presentation: $viewModel.presentation, dismiss: viewModel.onDismiss(_:), contentBuilder: { presentation in
+            switch presentation {
+            case .createReminder:
+                NavigationView {
+                    NewCreateReminderView(mode: .create, store: store)
+                }
                 .presentationDetents([.fraction(1)])
-        }
-        .task {
-            guard !hasShowOnboarding else { return }
-            self.fullScreenPresentation = .onboarding
-        }
-        .fullScreenCover(item: $fullScreenPresentation) { fullScreenPresentation in
-            switch fullScreenPresentation {
+            case .createReminderWithAI:
+                NavigationView {
+                    CueAIView(store: store)
+                }
+                .presentationDetents([.fraction(1)])
             case .onboarding:
                 OnboardingMainView(store: store)
-            @unknown default:
-                fatalError("This shouldn't happen")
+            case .paywall:
+                CuePaywallView()
             }
-        }
+        })
         .task {
-            self.focusAlarmManager.alarmManager = store.alarmManager
+            self.viewModel.focusAlarmManager.alarmManager = store.alarmManager
         }
     }
     
