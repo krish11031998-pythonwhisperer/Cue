@@ -24,22 +24,15 @@ struct FocusReminderCarouselSelectorView: View {
     
     var body: some View {
         CentralizeItemCarousel(selectedItem: selectedItem, itemSize: Self.itemSize, items: items) { item in
-            itemBubbleBuilder(icon: item.icon, selected: selectedItem == item)
+            itemBubbleBuilder(icon: item.icon, theme: item.theme, selected: selectedItem == item)
         }
         .frame(height: Self.itemSize.height)
         .scrollIndicators(.hidden)
     }
     
-    
     @ViewBuilder
-    private func reminderBubbleBuilder(_ reminder: ReminderModel) -> some View {
-        let selected = reminder.id == selectedItem?.id
-        itemBubbleBuilder(icon: .init(reminder.icon)!, selected: selected)
-    }
-    
-    @ViewBuilder
-    private func itemBubbleBuilder(icon: Icon, selected: Bool) -> some View {
-        let backgroundColor: Color = selected ? Color.proSky.surfaceSecondary : Color.surfaceTertiary
+    private func itemBubbleBuilder(icon: Icon, theme: LCHColor, selected: Bool) -> some View {
+        let backgroundColor: Color = theme.surfaceSecondary/*selected ? Color.proSky.surfaceSecondary : Color.surfaceTertiary*/
         ReminderIconView(icon: icon,
                          foregroundColor: .primary,
                          backgroundColor: backgroundColor,
@@ -48,7 +41,7 @@ struct FocusReminderCarouselSelectorView: View {
             if selected {
                 Circle()
                     .fill(Color.clear)
-                    .stroke(Color.proSky.outlineTertiary, lineWidth: 2)
+                    .stroke(theme.outlineTertiary, lineWidth: 2)
             }
         }
         .padding(.all, 4)

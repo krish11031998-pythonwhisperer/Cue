@@ -49,6 +49,15 @@ class FocusTimerRootViewModel {
             }
         }
         
+        var theme: LCHColor {
+            switch self {
+            case .focus:
+                return Color.proSky
+            case .reminder(let reminderModel):
+                return .init(color: reminderModel.color)
+            }
+        }
+        
         var title: String {
             switch self {
             case .focus:

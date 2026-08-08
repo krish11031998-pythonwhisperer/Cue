@@ -28,21 +28,37 @@ struct FocusCountdownTimerView: View {
         coordinator.state == .idle || coordinator.state == .reset
     }
     
+    var countdownViewType: CountdownViewType {
+        #if NEW_COUNTDOWN_TIMER
+        return .bubble
+        #else
+        return .circle
+        #endif
+    }
+    
+    var theme: LCHColor {
+        switch viewModel.selectedTimerItem {
+        case .focus:
+            return Color.proSky
+        case .reminder(let reminderModel):
+            return .init(color: reminderModel.color)
+        }
+    }
+    
+    #if NEW_COUNTDOWN_TIMER
+    var icon: Icon? {
+        guard case .reminder(let reminderModel) = viewModel.selectedTimerItem else { return .symbol(.timer) }
+        return .init(reminderModel.icon)
+    }
+    #endif
+    
     var body: some View {
         
         ZStack(alignment: .center) {
-            FocusCountdownView(targetDuration: coordinator.timerDuration, theme: Color.proSky) {
-                ZStack(alignment: .center) {
-                    if coordinator.state == .idle || coordinator.state == .reset {
-                        Color.clear
-                    } else {
-                        FocusSessionTimeCountdownView(theme: Color.proSky, remainingTime: coordinator.remainingTimeDuration, isCompleted: false)
-                    }
-                }
-                .aspectRatio(1, contentMode: .fit)
-                .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newValue in
-                    self.frame = newValue
-                }
+            FocusCountdownView(countdownViewType: countdownViewType,
+                               targetDuration: coordinator.timerDuration,
+                               theme: theme) {
+                InnerContent(countdownViewType: countdownViewType, theme: theme, icon: icon, frame: $frame)
             }
             .environment(\.focusTimerStateFromCoordinator, coordinator.state)
             .environment(\.focusTimerProgressFromCoordinator, coordinator.progress)
@@ -81,28 +97,35 @@ struct FocusCountdownTimerView: View {
         }
         .onChange(of: state, initial: false) { oldValue, newValue in
             guard case .withTimer = newValue else { return }
-//            coordinator.state = .idle
         }
     }
     
     
-    // MARK: - State Updates
+    // MARK: - Focus
     
-//    private func stateUpdateHandler(_ timerState: FocusCountdownView.TimerState) {
-//        switch timerState {
-//        case .completed:
-//            coordinator.reset()
-//        case .resume:
-//            // Hide the safeBottomArea View
-//            break
-//        case .paused:
-//            // Do nothing for now
-//            break
-//        case .idle:
-//            break
-//        }
-//    }
-    
+    private struct InnerContent: View {
+        
+        @Environment(FocusTimerLaunchControlCoordinator.self) var coordinator
+        let countdownViewType: CountdownViewType
+        let theme: LCHColor
+        let icon: Icon?
+        @Binding var frame: CGRect
+        
+        var body: some View {
+            ZStack(alignment: .center) {
+                if coordinator.state == .idle || coordinator.state == .reset {
+                    Color.clear
+                } else {
+                    FocusSessionTimeCountdownView(countdownViewType: countdownViewType, theme: theme, remainingTime: coordinator.remainingTimeDuration, isCompleted: false, icon: icon)
+                }
+            }
+            .aspectRatio(1, contentMode: .fit)
+            .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newValue in
+                self.frame = newValue
+            }
+        }
+        
+    }
     
     // MARK: - Selected Timer View
     
@@ -117,15 +140,18 @@ struct FocusCountdownTimerView: View {
                 VStack(alignment: .center, spacing: 0) {
                     Text("Focus")
                         .font(.title2.weight(.semibold))
-                        .foregroundColor(.primary)
                     
                     Text(coordinator.timerDuration.timerDurationString)
                         .contentTransition(.numericText(value: coordinator.timerDuration))
                         .animation(.easeInOut, value: coordinator.timerDuration)
                         .font(.largeTitle.weight(.bold))
-                        .foregroundStyle(.primary)
                         .padding(.top, 16)
                 }
+#if NEW_COUNTDOWN_TIMER
+                .foregroundColor(Color.proSky.foregroundTertiary)
+#else
+                .foregroundColor(.primary)
+#endif
             case .reminder(let reminder):
                 SelectedReminderView(reminderModel: reminder)
             }
@@ -139,18 +165,23 @@ struct FocusCountdownTimerView: View {
         let reminderModel: ReminderModel
         @Environment(FocusTimerLaunchControlCoordinator.self) var coordinator
         
+        var theme: LCHColor {
+            .init(color: reminderModel.color)
+        }
+        
         var body: some View {
             VStack(alignment: .center, spacing: 0) {
                 HStack(alignment: .center, spacing: 8) {
                     ReminderIconView(icon: .init(reminderModel.icon)!,
                                      foregroundColor: .primary,
-                                     backgroundColor: Color.proSky.backgroundSecondary,
+                                     backgroundColor: theme.backgroundTertiary,
                                      font: .subheadline)
                     .aspectRatio(1, contentMode: .fit)
                     .frame(width: 32, alignment: .center)
                     Text(reminderModel.title)
                         .multilineTextAlignment(.center)
                         .font(.title2.weight(.semibold))
+                        .foregroundStyle(theme.foregroundTertiary)
                 }
                     .foregroundColor(.primary)
                 
@@ -158,7 +189,11 @@ struct FocusCountdownTimerView: View {
                     .contentTransition(.numericText(value: coordinator.timerDuration))
                     .animation(.easeInOut, value: coordinator.timerDuration)
                     .font(.largeTitle.weight(.bold))
+                #if NEW_COUNTDOWN_TIMER
+                    .foregroundStyle(theme.foregroundTertiary)
+                #else
                     .foregroundStyle(.primary)
+                #endif
                     .padding(.top, 16)
                 
                 if !reminderModel.tasks.isEmpty {

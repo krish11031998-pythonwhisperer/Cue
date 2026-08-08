@@ -46,8 +46,31 @@ struct FocusTimerRootView: View {
         }
     }
     
+    private var defaultColor: Color {
+        switch colorScheme {
+        case .light:
+            Color.waveformColorOne
+        case .dark:
+            Color.waveformDarkColorOne
+        @unknown default:
+            Color.waveformColorOne
+        }
+    }
+    
     private var gestureRecognizerEnabled: Bool {
         coordinator.state == .idle || coordinator.state == .reset
+    }
+    
+    private var linearGradientBackground: LinearGradient {
+        let mainColor: LCHColor
+        switch viewModel.selectedTimerItem {
+        case .focus:
+            mainColor = .init(color: defaultColor)
+        case .reminder(let reminderModel):
+            mainColor = .init(color: reminderModel.color)
+        }
+        
+        return LinearGradient(stops: [.init(color: mainColor.backgroundTertiary, location: 0), .init(color: mainColor.backgroundSecondary, location: 0.37), .init(color: mainColor.backgroundPrimary, location: 0.67)], startPoint: .top, endPoint: .bottom)
     }
     
     var body: some View {
@@ -55,13 +78,15 @@ struct FocusTimerRootView: View {
             let size = proxy.size
             
             ZStack(alignment: .center) {
-                FocusCountdownTopGradient()
-                    .fill(radialGradient(width: size.width))
-                    .aspectRatio(1, contentMode: .fit)
-                    .frame(width: size.width, alignment: .center)
-                    .position(x: size.width.half, y: size.width.half)
-                    .blur(radius: 15)
-                    .ignoresSafeArea(edges: .top)
+//                FocusCountdownTopGradient()
+//                    .fill(radialGradient(width: size.width))
+//                    .aspectRatio(1, contentMode: .fit)
+//                    .frame(width: size.width, alignment: .center)
+//                    .position(x: size.width.half, y: size.width.half)
+//                    .blur(radius: 15)
+//                linearGradientBackground
+                Color.cueItBackground
+                    .ignoresSafeArea(edges: .vertical)
                 
                 FocusCountdownTimerView()
                     .environment(viewModel)
