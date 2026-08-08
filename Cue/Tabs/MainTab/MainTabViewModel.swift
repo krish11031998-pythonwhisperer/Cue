@@ -60,12 +60,15 @@ class MainTabViewModel {
     
     init() {
         let alarmManager = FocusAlarmManager()
-        self.focusTimerCoordinator = .init(alarmCoordinator: alarmManager, liveActivityCoordinator: nil)
+        self.focusTimerCoordinator = .init(alarmCoordinator: alarmManager,
+                                           liveActivityCoordinator: FocusLiveActivityManager())
         self.focusAlarmManager = alarmManager
         
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
         presentPayWallAfterFirstOnboarding = !hasShowOnboarding
-        self.presentation = .onboarding
+        if !hasShowOnboarding {
+            self.presentation = .onboarding
+        }
     }
     
     
@@ -77,6 +80,7 @@ class MainTabViewModel {
                 presentation = .paywall
             }
         case .onboarding:
+            CueUserDefaultsManager.shared[.hasShowOnboarding] = true
             presentation = .createReminder
         case .paywall:
             break

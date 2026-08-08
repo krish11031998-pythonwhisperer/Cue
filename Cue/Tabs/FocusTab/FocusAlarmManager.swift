@@ -14,7 +14,7 @@ class FocusAlarmManager: FocusTimerAlarmCoordinator {
     
     
     var alarmManager: CueAlarmManager?
-    
+      
     public func scheduleAlarmForTimer(startDate: Date, timeInterval: TimeInterval, title: String, color: Color) async -> (UUID, Alarm)? {
         guard let alarmManager else { return nil }
         return await alarmManager.scheduleAlarm(title: title, startDate: startDate, timeDuration: timeInterval, color: color)

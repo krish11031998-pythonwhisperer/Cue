@@ -9,12 +9,13 @@ import Foundation
 import VanorUI
 import SwiftUI
 internal import AlarmKit
+import AsyncAlgorithms
 
- enum FocusTimerType: CaseIterable, Identifiable {
+enum FocusTimerType: CaseIterable, Identifiable {
     case classic
     case pomodoro
     
-     var icon: SFSymbol {
+    var icon: SFSymbol {
         switch self {
         case .classic:
             return .hourglass
@@ -23,7 +24,7 @@ internal import AlarmKit
         }
     }
     
-     var title: String {
+    var title: String {
         switch self {
         case .classic:
             return "Classic"
@@ -32,7 +33,7 @@ internal import AlarmKit
         }
     }
     
-     var description: String {
+    var description: String {
         switch self {
         case .classic:
             return "A simple timer that counts down once"
@@ -41,14 +42,14 @@ internal import AlarmKit
         }
     }
     
-     var id: String {
+    var id: String {
         title
     }
 }
 
 @Observable
 @MainActor
- class FocusSessionCoordinator: FocusSessionControl {
+class FocusSessionCoordinator: FocusSessionControl {
     
     static let defaultTimer: TimeInterval = 30 * 60
     static let defaultPomodoroTimer: TimeInterval = 25 * 60
@@ -59,31 +60,31 @@ internal import AlarmKit
     
     // MARK: Current `FocusSession`
     
-     var state: FocusSessionState {
+    var state: FocusSessionState {
         guard let session else { return .idle }
         return session.state
     }
     
-     var progress: CGFloat {
+    var progress: CGFloat {
         guard let session else { return 0 }
         return session.timerProgress
     }
     
-     var remainingTimeDuration: TimeInterval {
+    var remainingTimeDuration: TimeInterval {
         let remainingTimeInterval = currentSessionTimeDuration() * (1 - progress)
         return remainingTimeInterval
     }
     
     
-     var startTime: Date? {
+    var startTime: Date? {
         session?.startTime
     }
     
-     var currentSessionIndex: Int {
+    var currentSessionIndex: Int {
         session?.currentSessionIndex ?? 0
     }
     
-
+    
     // MARK: Others
     
     private var timerDurationString: String? {
@@ -97,7 +98,7 @@ internal import AlarmKit
         return "\(startTimeString) → \(endTimeString)"
     }
     
-     var informationString: String {
+    var informationString: String {
         var resultString: String = ""
         if let timerDurationString = timerDurationString {
             resultString += timerDurationString
@@ -109,19 +110,19 @@ internal import AlarmKit
         
         return resultString
     }
-
+    
     
     // MARK: - Properties
     
     private var session: FocusSession?
-     var timerDuration: TimeInterval
+    var timerDuration: TimeInterval
     
     // Pomodoro timer related variables
-     var breakDuration: TimeInterval
-     var pomodoroSessionCount: Int = 2
+    var breakDuration: TimeInterval
+    var pomodoroSessionCount: Int = 2
     
-     var showTasksSheet: Bool = false
-     var selectedTimerType: FocusTimerType = .classic {
+    var showTasksSheet: Bool = false
+    var selectedTimerType: FocusTimerType = .classic {
         didSet {
             switch selectedTimerType {
             case .classic:
@@ -133,29 +134,31 @@ internal import AlarmKit
     }
     
     @ObservationIgnored
-     var sessionAttributes: FocusSessionAttributes?
+    var sessionAttributes: FocusSessionAttributes?
     @ObservationIgnored
-     var numberOfTasks: Int {
-         get { sessionAttributes?.numberOfTasks ?? 0 }
-         set { }
+    var numberOfTasks: Int {
+        get { sessionAttributes?.numberOfTasks ?? 0 }
+        set { }
     }
     @ObservationIgnored
     private var alarms: [UUID: Alarm] = [:]
+    @ObservationIgnored
+    private var liveAcitivityObservation: Task<Void, Never>?
     
-     var canShowAlarm: Bool = false
-     var isAlarmOn: Bool = false
+    var canShowAlarm: Bool = false
+    var isAlarmOn: Bool = false
     
     private let alarmCoordinator: FocusTimerAlarmCoordinator?
     private let liveActivityCoordindator: FocusTimerLiveActivityCoordinator?
     
-     init(alarmCoordinator: FocusTimerAlarmCoordinator?, liveActivityCoordinator: FocusTimerLiveActivityCoordinator?) {
+    init(alarmCoordinator: FocusTimerAlarmCoordinator?, liveActivityCoordinator: FocusTimerLiveActivityCoordinator?) {
         self.alarmCoordinator = alarmCoordinator
         self.liveActivityCoordindator = liveActivityCoordinator
         self.timerDuration = FocusSessionCoordinator.defaultTimer
         self.breakDuration = FocusSessionCoordinator.defaultBreakTimer
     }
     
-     func startTimer() {
+    func startTimer() {
         switch selectedTimerType {
         case .classic:
             session = ClassicFocusSession(timerDuration: timerDuration)
@@ -167,16 +170,16 @@ internal import AlarmKit
         setupLiveActivity()
         session?.control = self
     }
-        
-     func pauseTimer() {
+    
+    func pauseTimer() {
         self.session?.pauseTimer()
     }
     
-     func resumeTimer() {
+    func resumeTimer() {
         self.session?.resumeTimer()
     }
     
-     func reset() {
+    func reset() {
         self.timerDuration = FocusSessionCoordinator.defaultTimer
         if case .classic = selectedTimerType {
             self.session?.resetTimer()
@@ -185,14 +188,14 @@ internal import AlarmKit
         self.session = nil
     }
     
-     func cancelAndReset() {
+    func cancelAndReset() {
         let alarmID = session?.alarmID
         reset()
         guard let alarmID else { return }
         alarmCoordinator?.cancelAlarm(alarmID)
     }
     
-     func presentTaskSheet() {
+    func presentTaskSheet() {
         guard numberOfTasks > 0 else { return }
         
         switch state {
@@ -222,18 +225,49 @@ internal import AlarmKit
     // MARK: - LiveActivity
     
     private func setupLiveActivity() {
-        guard let sessionAttributes,
+        guard var sessionAttributes,
               let startTime,
               let totalDuration = session?.totalDuration else { return }
+        
+        sessionAttributes.sessionType = {
+            switch selectedTimerType {
+            case .classic:
+                return .classic
+            case .pomodoro:
+                return .pomodoro
+            }
+        }()
         
         let endDate = startTime.addingTimeInterval(totalDuration)
         let activityID = UUID()
         session?.liveActivityID = activityID
         
         liveActivityCoordindator?.setupLiveActivity(for: activityID, sessionAttributes: sessionAttributes, startDate: startTime, endDate: endDate)
+//        updateLiveActivityWithProgress()
+    }
+    
+    private func updateLiveActivityWithProgress() {
+        liveAcitivityObservation?.cancel()
+        guard let session,
+              let activityID = session.liveActivityID,
+              let endTime = session.endTime else { return }
+        
+        let observationStream = Observations({ [weak self] in
+            self?.session?.timerProgress ?? 0
+        })
+        ._throttle(for: .seconds(1), latest: true)
+        
+        liveAcitivityObservation = Task { @MainActor [weak self] in
+            for await progress in observationStream {
+                guard !Task.isCancelled else { return }
+//                print("(DEBUG) progress: ", progress)
+                self?.liveActivityCoordindator?.updateLiveAcitivity(for: activityID, content: .init(restTime: 0, endDate: endTime, progress: progress, completedTasks: 2))
+            }
+        }
     }
     
     private func endLiveActivity() {
+        liveAcitivityObservation?.cancel()
         guard let activityID = session?.liveActivityID else { return }
         liveActivityCoordindator?.endLiveActivity(for: activityID)
     }
@@ -257,7 +291,7 @@ internal import AlarmKit
         }
     }
     
-     func checkIfCanSetAlarm() async {
+    func checkIfCanSetAlarm() async {
         switch await alarmCoordinator?.authorizationStatus() {
         case .notDetermined, .authorized:
             self.canShowAlarm = true
@@ -270,7 +304,7 @@ internal import AlarmKit
         }
     }
     
-     func toggleAlarm() {
+    func toggleAlarm() {
         guard let alarmCoordinator else { return }
         
         if isAlarmOn == false {
