@@ -53,14 +53,14 @@ class MainTabViewModel {
     var presentPayWallAfterFirstOnboarding: Bool
     
     let focusAlarmManager: FocusAlarmManager
-    let focusTimerCoordinator: FocusTimerLaunchControlCoordinator
+    let focusTimerCoordinator: FocusSessionCoordinator
     let hasShowOnboarding: Bool
     let todayPublisher: PassthroughSubject<Void, Never> = .init()
     
     
     init() {
         let alarmManager = FocusAlarmManager()
-        self.focusTimerCoordinator = .init(alarmCoordinator: alarmManager)
+        self.focusTimerCoordinator = .init(alarmCoordinator: alarmManager, liveActivityCoordinator: nil)
         self.focusAlarmManager = alarmManager
         
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false

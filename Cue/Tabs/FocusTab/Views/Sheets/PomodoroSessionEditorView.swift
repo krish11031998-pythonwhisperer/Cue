@@ -194,7 +194,7 @@ fileprivate struct TestView: View {
 
 #Preview {
     PomodoroSessionEditorView()
-//        .environment(FocusTimerLaunchControlCoordinator(alarmCoordinator: CueAlarmManager()))
+//        .environment(FocusSessionCoordinator(alarmCoordinator: CueAlarmManager()))
 }
 
 #Preview {

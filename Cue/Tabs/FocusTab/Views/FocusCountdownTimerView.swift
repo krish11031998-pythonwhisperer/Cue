@@ -20,7 +20,7 @@ struct FocusCountdownTimerView: View {
     }
     
     @Environment(FocusTimerRootViewModel.self) var viewModel
-    @Environment(FocusTimerLaunchControlCoordinator.self) var coordinator
+    @Environment(FocusSessionCoordinator.self) var coordinator
     @State private var frame: CGRect = .zero
     @State private var state: ViewState = .idle
     
@@ -60,7 +60,7 @@ struct FocusCountdownTimerView: View {
                                theme: theme) {
                 InnerContent(countdownViewType: countdownViewType, theme: theme, icon: icon, frame: $frame)
             }
-            .environment(\.focusTimerStateFromCoordinator, coordinator.state)
+            .environment(\.focusTimerStateFromCoordinator, coordinator.state.uiState)
             .environment(\.focusTimerProgressFromCoordinator, coordinator.progress)
             .opacity(isIdle ? 0.275 : 1)
             .blur(radius: isIdle ? 5 : 0)
@@ -105,7 +105,7 @@ struct FocusCountdownTimerView: View {
     
     private struct InnerContent: View {
         
-        @Environment(FocusTimerLaunchControlCoordinator.self) var coordinator
+        @Environment(FocusSessionCoordinator.self) var coordinator
         let countdownViewType: CountdownViewType
         let theme: LCHColor
         let icon: Icon?
@@ -131,7 +131,7 @@ struct FocusCountdownTimerView: View {
     
     struct SelectedTimerView: View {
         
-        @Environment(FocusTimerLaunchControlCoordinator.self) var coordinator
+        @Environment(FocusSessionCoordinator.self) var coordinator
         let item: TimerType
         
         var body: some View {
@@ -163,7 +163,7 @@ struct FocusCountdownTimerView: View {
     struct SelectedReminderView: View {
         
         let reminderModel: ReminderModel
-        @Environment(FocusTimerLaunchControlCoordinator.self) var coordinator
+        @Environment(FocusSessionCoordinator.self) var coordinator
         
         var theme: LCHColor {
             .init(color: reminderModel.color)
@@ -212,6 +212,6 @@ struct FocusCountdownTimerView: View {
 #Preview {
     FocusCountdownTimerView()
         .environment(FocusTimerRootViewModel(reminders: [.exampleOne(), .exampleTwo(), .exampleThree()]))
-        .environment(FocusTimerLaunchControlCoordinator(alarmCoordinator: nil))
+        .environment(FocusSessionCoordinator(alarmCoordinator: nil, liveActivityCoordinator: nil))
         .padding(.all, 20)
 }

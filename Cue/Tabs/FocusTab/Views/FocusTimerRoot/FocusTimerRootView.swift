@@ -21,12 +21,12 @@ struct FocusCountdownTopGradient: Shape {
 
 struct FocusTimerRootView: View {
 
-    @Bindable private var coordinator: FocusTimerLaunchControlCoordinator
+    @Bindable private var coordinator: FocusSessionCoordinator
     @State private var viewModel: FocusTimerRootViewModel = .init()
     let reminders: [ReminderModel]
     @Environment(\.colorScheme) var colorScheme
     
-    init(coordinator: FocusTimerLaunchControlCoordinator, reminders: [ReminderModel]) {
+    init(coordinator: FocusSessionCoordinator, reminders: [ReminderModel]) {
         self.coordinator = coordinator
         self.reminders = reminders
     }
@@ -78,13 +78,6 @@ struct FocusTimerRootView: View {
             let size = proxy.size
             
             ZStack(alignment: .center) {
-//                FocusCountdownTopGradient()
-//                    .fill(radialGradient(width: size.width))
-//                    .aspectRatio(1, contentMode: .fit)
-//                    .frame(width: size.width, alignment: .center)
-//                    .position(x: size.width.half, y: size.width.half)
-//                    .blur(radius: 15)
-//                linearGradientBackground
                 Color.cueItBackground
                     .ignoresSafeArea(edges: .vertical)
                 
@@ -151,9 +144,9 @@ struct FocusTimerRootView: View {
     struct FloatingFocusTimerFooterView: View {
         
         private var viewModel: FocusTimerRootViewModel
-        @Bindable private var coordinator: FocusTimerLaunchControlCoordinator
+        @Bindable private var coordinator: FocusSessionCoordinator
         
-        init(viewModel: FocusTimerRootViewModel, coordinator: FocusTimerLaunchControlCoordinator) {
+        init(viewModel: FocusTimerRootViewModel, coordinator: FocusSessionCoordinator) {
             self.viewModel = viewModel
             self.coordinator = coordinator
         }
@@ -268,12 +261,10 @@ struct FocusTimerRootView: View {
             }
         }
     }
-    
-    
 }
 
 #Preview {
-    @Previewable @State var coordinator: FocusTimerLaunchControlCoordinator = .init(alarmCoordinator: nil)
+    @Previewable @State var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil)
     FocusTimerRootView(coordinator: coordinator, reminders: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()])
         .safeAreaBar(edge: .bottom) {
             FocusTimerLaunchControl(coordinator: coordinator) {

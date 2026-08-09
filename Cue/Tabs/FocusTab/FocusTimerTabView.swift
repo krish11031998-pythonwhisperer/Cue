@@ -12,11 +12,11 @@ import Model
 
 struct FocusTimerTabView: View {
     
-    @Bindable private var coordinator: FocusTimerLaunchControlCoordinator
+    @Bindable private var coordinator: FocusSessionCoordinator
     @State private var viewModel: FocusTimeViewModel = .init()
     @Environment(Store.self) var store
     
-    init(coordinator: FocusTimerLaunchControlCoordinator) {
+    init(coordinator: FocusSessionCoordinator) {
         self.coordinator = coordinator
     }
     
@@ -54,5 +54,5 @@ struct FocusTimerTabView: View {
 
 
 #Preview {
-    FocusTimerTabView(coordinator: .init(alarmCoordinator: nil))
+    FocusTimerTabView(coordinator: .init(alarmCoordinator: nil, liveActivityCoordinator: nil))
 }
