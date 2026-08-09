@@ -117,4 +117,16 @@ class FocusTimerRootViewModel {
             sheetPresentation = .pomodoroSessionEditor
         }
     }
+    
+    
+    // MARK: - Focus Session Attributes
+    
+    func focusSessionAttributes() -> FocusSessionAttributes {
+        switch selectedTimerItem {
+        case .focus:
+            return .init(name: "Focus", color: Color.proSky, icon: .symbol(.timer), numberOfTasks: 0)
+        case .reminder(let reminderModel):
+            return .init(name: reminderModel.title, color: .init(color: reminderModel.color), icon: .init(reminderModel.icon) ?? Icon.symbol(.timer), numberOfTasks: reminderModel.tasks.count)
+        }
+    }
 }

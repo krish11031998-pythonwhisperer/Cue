@@ -15,6 +15,7 @@
 		EF079D912F1BFFC600986EF8 /* Model.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = EF079D8A2F1BFFC600986EF8 /* Model.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		EF079DFA2F1C304200986EF8 /* KKit in Frameworks */ = {isa = PBXBuildFile; productRef = EF079DF92F1C304200986EF8 /* KKit */; };
 		EF3225232F1EF04B0054901C /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = EF3225222F1EF04B0054901C /* AsyncAlgorithms */; };
+		EF8BA3143027DFE50085FDC0 /* VanorUI in Frameworks */ = {isa = PBXBuildFile; productRef = EF8BA3133027DFE50085FDC0 /* VanorUI */; };
 		EFA0BE6F2F1C3BDF00866D42 /* VanorUI in Frameworks */ = {isa = PBXBuildFile; productRef = EFA0BE6E2F1C3BDF00866D42 /* VanorUI */; };
 		EFD66AA02F3C24F7006E4599 /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = EFD66A9F2F3C24F7006E4599 /* ReceiptParser */; };
 		EFD66AA22F3C24F7006E4599 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = EFD66AA12F3C24F7006E4599 /* RevenueCat */; };
@@ -75,10 +76,10 @@
 		E5A9EDE545D34C3BB2589D72 /* CueWidgets-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "CueWidgets-Info.plist"; sourceTree = "<group>"; };
 		EF079D722F1BE5EC00986EF8 /* Kyu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kyu.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EF079D8A2F1BFFC600986EF8 /* Model.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Model.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		EF0AF1962FE0AD8B00388694 /* vanor-ui-library */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vanor-ui-library"; path = "../Shipyard/vanor-ui-library"; sourceTree = SOURCE_ROOT; };
 		EF2950F12F38B18300FEAD32 /* Kyu-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Kyu-Info.plist"; sourceTree = "<group>"; };
 		EF2950FA2F38BDF800FEAD32 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		EF2950FC2F38BDF800FEAD32 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		EF8BA31C302899A20085FDC0 /* vanor-ui-library */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vanor-ui-library"; path = "../Shipyard/vanor-ui-library"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -107,6 +108,7 @@
 				EEE0DF1B57D2479D8660E331 /* Model.framework in Frameworks */,
 				59871315507A4C83B219375A /* WidgetKit.framework in Frameworks */,
 				9A911007506D4E749BBA9D20 /* SwiftUI.framework in Frameworks */,
+				EF8BA3143027DFE50085FDC0 /* VanorUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -144,7 +146,7 @@
 				A0B5EBE1344F4A75A1BF3132 /* CueWidgets */,
 				EF32251F2F1EF02B0054901C /* Frameworks */,
 				EF079D732F1BE5EC00986EF8 /* Products */,
-				EF0AF1962FE0AD8B00388694 /* vanor-ui-library */,
+				EF8BA31C302899A20085FDC0 /* vanor-ui-library */,
 			);
 			sourceTree = "<group>";
 		};
@@ -803,6 +805,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = EF32251C2F1EF0090054901C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
 			productName = AsyncAlgorithms;
+		};
+		EF8BA3133027DFE50085FDC0 /* VanorUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EFA0BE6D2F1C3BDF00866D42 /* XCRemoteSwiftPackageReference "vanor-ui-library" */;
+			productName = VanorUI;
 		};
 		EFA0BE6E2F1C3BDF00866D42 /* VanorUI */ = {
 			isa = XCSwiftPackageProductDependency;
