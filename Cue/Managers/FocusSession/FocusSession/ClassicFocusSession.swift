@@ -25,10 +25,15 @@ class ClassicFocusSession: FocusSession, @MainActor Hashable {
     private var elapsedTime: TimeInterval = 0.0
     internal var onCompletion: (() -> Void)?
     
+    var endTime: Date? {
+        let distantFuture: TimeInterval = timerDuration
+        return startTime?.addingTimeInterval(distantFuture)
+    }
+    
     @ObservationIgnored
     private var timer: Timer?
     @ObservationIgnored
-    private var breakTimerStart: Date?
+    private var accumalatedRestTime: TimeInterval = 0
     
     var timerProgress: Double {
         elapsedTime / timerDuration

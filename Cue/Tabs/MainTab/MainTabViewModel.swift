@@ -53,7 +53,7 @@ class MainTabViewModel {
     var presentPayWallAfterFirstOnboarding: Bool
     
     let focusAlarmManager: FocusAlarmManager
-    let focusTimerCoordinator: FocusTimerLaunchControlCoordinator
+    let focusTimerCoordinator: FocusSessionCoordinator
     let hasShowOnboarding: Bool
     let todayPublisher: PassthroughSubject<Void, Never> = .init()
     

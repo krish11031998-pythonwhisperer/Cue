@@ -106,9 +106,10 @@ struct FocusTimerRootView: View {
             }
         })
         .onChange(of: viewModel.selectedTimerItem, initial: true) { _, newValue in
-            guard case .reminder(let reminderModel) = newValue else { return }
-            let tasks = reminderModel.tasks
-            coordinator.numberOfTasks = tasks.count
+//            guard case .reminder(let reminderModel) = newValue else { return }
+//            let tasks = reminderModel.tasks
+//            coordinator.numberOfTasks = tasks.count
+            coordinator.sessionAttributes = viewModel.focusSessionAttributes()
         }
         .onChange(of: reminders, initial: true) { oldValue, newValue in
             viewModel.updateWithReminders(newValue)

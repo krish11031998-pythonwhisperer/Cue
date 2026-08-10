@@ -19,16 +19,20 @@ extension Date {
     
     func measurementString(startDate: Date, endDate: Date, restTime: TimeInterval) -> String {
 
-        let measurementFormatter = MeasurementFormatter()
-        measurementFormatter.unitStyle = .short
-        measurementFormatter.unitOptions = .providedUnit
-        measurementFormatter.numberFormatter.maximumFractionDigits = 0
-
         let totalDuration = endDate.timeIntervalSince(startDate)
         let elapsedDuration = self.timeIntervalSince(startDate)
 
         let timeLeft = totalDuration - elapsedDuration - restTime
 
+        return Self.measurementString(timeLeft: timeLeft)
+    }
+    
+    static func measurementString(timeLeft: TimeInterval) -> String {
+        let measurementFormatter = MeasurementFormatter()
+        measurementFormatter.unitStyle = .short
+        measurementFormatter.unitOptions = .providedUnit
+        measurementFormatter.numberFormatter.maximumFractionDigits = 0
+        
         let remainingTime = max(0, (timeLeft).rounded(.toNearestOrAwayFromZero))
         let mins = (remainingTime/60).rounded(.down)
 
