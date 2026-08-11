@@ -60,8 +60,10 @@ class MainTabViewModel {
     
     init() {
         let alarmManager = FocusAlarmManager()
+        let appShieldManager = CueAppBlockManager()
+        let liveActivityManager = FocusLiveActivityManager()
         self.focusTimerCoordinator = .init(alarmCoordinator: alarmManager,
-                                           liveActivityCoordinator: FocusLiveActivityManager())
+                                           liveActivityCoordinator: liveActivityManager, appShieldCoordinator: appShieldManager)
         self.focusAlarmManager = alarmManager
         
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false

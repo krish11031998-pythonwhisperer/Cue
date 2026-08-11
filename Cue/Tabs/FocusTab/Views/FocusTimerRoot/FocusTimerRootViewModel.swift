@@ -9,6 +9,8 @@ import Foundation
 import Model
 import VanorUI
 import SwiftUI
+import FamilyControls
+import ManagedSettings
 
 @MainActor
 @Observable
@@ -18,11 +20,14 @@ class FocusTimerRootViewModel {
     
     enum Sheet: Identifiable {
         case pomodoroSessionEditor
+        case appBlock
         
         var id: String {
             switch self {
             case .pomodoroSessionEditor:
                 return "pomodoroSessionEditor"
+            case .appBlock:
+                return "appBlock"
             }
         }
     }
@@ -68,6 +73,7 @@ class FocusTimerRootViewModel {
         }
     }
     
+    var selectedActivities: FamilyActivitySelection = .init()
     var sheetPresentation: Sheet?
     var timerItems: [TimerType] = [.focus]
     var selectedTimerItem: TimerType = .focus
@@ -127,6 +133,67 @@ class FocusTimerRootViewModel {
             return .init(name: "Focus", color: Color.proSky, icon: .symbol(.timer), sessionType: nil, numberOfTasks: 0)
         case .reminder(let reminderModel):
             return .init(name: reminderModel.title, color: .init(color: reminderModel.color), icon: .init(reminderModel.icon) ?? Icon.symbol(.timer), sessionType: nil, numberOfTasks: reminderModel.tasks.count)
+        }
+    }
+    
+    
+    // MARK: - App Block
+    
+    func appShieldConfiguration() -> CueShieldConfigurationModel {
+        let focusSession: CueShieldConfigurationModel.FocusSession
+        let theme: LCHColor
+        let title: String
+        let subtitle: String
+        
+        switch selectedTimerItem {
+        case .focus:
+            theme = Color.proSky
+            let symbolColor = UIColor(theme.foregroundPrimary.resolved(for: .dark))/*UIColor.white*/
+            focusSession = .init(icon: .init(systemSymbol: .timer).withTintColor(symbolColor),
+                                 color: theme.backgroundTertiary)
+            title = "Stay Focused"
+        case .reminder(let reminderModel):
+            let reminderImage: UIImage?
+            if let symbol = reminderModel.icon.symbol {
+                reminderImage = .init(systemName: symbol)
+            } else if let emoji = reminderModel.icon.emoji{
+                reminderImage = UIImage.imageFromEmoji(.init(emoji), fontSize: nil, size: .init(squared: 48))
+            } else {
+                reminderImage = nil
+            }
+            
+            theme = .init(color: reminderModel.color)
+            focusSession = .init(icon: reminderImage ?? .init(systemSymbol: .questionmark),
+                                 color: theme.backgroundTertiary)
+            title = "Stay Focused on \(reminderModel.title)"
+        }
+        
+        subtitle = "You are currently in a focus session and have blocked  \(CueShieldConfigurationModel.placeholder)"
+        let titleColor = theme.foregroundSecondary.resolved(for: .dark)
+        let subtitleColor = theme.foregroundTertiary.resolved(for: .dark)
+        let primaryButtonForeground = Color.white
+        let primaryButtonBackground = theme.baseColor
+        
+        let configuration = CueShieldConfigurationModel(focusSession: focusSession,
+                                                        title: .init(title: title, color: titleColor),
+                                                        subtitle: .init(title: subtitle, color: subtitleColor),
+                                                        primaryButton: .init(title: "Remain Focused",
+                                                                             foreground: primaryButtonForeground,
+                                                                             background: primaryButtonBackground,
+                                                                             response: .close),
+                                                        secondaryButton: nil)
+        return configuration
+    }
+    
+    func presentAppBlock() {
+        Task { @MainActor in
+            do {
+                guard try await CueAppBlockManager.retrieveAuthorization() == .approved else { return }
+                self.sheetPresentation = .appBlock
+            } catch {
+                #warning("Present an error alert")
+                print("(ERROR) While retrieving Authorization for App block: ", error.localizedDescription)
+            }
         }
     }
 }

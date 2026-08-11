@@ -30,7 +30,7 @@ struct FocusCountdownTimerView: View {
     
     var countdownViewType: CountdownViewType {
         #if NEW_COUNTDOWN_TIMER
-        return .bubble
+        return .circle
         #else
         return .circle
         #endif
@@ -212,6 +212,6 @@ struct FocusCountdownTimerView: View {
 #Preview {
     FocusCountdownTimerView()
         .environment(FocusTimerRootViewModel(reminders: [.exampleOne(), .exampleTwo(), .exampleThree()]))
-        .environment(FocusSessionCoordinator(alarmCoordinator: nil, liveActivityCoordinator: nil))
+        .environment(FocusSessionCoordinator(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil))
         .padding(.all, 20)
 }
