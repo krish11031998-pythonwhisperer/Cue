@@ -133,9 +133,16 @@ struct FocusTimerLaunchControl: View {
                         width * 0.4
                     }
                 HStack(alignment: .center, spacing: 8) {
-                    LaunchControlButton(image: .lockIphone, size: .capsule, action: presentBlockAppSheet)
                     
-                    LaunchControlButton(image: coordinator.selectedTimerType.icon, size: .capsule, menu: {
+                    LaunchControlButton(symbol: .same(.lockAppDashed),
+                                        isSelected: coordinator.appShieldIsOn,
+                                        size: .capsule,
+                                        action: presentBlockAppSheet)
+                        .frame(maxWidth: .infinity, alignment: .center)
+
+                    LaunchControlButton(symbol: .same(coordinator.selectedTimerType.icon),
+                                        size: .capsule,
+                                        menu: {
                         ForEach(FocusTimerType.allCases.reversed()) { focusTimerType in
                             Button {
                                 // button Action
@@ -149,12 +156,13 @@ struct FocusTimerLaunchControl: View {
                     })
                     .frame(maxWidth: .infinity, alignment: .center)
                     
-                    LaunchControlButton(image: .alarmWavesLeftAndRight, size: .capsule) {
+                    LaunchControlButton(symbol: .init(base: .alarmWavesLeftAndRight, selected: .alarmWavesLeftAndRightFill),
+                                        isSelected: coordinator.isAlarmOn,
+                                        size: .capsule) {
                         // Want an alarm
                         coordinator.toggleAlarm()
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .environment(\.launchControlButtonIsSelected, coordinator.isAlarmOn)
                     .disabled(!coordinator.canShowAlarm)
                 }
             }
@@ -181,7 +189,7 @@ struct FocusTimerLaunchControl: View {
                 if !expandTimeArc {
                     BaseLaunchControlView(coordinator: coordinator, presentBlockAppSheet: presentBlockAppSheet) {
                         HStack(alignment: .center, spacing: 8) {
-                            LaunchControlButton(image: .minus, size: .small, action: coordinator.decrement)
+                            LaunchControlButton(symbol: .same(.minus), size: .small, action: coordinator.decrement)
                             
                             LaunchControlTimeView(duration: coordinator.timerDuration, durationString: coordinator.timerDurationString)
                                 .matchedGeometryEffect(id: "launchControlTime", in: animation, properties: .frame, anchor: .leading, isSource: !expandTimeArc)
@@ -190,7 +198,7 @@ struct FocusTimerLaunchControl: View {
                                     expandTimeArc.toggle()
                                 }
                             
-                            LaunchControlButton(image: .plus, size: .small, action: coordinator.increment)
+                            LaunchControlButton(symbol: .same(.plus), size: .small, action: coordinator.increment)
                         }
                     }
                 } else {

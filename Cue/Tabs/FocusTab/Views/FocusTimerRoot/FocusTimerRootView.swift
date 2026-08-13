@@ -111,18 +111,17 @@ struct FocusTimerRootView: View {
                 PomodoroSessionEditorView()
                     .fittedPresentationDetent()
             case .appBlock:
-                BlockAppView(selectedActivities: $viewModel.selectedActivities)
-                    .presentationDetents([.fraction(1)])
+                BlockAppView(selectedActivities: coordinator.shieldActivities) {
+                    self.coordinator.shieldActivities = $0
+                    self.coordinator.appShieldIsOn = !$0.isEmpty
+                }
+                .presentationDetents([.fraction(1)])
             }
         }
         .onChange(of: viewModel.selectedTimerItem, initial: true) { _, newValue in
             coordinator.sessionAttributes = viewModel.focusSessionAttributes()
             coordinator.shieldConfiguration = viewModel.appShieldConfiguration()
         }
-        .onChange(of: viewModel.selectedActivities, { oldValue, newValue in
-            coordinator.shieldActivities = viewModel.selectedActivities
-            coordinator.appShieldIsOn = !newValue.isEmpty
-        })
         .onChange(of: reminders, initial: true) { oldValue, newValue in
             viewModel.updateWithReminders(newValue)
         }
@@ -217,12 +216,12 @@ struct FocusTimerRootView: View {
                 
                 Spacer()
                 
-                LaunchControlButton(image: .lockAppDashed, size: .regular) {
+                LaunchControlButton(symbol: .same(.lockAppDashed), size: .regular) {
                     // Disable App Blocking
                     return
                 }
-                
-                LaunchControlButton(image: .alarmWavesLeftAndRight, size: .regular) {
+
+                LaunchControlButton(symbol: .same(.alarmWavesLeftAndRight), size: .regular) {
                     // Diable Alarm
                     return
                 }

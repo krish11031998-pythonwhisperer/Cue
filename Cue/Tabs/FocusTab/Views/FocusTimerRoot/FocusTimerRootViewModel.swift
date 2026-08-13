@@ -73,7 +73,6 @@ class FocusTimerRootViewModel {
         }
     }
     
-    var selectedActivities: FamilyActivitySelection = .init()
     var sheetPresentation: Sheet?
     var timerItems: [TimerType] = [.focus]
     var selectedTimerItem: TimerType = .focus
@@ -148,8 +147,9 @@ class FocusTimerRootViewModel {
         switch selectedTimerItem {
         case .focus:
             theme = Color.proSky
-            let symbolColor = UIColor(theme.foregroundPrimary.resolved(for: .dark))/*UIColor.white*/
-            focusSession = .init(icon: .init(systemSymbol: .timer).withTintColor(symbolColor),
+            let symbolColor = UIColor(theme.foregroundPrimary.resolved(for: .dark))
+            let image = UIImage(systemSymbol: .timer).resized(size: .init(squared: 48)).withTintColor(symbolColor)
+            focusSession = .init(icon: image,
                                  color: theme.backgroundTertiary)
             title = "Stay Focused"
         case .reminder(let reminderModel):
@@ -168,7 +168,7 @@ class FocusTimerRootViewModel {
             title = "Stay Focused on \(reminderModel.title)"
         }
         
-        subtitle = "You are currently in a focus session and have blocked  \(CueShieldConfigurationModel.placeholder)"
+        subtitle = "\nYou are currently in a focus session and have blocked \(CueShieldConfigurationModel.placeholder)"
         let titleColor = theme.foregroundSecondary.resolved(for: .dark)
         let subtitleColor = theme.foregroundTertiary.resolved(for: .dark)
         let primaryButtonForeground = Color.white
