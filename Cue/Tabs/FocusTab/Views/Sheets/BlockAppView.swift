@@ -130,30 +130,42 @@ struct BlockAppView: View {
             }
         }
         
+        @Environment(\.theme) var theme
         let infoType: InfoType
         
         init(infoType: InfoType) {
             self.infoType = infoType
         }
         
+        var glass: Glass {
+            if infoType.count > 0 {
+                return .regular.tint(theme.surfaceSecondary)
+            } else {
+                return .regular.tint(theme.surfaceTertiary)
+            }
+        }
+        
         var body: some View {
-            VStack(alignment: .center, spacing: 4) {
-                Image(systemSymbol: infoType.symbol)
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 4) {
                 
-                Text(infoType.title)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
+                Group {
+                    Image(systemSymbol: infoType.symbol)
+                    Text(infoType.title)
+                }
+                .foregroundStyle(theme.foregroundTertiary)
+                .font(.caption)
+                .fontWeight(.semibold)
                 
                 Text("\(infoType.count)")
-                    .font(.headline)
+                    .font(.bitcountMedium(style: .title2))
+                    .foregroundStyle(theme.foregroundSecondary)
                     .contentTransition(.numericText(value: Double(infoType.count)))
                     .animation(.easeInOut, value: infoType.count)
                     .padding(.top, 8)
             }
+            .padding(.init(top: 12, leading: 14, bottom: 12, trailing: 14))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassEffect(glass, in: .roundedRect(cornerRadius: 18))
         }
         
     }
