@@ -57,6 +57,11 @@ public class PomodoroFocusSession: FocusSession, FocusSessionControl {
         set {}
     }
     
+    var alarmID: UUID?
+    var liveActivityID: UUID?
+    
+    var allAlarmIDs: [UUID] = []
+    
     private let singleSessionDuration: TimeInterval
     private let breakSessionDuration: TimeInterval
     private var sessions: [ClassicFocusSession] = []

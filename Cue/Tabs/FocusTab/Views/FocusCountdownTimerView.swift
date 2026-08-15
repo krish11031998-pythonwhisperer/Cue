@@ -60,19 +60,17 @@ struct FocusCountdownTimerView: View {
                                theme: theme) {
                 InnerContent(countdownViewType: countdownViewType, theme: theme, icon: icon, frame: $frame)
             }
-            .environment(\.focusTimerStateFromCoordinator, coordinator.state.uiState)
-            .environment(\.focusTimerProgressFromCoordinator, coordinator.progress)
-            .opacity(isIdle ? 0.275 : 1)
-            .blur(radius: isIdle ? 5 : 0)
+                               .environment(\.focusTimerStateFromCoordinator, coordinator.state.uiState)
+                               .environment(\.focusTimerProgressFromCoordinator, coordinator.progress)
+                               .opacity(isIdle ? 0.275 : 1)
+                               .blur(radius: isIdle ? 5 : 0)
             
             if coordinator.state == .idle || coordinator.state == .reset {
                 switch state {
                 case .idle:
                     EmptyView()
                 case .withTimer(let item):
-                    SelectedTimerView(item: item)
-                        .position(frame.center)
-                        .frame(width: frame.width, height: frame.height, alignment: .center)
+                    SelectedTimerView(theme: theme, frame: frame, item: item)
                         .popIn(percent: viewModel.panGestureTranslation)
                         .transition(.popIn)
                 case .transitioningBetweenReminders:
@@ -111,12 +109,25 @@ struct FocusCountdownTimerView: View {
         let icon: Icon?
         @Binding var frame: CGRect
         
+        var font: FocusSessionTimeCountdownView.FontType {
+            #if NEW_COUNTDOWN_TIMER
+            return .custom(.bitcountMedium(style: .extraLargeTitle))
+            #else
+            return .defaultLargeTitle
+            #endif
+        }
+        
         var body: some View {
             ZStack(alignment: .center) {
                 if coordinator.state == .idle || coordinator.state == .reset {
                     Color.clear
                 } else {
-                    FocusSessionTimeCountdownView(countdownViewType: countdownViewType, theme: theme, remainingTime: coordinator.remainingTimeDuration, isCompleted: false, icon: icon)
+                    FocusSessionTimeCountdownView(countdownViewType: countdownViewType,
+                                                  theme: theme,
+                                                  remainingTime: coordinator.remainingTimeDuration,
+                                                  isCompleted: false,
+                                                  icon: icon,
+                                                  font: font)
                 }
             }
             .aspectRatio(1, contentMode: .fit)
@@ -132,29 +143,72 @@ struct FocusCountdownTimerView: View {
     struct SelectedTimerView: View {
         
         @Environment(FocusSessionCoordinator.self) var coordinator
+        @State private var childFrame: CGRect = .zero
+        let namespace: NamedCoordinateSpace = .named("parentView")
+        let theme: LCHColor
+        let frame: CGRect
         let item: TimerType
         
-        var body: some View {
-            switch item {
-            case .focus:
-                VStack(alignment: .center, spacing: 0) {
-                    Text("Focus")
-                        .font(.title2.weight(.semibold))
-                    
-                    Text(coordinator.timerDuration.timerDurationString)
-                        .contentTransition(.numericText(value: coordinator.timerDuration))
-                        .animation(.easeInOut, value: coordinator.timerDuration)
-                        .font(.largeTitle.weight(.bold))
-                        .padding(.top, 16)
-                }
-#if NEW_COUNTDOWN_TIMER
-                .foregroundColor(Color.proSky.foregroundTertiary)
-#else
-                .foregroundColor(.primary)
-#endif
-            case .reminder(let reminder):
-                SelectedReminderView(reminderModel: reminder)
+        var chipType: FocusCountdownTimerView.InfoChipView.ChipType {
+            switch coordinator.selectedTimerType {
+            case .classic:
+                return .classic
+            case .pomodoro:
+                return .pomodoro(sessionCount: coordinator.pomodoroSessionCount, breakDuration: coordinator.breakDuration)
             }
+        }
+        
+        var body: some View {
+            ZStack(alignment: .top) {
+                
+                if coordinator.numberOfTasks > 0 {
+                    Chip(text: "\(coordinator.numberOfTasks) Tasks", theme: theme)
+                        .position(x: childFrame.midX, y: childFrame.minY - 24)
+                }
+                
+                Group {
+                    switch item {
+                    case .focus:
+                        GeneralFocusSessionView(timerDuration: coordinator.timerDuration)
+                    case .reminder(let reminder):
+                        SelectedReminderView(reminderModel: reminder)
+                    }
+                }
+                .onGeometryChange(for: CGRect.self, of: { $0.frame(in: namespace) }, action: { childFrame = $0 })
+                .position(frame.center)
+                
+                InfoChipView(chipType: chipType, theme: theme)
+                    .padding(.top, childFrame.maxY)
+            }
+            .frame(width: frame.width, height: frame.height, alignment: .center)
+            .coordinateSpace(namespace)
+        }
+    }
+    
+    struct GeneralFocusSessionView: View {
+        
+        let timerDuration: TimeInterval
+        
+        var body: some View {
+            VStack(alignment: .center, spacing: 0) {
+                Text("Focus")
+                    .font(.title2.weight(.semibold))
+                
+                Text(timerDuration.timerDurationString)
+                    .contentTransition(.numericText(value: timerDuration))
+                    .animation(.easeInOut, value: timerDuration)
+                    #if NEW_COUNTDOWN_TIMER
+                    .font(.bitcountMedium(style: .largeTitle))
+                    #else
+                    .font(.largeTitle.weight(.bold))
+                    #endif
+                    .padding(.top, 16)
+            }
+            #if NEW_COUNTDOWN_TIMER
+            .foregroundColor(Color.proSky.foregroundTertiary)
+            #else
+            .foregroundColor(.primary)
+            #endif
         }
     }
     
@@ -183,28 +237,67 @@ struct FocusCountdownTimerView: View {
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(theme.foregroundTertiary)
                 }
-                    .foregroundColor(.primary)
                 
                 Text(coordinator.timerDuration.timerDurationString)
                     .contentTransition(.numericText(value: coordinator.timerDuration))
                     .animation(.easeInOut, value: coordinator.timerDuration)
-                    .font(.largeTitle.weight(.bold))
                 #if NEW_COUNTDOWN_TIMER
+                    .font(.bitcountMedium(style: .largeTitle))
                     .foregroundStyle(theme.foregroundTertiary)
                 #else
+                    .font(.largeTitle.weight(.bold))
                     .foregroundStyle(.primary)
                 #endif
                     .padding(.top, 16)
-                
-                if !reminderModel.tasks.isEmpty {
-                    Text("\(reminderModel.tasks.count) Tasks")
-                        .font(.body.weight(.medium))
-                        .padding(.init(top: 8, leading: 8, bottom: 8, trailing: 8))
-                        .background(Material.thin, in: .capsule)
-                        .padding(.top, 16)
+            }
+        }
+    }
+    
+    
+    // MARK: - Chip
+    
+    struct InfoChipView: View {
+        
+        enum ChipType: Equatable {
+            case classic
+            case pomodoro(sessionCount: Int, breakDuration: TimeInterval)
+            
+            var topPadding: CGFloat {
+                switch self {
+                case .classic:
+                    return 16
+                case .pomodoro:
+                    return 8
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        }
+        
+        let chipType: ChipType
+        let theme: LCHColor
+        
+        var body: some View {
+            if case .pomodoro(let sessionCount, let breakDuration) = chipType {
+                HStack(alignment: .center, spacing: 8) {
+                    Chip(text: "\(sessionCount) Sessions", theme: theme)
+                    Chip(text: "Break: \(breakDuration.timerDurationString)", theme: theme)
+                }
+                .padding(.top, 8)
+            } else {
+                EmptyView()
+            }
+        }
+    }
+    
+    struct Chip: View {
+        let text: String
+        let theme: LCHColor
+        
+        var body: some View {
+            Text(text)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(theme.foregroundSecondary)
+                .padding(.init(top: 8, leading: 8, bottom: 8, trailing: 8))
+                .background(theme.backgroundPrimary, in: .capsule)
         }
     }
 }

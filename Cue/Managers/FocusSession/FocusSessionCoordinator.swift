@@ -52,6 +52,11 @@ enum FocusTimerType: CaseIterable, Identifiable {
 @MainActor
 class FocusSessionCoordinator: FocusSessionControl {
     
+    enum AlarmAt {
+        case endOfSession
+        case betweenPomodoroSessions
+    }
+    
     static let defaultTimer: TimeInterval = 30 * 60
     static let defaultPomodoroTimer: TimeInterval = 25 * 60
     static let defaultBreakTimer: TimeInterval = 5 * 60
@@ -128,6 +133,7 @@ class FocusSessionCoordinator: FocusSessionControl {
             switch selectedTimerType {
             case .classic:
                 timerDuration = Self.defaultTimer
+                alarmAt = .endOfSession
             case .pomodoro:
                 timerDuration = Self.defaultPomodoroTimer
             }
@@ -135,21 +141,20 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
     
     @ObservationIgnored
-    var sessionAttributes: FocusSessionAttributes?
+    var alarmAt: AlarmAt = .endOfSession
     @ObservationIgnored
     var shieldConfiguration: CueShieldConfigurationModel?
     @ObservationIgnored
-    var shieldActivities: FamilyActivitySelection = .init() 
+    var shieldActivities: FamilyActivitySelection = .init()
     @ObservationIgnored
     var numberOfTasks: Int {
         get { sessionAttributes?.numberOfTasks ?? 0 }
         set { }
     }
     @ObservationIgnored
-    private var alarms: [UUID: Alarm] = [:]
-    @ObservationIgnored
     private var liveAcitivityObservation: Task<Void, Never>?
     
+    var sessionAttributes: FocusSessionAttributes?
     var canShowAlarm: Bool = false
     var isAlarmOn: Bool = false
     var appShieldIsOn: Bool = false
@@ -200,10 +205,8 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
     
     func cancelAndReset() {
-        let alarmID = session?.alarmID
+        cancelScheduledAlarm()
         reset()
-        guard let alarmID else { return }
-        alarmCoordinator?.cancelAlarm(alarmID)
     }
     
     func presentTaskSheet() {
@@ -282,9 +285,71 @@ class FocusSessionCoordinator: FocusSessionControl {
         liveActivityCoordindator?.endLiveActivity(for: activityID)
     }
     
+    
     // MARK: - Alarms
     
+    func setupAlarmForOngoingSesion() {
+        isAlarmOn = true
+        setupAlarmForSession()
+    }
+    
     private func setupAlarmForSession() {
+        switch alarmAt {
+        case .endOfSession:
+            if let startDate = session?.startTime {
+                Task { @MainActor in
+                    
+                    var timeInterval: TimeInterval
+                    
+                    switch selectedTimerType {
+                    case .classic:
+                        timeInterval = self.timerDuration
+                    case .pomodoro:
+                        timeInterval = Double(pomodoroSessionCount) * self.timerDuration + Double(self.pomodoroSessionCount - 1) * self.breakDuration
+                    }
+                    
+                    let id = await self.scheduleAlarm(title: titleForAlarm, startTime: startDate, timerDuration: timeInterval)
+                    session?.alarmID = id
+                }
+            }
+        case .betweenPomodoroSessions:
+            guard let pomodoroSession = session as? PomodoroFocusSession else {
+                fatalError("Attempting to add multiple alarms for a non-pomodoro session")
+            }
+            
+            guard let startTime = session?.startTime else { return }
+            
+            let timerDuration = self.timerDuration
+            let breakDuration = self.breakDuration
+            
+            Task { @MainActor in
+                let alarmIds: [UUID] = await withTaskGroup(of: UUID?.self) { group in
+                    for idx in 0..<pomodoroSessionCount {
+                        group.addTask {
+                            let timeDiff = Double(idx) * (timerDuration + breakDuration)
+                            let alarmStartTime = startTime.addingTimeInterval(timeDiff)
+                            
+                            return await self.scheduleAlarm(title: self.titleForAlarm, startTime: alarmStartTime, timerDuration: self.timerDuration)
+                        }
+                    }
+                    
+                    var alarmUUIDs: [UUID] = []
+                    
+                    for await uuid in group {
+                        if let uuid {
+                            alarmUUIDs.append(uuid)
+                        }
+                    }
+                    
+                    return alarmUUIDs
+                }
+                
+                pomodoroSession.allAlarmIDs = alarmIds
+            }
+        }
+    }
+    
+    private var titleForAlarm: String {
         let alarmTitle: String
         switch selectedTimerType {
         case .classic:
@@ -293,12 +358,7 @@ class FocusSessionCoordinator: FocusSessionControl {
             alarmTitle = "Pomodoro Alarm"
         }
         
-        if let startDate = session?.startTime {
-            Task { @MainActor in
-                let id = await self.scheduleAlarm(title: alarmTitle, startTime:  startDate)
-                session?.alarmID = id
-            }
-        }
+        return alarmTitle
     }
     
     func checkIfCanSetAlarm() async {
@@ -315,37 +375,78 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
     
     func toggleAlarm() {
-        guard let alarmCoordinator else { return }
-        
         if isAlarmOn == false {
-            Task { @MainActor in
-                let isAuthorized = await alarmCoordinator.requestAuthorization()
-                guard isAuthorized else { return }
-                self.isAlarmOn = true
-            }
+            self.turnOnAlarm()
         } else {
             self.isAlarmOn = false
         }
     }
     
+    func turnOnAlarm() {
+        Task { @MainActor in
+            let isAuthorized = await self.alarmCoordinator?.requestAuthorization()
+            guard let isAuthorized, isAuthorized else { return }
+            self.isAlarmOn = true
+        }
+    }
+    
+    func updateAlarmAt(_ alarmAt: AlarmAt) {
+        guard case .pomodoro = selectedTimerType else {
+            fatalError("Can only be set when the session is Pomodoro")
+        }
+        
+        self.alarmAt = alarmAt
+        turnOnAlarm()
+    }
+    
     @discardableResult
-    func scheduleAlarm(title: String, startTime: Date) async -> UUID? {
+    func scheduleAlarm(title: String, startTime: Date, timerDuration: TimeInterval) async -> UUID? {
         guard isAlarmOn else { return nil }
         let data = await alarmCoordinator?.scheduleAlarmForTimer(startDate: startTime, timeInterval: timerDuration, title: title, color: Color.proSky.baseColor)
-        guard let (uuid, alarm) = data else { return nil }
-        self.alarms[uuid] = alarm
+        guard let (uuid, _) = data else { return nil }
         return uuid
     }
     
-    func cancelAlarm() {
-        guard let alarmID = session?.alarmID else { return }
-        alarmCoordinator?.cancelAlarm(alarmID)
+    func cancelScheduledAlarm() {
+        
+        func cancelSingleAlarm(session: FocusSession?) {
+            guard let alarmID = session?.alarmID else { return }
+            alarmCoordinator?.cancelAlarm(alarmID)
+            session?.alarmID = nil
+        }
+        
+        func cancelAllAlarms(session: FocusSession?) {
+            guard let pomodoroSession = session as? PomodoroFocusSession else { return }
+            pomodoroSession.allAlarmIDs.forEach {
+                alarmCoordinator?.cancelAlarm($0)
+            }
+            pomodoroSession.allAlarmIDs = []
+        }
+        
+        switch selectedTimerType {
+        case .classic:
+            cancelSingleAlarm(session: session)
+        case .pomodoro:
+            switch alarmAt {
+            case .endOfSession:
+                cancelSingleAlarm(session: session)
+            case .betweenPomodoroSessions:
+                cancelAllAlarms(session: session)
+            }
+        }
+        
+        isAlarmOn = false
     }
     
     
     // MARK: - AppShield
     
-    func applyAppShield() {
+    func applyAppShieldForOngoingSession() {
+        appShieldIsOn = true
+        applyAppShield()
+    }
+    
+    private func applyAppShield() {
         guard appShieldIsOn, let shieldConfiguration else { return }
         appShieldCoordinator?.saveShieldConfiguration(shieldConfiguration)
         appShieldCoordinator?.applyRestrictions(shieldActivities)
@@ -353,6 +454,8 @@ class FocusSessionCoordinator: FocusSessionControl {
     
     func removeAppShield() {
         appShieldCoordinator?.removeRestrictions()
+        shieldActivities = .init()
+        appShieldIsOn = false
     }
     
     

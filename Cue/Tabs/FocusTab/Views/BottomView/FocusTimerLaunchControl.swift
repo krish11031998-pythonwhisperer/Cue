@@ -74,7 +74,7 @@ fileprivate extension FocusSessionCoordinator {
     }
     
     var pomodoroSessionDescription: String {
-        "\(pomodoroSessionDurationString) - \(pomodoroBreakDurationString) x \(pomodoroSessionCount)"
+        "\(pomodoroSessionDurationString) • \(pomodoroBreakDurationString) • \(pomodoroSessionCount) sessions"
     }
 }
 
@@ -156,11 +156,45 @@ struct FocusTimerLaunchControl: View {
                     })
                     .frame(maxWidth: .infinity, alignment: .center)
                     
-                    LaunchControlButton(symbol: .init(base: .alarmWavesLeftAndRight, selected: .alarmWavesLeftAndRightFill),
-                                        isSelected: coordinator.isAlarmOn,
-                                        size: .capsule) {
-                        // Want an alarm
-                        coordinator.toggleAlarm()
+                    Group {
+                        switch coordinator.selectedTimerType {
+                        case .classic:
+                            LaunchControlButton(symbol: .init(base: .alarmWavesLeftAndRight, selected: .alarmWavesLeftAndRightFill),
+                                                isSelected: coordinator.isAlarmOn,
+                                                size: .capsule) {
+                                // Want an alarm
+                                coordinator.toggleAlarm()
+                            }
+                        case .pomodoro:
+                            LaunchControlButton(symbol: .init(base: .alarmWavesLeftAndRight, selected: .alarmWavesLeftAndRightFill),
+                                                isSelected: coordinator.isAlarmOn,
+                                                size: .capsule,
+                                                menu: {
+                                Button {
+                                    coordinator.isAlarmOn = false
+                                } label: {
+                                    Text("Turn Off")
+                                    Text("No alarms fired")
+                                    Image(systemSymbol: .xmarkCircle)
+                                }
+                                
+                                Button {
+                                    coordinator.updateAlarmAt(.endOfSession)
+                                } label: {
+                                    Text("End of Session")
+                                    Text("Set one alarm that will fire at the end of the final focus session")
+                                    Image(systemSymbol: .clockBadgeCheckmarkFill)
+                                }
+                                
+                                Button {
+                                    coordinator.updateAlarmAt(.betweenPomodoroSessions)
+                                } label: {
+                                    Text("Between Session")
+                                    Text("Set alarms that will fire at the end of each focus session")
+                                    Image(systemSymbol: .clock)
+                                }
+                            })
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                     .disabled(!coordinator.canShowAlarm)
@@ -174,6 +208,7 @@ struct FocusTimerLaunchControl: View {
     
     struct ClassicSessionLaunchControlView: View {
         
+        @Environment(\.theme) var theme
         @Namespace private var animation
         @Bindable var coordinator: FocusSessionCoordinator
         @State private var expandTimeArc: Bool = false
@@ -234,6 +269,7 @@ struct FocusTimerLaunchControl: View {
     
     struct LaunchControlSliderView: View {
         
+        @Environment(\.theme) var theme
         var animation: Namespace.ID
         @Bindable var coordinator: FocusSessionCoordinator
         @Binding var expandTimeArc: Bool
@@ -251,7 +287,7 @@ struct FocusTimerLaunchControl: View {
                 .containerRelativeFrame(.horizontal) { width, _ in
                     width * 0.4 - (80)
                 }
-                InteractiveSwiftUIView(progress: coordinator.startingDurationForSlider) { factor in
+                InteractiveSwiftUIView(theme: theme, progress: coordinator.startingDurationForSlider) { factor in
                     coordinator.sliderFractionToTimeDuration(fraction: factor)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -266,6 +302,7 @@ struct FocusTimerLaunchControl: View {
     
     struct LaunchControlTimeView: View {
         
+        @Environment(\.theme) var theme
         let duration: TimeInterval
         let durationString: String
         
@@ -273,13 +310,13 @@ struct FocusTimerLaunchControl: View {
             Text(durationString)
                 .font(.subheadline)
                 .fontWeight(.semibold)
-                .foregroundStyle(Color.invertedForegroundPrimary)
+                .foregroundStyle(theme.foregroundSecondary)
                 .contentTransition(.numericText(value: duration))
                 .animation(.easeInOut, value: duration)
                 .padding(.vertical, 6)
                 .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                .background(Color.invertedBackgroundPrimary, in: .capsule)
+                .background(theme.backgroundSecondary, in: .capsule)
         }
     }
     
@@ -288,17 +325,18 @@ struct FocusTimerLaunchControl: View {
     
     struct PomodoroLaunchControlTimeView: View {
         
+        @Environment(\.theme) var theme
         let durationDescriptionString: String
         
         var body: some View {
             Text(durationDescriptionString)
-                .font(.subheadline)
+                .font(.footnote)
                 .fontWeight(.semibold)
-                .foregroundStyle(Color.invertedForegroundPrimary)
+                .foregroundStyle(theme.foregroundSecondary)
                 .padding(.vertical, 6)
                 .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                .background(Color.invertedBackgroundPrimary, in: .capsule)
+                .background(theme.backgroundSecondary, in: .capsule)
         }
         
     }

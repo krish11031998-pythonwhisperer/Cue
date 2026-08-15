@@ -29,7 +29,7 @@ struct FocusTabBottomAccessoryView: View {
         ZStack {
             switch coordinator.state {
             case .idle, .reset:
-                StartTimerButton(action: coordinator.startTimer)
+                StartTimerButton(sessionAttributes: coordinator.sessionAttributes, action: coordinator.startTimer)
                     .transition(transition)
             case .start, .resume, .pause:
                 OngoaingTimerControl(coordinator: coordinator, actionOnTap: coordinator.presentTaskSheet)
@@ -44,10 +44,15 @@ struct FocusTabBottomAccessoryView: View {
     
     struct StartTimerButton: View {
         
+        let sessionAttributes: FocusSessionAttributes?
         let action: () -> Void
         
         var theme: LCHColor {
-            Color.proSky
+            if let color = sessionAttributes?.color {
+                return color
+            } else {
+                return Color.proSky
+            }
         }
         
         var body: some View {
@@ -125,6 +130,5 @@ struct FocusTabBottomAccessoryView: View {
         .frame(height: 54)
         .task {
             control.timerDuration = 10 * 60
-//            control.numberOfTasks = 10
         }
 }

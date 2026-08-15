@@ -108,12 +108,13 @@ struct FocusTimerRootView: View {
         .sheet(item: $viewModel.sheetPresentation) { sheet in
             switch sheet {
             case .pomodoroSessionEditor:
-                PomodoroSessionEditorView()
+                PomodoroSessionEditorView(coordinator: coordinator)
                     .fittedPresentationDetent()
-            case .appBlock:
+            case .appBlock(let completion):
                 BlockAppView(selectedActivities: coordinator.shieldActivities) {
                     self.coordinator.shieldActivities = $0
                     self.coordinator.appShieldIsOn = !$0.isEmpty
+                    completion?()
                 }
                 .presentationDetents([.fraction(1)])
             }
@@ -125,6 +126,7 @@ struct FocusTimerRootView: View {
         .onChange(of: reminders, initial: true) { oldValue, newValue in
             viewModel.updateWithReminders(newValue)
         }
+        .environment(\.theme, viewModel.selectedTimerItem.theme)
     }
     
     private func dragGestureHandler(_ point: CGPoint) {
@@ -155,7 +157,7 @@ struct FocusTimerRootView: View {
     
     struct FloatingFocusTimerFooterView: View {
         
-        private var viewModel: FocusTimerRootViewModel
+        @Bindable private var viewModel: FocusTimerRootViewModel
         @Bindable private var coordinator: FocusSessionCoordinator
         
         init(viewModel: FocusTimerRootViewModel, coordinator: FocusSessionCoordinator) {
@@ -172,19 +174,18 @@ struct FocusTimerRootView: View {
                         print("(DEBUG) present sheet with reminders")
                         viewModel.presentAction(sessionType: coordinator.selectedTimerType)
                     } presentBlockAppsSheet: {
-                        viewModel.presentAppBlock()
+                        viewModel.presentAppBlock(nil)
                     }
                     .transition(.popIn)
                 case .pause, .resume, .start:
                     Group {
                         switch coordinator.selectedTimerType {
                         case .classic:
-                            ClassicFocusSessionTimerView(icon: viewModel.selectedTimerItem.icon, title: viewModel.selectedTimerItem.title)
+                            ClassicFocusSessionTimerView(viewModel: viewModel, coordinator: coordinator, icon: viewModel.selectedTimerItem.icon, title: viewModel.selectedTimerItem.title)
                         case .pomodoro:
-                            PomodoroFocusSessionTimerView(icon: viewModel.selectedTimerItem.icon,
-                                                          title: viewModel.selectedTimerItem.title,
-                                                          currentSessionIndex: coordinator.currentSessionIndex,
-                                                          sessionCount: coordinator.pomodoroSessionCount)
+                            PomodoroFocusSessionTimerView(viewModel: viewModel, coordinator: coordinator,
+                                                          icon: viewModel.selectedTimerItem.icon,
+                                                          title: viewModel.selectedTimerItem.title)
                         }
                     }
                     .transition(.popIn)
@@ -200,75 +201,150 @@ struct FocusTimerRootView: View {
     // MARK: - Classic Focus Session Timer View
     
     struct ClassicFocusSessionTimerView: View {
-        let icon: Icon
+        @Environment(\.theme) var theme
+        
+        @Bindable var viewModel: FocusTimerRootViewModel
+        var coordinator: FocusSessionCoordinator
+        var icon: Icon
         let title: String
+        @State private var presentAppShieldPopover: Bool = false
+        @State private var presentAlarmPopover: Bool = false
         
         var body: some View {
             HStack(alignment: .center, spacing: 8) {
                 ReminderIconView(icon: icon,
-                                 foregroundColor: .primary,
-                                 backgroundColor: Color.secondarySystemBackground,
-                                 font: .caption)
-                .frame(width: 32, height: 32, alignment: .center)
+                                 foregroundColor: theme.foregroundPrimary,
+                                 backgroundColor: theme.backgroundSecondary,
+                                 font: .headline)
+                .frame(width: 44, height: 44, alignment: .center)
                 
                 Text(title)
                     .font(.headline.weight(.semibold))
+                    .foregroundStyle(theme.foregroundPrimary)
                 
                 Spacer()
                 
-                LaunchControlButton(symbol: .same(.lockAppDashed), size: .regular) {
+                LaunchControlButton(symbol: .same(.lockAppDashed), isSelected: coordinator.appShieldIsOn, size: .regular) {
                     // Disable App Blocking
-                    return
+                    if coordinator.appShieldIsOn {
+                        presentAppShieldPopover = true
+                    } else {
+                        // Present App Sheild popover
+                        viewModel.presentAppBlock {
+                            coordinator.applyAppShieldForOngoingSession()
+                        }
+                    }
                 }
+                .confirmationDialog("Turn off App Shield", isPresented: $presentAppShieldPopover, titleVisibility: .visible, actions: {
+                    Button("Turn Off", role: .destructive) {
+                        // turn off AppSheild
+                        coordinator.removeAppShield()
+                    }
+                }, message: {
+                    Text("Are you sure you want to turn of the App Shield?")
+                        .font(.body)
+                })
 
-                LaunchControlButton(symbol: .same(.alarmWavesLeftAndRight), size: .regular) {
+                LaunchControlButton(symbol: .same(.alarmWavesLeftAndRight), isSelected: coordinator.isAlarmOn, size: .regular) {
                     // Diable Alarm
-                    return
+                    if coordinator.isAlarmOn {
+                        presentAlarmPopover = true
+                    } else {
+                        coordinator.setupAlarmForOngoingSesion()
+                    }
                 }
+                .confirmationDialog("Turn off Alarm", isPresented: $presentAlarmPopover, titleVisibility: .visible, actions: {
+                    Button("Turn Off", role: .destructive) {
+                        // turn off Alarm
+                        coordinator.cancelScheduledAlarm()
+                    }
+                }, message: {
+                    Text("Turning off the alarm(s) during your focus session would mean you won't notified abouyt the end of the session")
+                        .font(.body)
+                })
             }
             .transition(.popIn)
+            
         }
     }
     
     struct PomodoroFocusSessionTimerView: View {
         
+        @Environment(\.theme) var theme
+        @Bindable var viewModel: FocusTimerRootViewModel
+        var coordinator: FocusSessionCoordinator
         let icon: Icon
         let title: String
-        let currentSessionIndex: Int
-        let sessionCount: Int
+        
+        private var currentSessionIndex: Int {
+            coordinator.currentSessionIndex
+        }
+        
+        private var sessionCount: Int {
+            coordinator.pomodoroSessionCount
+        }
+        
+        var totalDuration: TimeInterval {
+            return Double(sessionCount) * coordinator.timerDuration + Double(sessionCount - 1) * coordinator.breakDuration
+        }
+        
+        var sessionDurationFactor: CGFloat {
+            let sessionDuration = coordinator.timerDuration
+            return CGFloat(sessionDuration/totalDuration)
+        }
+        
+        var breakDurationFactor: CGFloat {
+            let breakDuration = coordinator.breakDuration
+            return CGFloat(breakDuration/totalDuration)
+        }
+        
+        struct BlinkingCapsule: View {
+            @State private var blink: Bool = false
+            let color: Color
+            
+            init(color: Color) {
+                self.color = color
+            }
+            
+            var body: some View {
+                Capsule()
+                    .fill(color)
+                    .animation(.easeInOut(duration: 0.75).repeatForever(autoreverses: true)) { content in
+                        content
+                            .opacity(blink ? 0.3 : 1)
+                    }
+                    .onAppear {
+                        self.blink = true
+                    }
+            }
+        }
         
         @ViewBuilder
         func capsule(for index: Int) -> some View {
-            let theme: LCHColor = index % 2 == 0 ? Color.proSky : Color.proPlum
+            let capsuleColor = index % 2 == 0 ? theme.surfacePrimary : theme.surfaceSecondary
             if index < currentSessionIndex {
                 Capsule()
-                    .fill(theme.baseColor)
+                    .fill(index % 2 == 0 ? theme.baseColor : theme.surfacePrimary)
             } else if index == currentSessionIndex {
-                Capsule()
-                    .fill(theme.baseColor)
-                    .animation(.easeInOut.repeatForever()) { content in
-                        content
-                            .opacity(index == currentSessionIndex ? 0.3 : 1)
-                    }
+                BlinkingCapsule(color: capsuleColor)
             } else {
                 Capsule()
-                    .fill(theme.backgroundPrimary)
+                    .fill(capsuleColor)
             }
         }
         
         var body: some View {
-            VStack(alignment: .center, spacing: 4) {
-                ClassicFocusSessionTimerView(icon: icon, title: title)
+            VStack(alignment: .center, spacing: 8) {
+                ClassicFocusSessionTimerView(viewModel: viewModel, coordinator: coordinator, icon: icon, title: title)
                 
-                HStack(alignment: .center, spacing: 2) {
-                    ForEach(0..<(sessionCount + sessionCount - 1)) { index in
-                        if index % 2 == 0 {
+                GeometryReader { proxy in
+                    let availableWidth = proxy.size.width - CGFloat((sessionCount * 2 - 1) * 2)
+                    let sessionWidth = availableWidth * sessionDurationFactor
+                    let breakWidth = availableWidth * breakDurationFactor
+                    HStack(alignment: .center, spacing: 2) {
+                        ForEach(0..<(sessionCount + sessionCount - 1)) { index in
                             capsule(for: index)
-                                .frame(height: 4)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                        } else {
-                            capsule(for: index)
-                                .frame(width: 24, height: 4, alignment: .center)
+                                .frame(width:  index % 2 == 0 ? sessionWidth : breakWidth, height: 4, alignment: .center)
                         }
                     }
                 }

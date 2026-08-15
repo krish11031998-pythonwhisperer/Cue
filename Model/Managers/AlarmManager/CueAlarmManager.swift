@@ -170,15 +170,18 @@ public class CueAlarmManager {
         do {
             let  alarm = try await alarmManager.schedule(id: id, configuration: configuration)
             print("(DEBUG) Successfully created an alarm for focusTimers: \(alarm.id) @ \(targetAlarm.timeBuilder()) ✅!")
+            await MainActor.run { [weak self] in
+                self?.alarmsMap[alarm.id] = alarm
+            }
             return (id, alarm)
         } catch {
             print("(ERROR) there was an error!\(error.self): ", error.localizedDescription)
         }
-        
+
         return nil
     }
-    
-    
+
+
     // MARK: - Observe
     
     func getCurrentAlarms() {

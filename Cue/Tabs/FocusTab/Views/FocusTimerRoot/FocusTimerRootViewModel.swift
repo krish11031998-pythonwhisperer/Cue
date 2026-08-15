@@ -20,7 +20,7 @@ class FocusTimerRootViewModel {
     
     enum Sheet: Identifiable {
         case pomodoroSessionEditor
-        case appBlock
+        case appBlock(Callback?)
         
         var id: String {
             switch self {
@@ -148,7 +148,7 @@ class FocusTimerRootViewModel {
         case .focus:
             theme = Color.proSky
             let symbolColor = UIColor(theme.foregroundPrimary.resolved(for: .dark))
-            let image = UIImage(systemSymbol: .timer).resized(size: .init(squared: 48)).withTintColor(symbolColor)
+            let image = UIImage(systemSymbol: .timer).withTintColor(symbolColor, renderingMode: .alwaysTemplate).resized(size: .init(squared: 48))
             focusSession = .init(icon: image,
                                  color: theme.backgroundTertiary)
             title = "Stay Focused"
@@ -185,11 +185,11 @@ class FocusTimerRootViewModel {
         return configuration
     }
     
-    func presentAppBlock() {
+    func presentAppBlock(_ completion: Callback?) {
         Task { @MainActor in
             do {
                 guard try await CueAppBlockManager.retrieveAuthorization() == .approved else { return }
-                self.sheetPresentation = .appBlock
+                self.sheetPresentation = .appBlock(completion)
             } catch {
                 #warning("Present an error alert")
                 print("(ERROR) While retrieving Authorization for App block: ", error.localizedDescription)

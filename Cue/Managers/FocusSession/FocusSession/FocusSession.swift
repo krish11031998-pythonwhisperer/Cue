@@ -14,7 +14,7 @@ protocol FocusSessionControl: AnyObject {
 }
 
 @MainActor
-protocol FocusSession {
+protocol FocusSession: AnyObject {
     var startTime: Date? { get set }
     var endTime: Date? { get }
     var alarmID: UUID? { get set }
@@ -49,16 +49,6 @@ extension FocusSession {
     
     var startTime: Date? {
         get{ nil }
-        set { }
-    }
-    
-    var alarmID: UUID? {
-        get { nil }
-        set { }
-    }
-    
-    var liveActivityID: UUID? {
-        get { nil }
         set { }
     }
 }
