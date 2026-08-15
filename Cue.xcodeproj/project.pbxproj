@@ -20,6 +20,11 @@
 		EFD66AA02F3C24F7006E4599 /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = EFD66A9F2F3C24F7006E4599 /* ReceiptParser */; };
 		EFD66AA22F3C24F7006E4599 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = EFD66AA12F3C24F7006E4599 /* RevenueCat */; };
 		EFD66AA42F3C24F7006E4599 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = EFD66AA32F3C24F7006E4599 /* RevenueCatUI */; };
+		EFDFA599302A84EE00A5094A /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EFDFA598302A84EE00A5094A /* ManagedSettings.framework */; };
+		EFDFA59B302A84EE00A5094A /* ManagedSettingsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EFDFA59A302A84EE00A5094A /* ManagedSettingsUI.framework */; };
+		EFDFA5A3302A84EE00A5094A /* CueSheildConfiguration.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EFDFA597302A84EE00A5094A /* CueSheildConfiguration.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		EFDFA5AE302A864000A5094A /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EFDFA598302A84EE00A5094A /* ManagedSettings.framework */; };
+		EFDFA5B6302A864000A5094A /* CueSheildAction.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EFDFA5AD302A864000A5094A /* CueSheildAction.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +49,20 @@
 			remoteGlobalIDString = EF079D892F1BFFC600986EF8;
 			remoteInfo = Model;
 		};
+		EFDFA5A1302A84EE00A5094A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EF079D6A2F1BE5EC00986EF8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EFDFA596302A84EE00A5094A;
+			remoteInfo = CueSheildConfiguration;
+		};
+		EFDFA5B4302A864000A5094A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EF079D6A2F1BE5EC00986EF8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EFDFA5AC302A864000A5094A;
+			remoteInfo = CueSheildAction;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -64,6 +83,8 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
+				EFDFA5A3302A84EE00A5094A /* CueSheildConfiguration.appex in Embed Foundation Extensions */,
+				EFDFA5B6302A864000A5094A /* CueSheildAction.appex in Embed Foundation Extensions */,
 				0B25B4A6173942AC92AE2D24 /* CueWidgets.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
@@ -80,7 +101,47 @@
 		EF2950FA2F38BDF800FEAD32 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		EF2950FC2F38BDF800FEAD32 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		EF8BA31C302899A20085FDC0 /* vanor-ui-library */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vanor-ui-library"; path = "../Shipyard/vanor-ui-library"; sourceTree = SOURCE_ROOT; };
+		EF9F5F56302A72D900075A0A /* KyuDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KyuDebug.entitlements; sourceTree = "<group>"; };
+		EFDFA597302A84EE00A5094A /* CueSheildConfiguration.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CueSheildConfiguration.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		EFDFA598302A84EE00A5094A /* ManagedSettings.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ManagedSettings.framework; path = System/Library/Frameworks/ManagedSettings.framework; sourceTree = SDKROOT; };
+		EFDFA59A302A84EE00A5094A /* ManagedSettingsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ManagedSettingsUI.framework; path = System/Library/Frameworks/ManagedSettingsUI.framework; sourceTree = SDKROOT; };
+		EFDFA5AD302A864000A5094A /* CueSheildAction.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CueSheildAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		EFDFA5A4302A84EE00A5094A /* Exceptions for "CueSheildConfiguration" folder in "CueSheildConfiguration" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = EFDFA596302A84EE00A5094A /* CueSheildConfiguration */;
+		};
+		EFDFA5B7302A864000A5094A /* Exceptions for "CueSheildAction" folder in "CueSheildAction" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = EFDFA5AC302A864000A5094A /* CueSheildAction */;
+		};
+		EFDFA5C1302B3FC500A5094A /* Exceptions for "Cue" folder in "CueSheildConfiguration" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Managers/AppBlockManager/CueAppBlockManager.swift,
+				Managers/AppBlockManager/CueShieldConfigurationModel.swift,
+				Managers/AppBlockManager/FocusAppShieldCoordinator.swift,
+			);
+			target = EFDFA596302A84EE00A5094A /* CueSheildConfiguration */;
+		};
+		EFDFA5C2302B3FC500A5094A /* Exceptions for "Cue" folder in "CueSheildAction" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Managers/AppBlockManager/CueAppBlockManager.swift,
+				Managers/AppBlockManager/CueShieldConfigurationModel.swift,
+				Managers/AppBlockManager/FocusAppShieldCoordinator.swift,
+			);
+			target = EFDFA5AC302A864000A5094A /* CueSheildAction */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A0B5EBE1344F4A75A1BF3132 /* CueWidgets */ = {
@@ -90,12 +151,32 @@
 		};
 		EF079D742F1BE5EC00986EF8 /* Cue */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				EFDFA5C1302B3FC500A5094A /* Exceptions for "Cue" folder in "CueSheildConfiguration" target */,
+				EFDFA5C2302B3FC500A5094A /* Exceptions for "Cue" folder in "CueSheildAction" target */,
+			);
 			path = Cue;
 			sourceTree = "<group>";
 		};
 		EF079D8B2F1BFFC600986EF8 /* Model */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Model;
+			sourceTree = "<group>";
+		};
+		EFDFA59C302A84EE00A5094A /* CueSheildConfiguration */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				EFDFA5A4302A84EE00A5094A /* Exceptions for "CueSheildConfiguration" folder in "CueSheildConfiguration" target */,
+			);
+			path = CueSheildConfiguration;
+			sourceTree = "<group>";
+		};
+		EFDFA5AF302A864000A5094A /* CueSheildAction */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				EFDFA5B7302A864000A5094A /* Exceptions for "CueSheildAction" folder in "CueSheildAction" target */,
+			);
+			path = CueSheildAction;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -133,17 +214,37 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EFDFA594302A84EE00A5094A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EFDFA599302A84EE00A5094A /* ManagedSettings.framework in Frameworks */,
+				EFDFA59B302A84EE00A5094A /* ManagedSettingsUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EFDFA5AA302A864000A5094A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EFDFA5AE302A864000A5094A /* ManagedSettings.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		EF079D692F1BE5EC00986EF8 = {
 			isa = PBXGroup;
 			children = (
+				EF9F5F56302A72D900075A0A /* KyuDebug.entitlements */,
 				EF2950F12F38B18300FEAD32 /* Kyu-Info.plist */,
 				E5A9EDE545D34C3BB2589D72 /* CueWidgets-Info.plist */,
 				EF079D742F1BE5EC00986EF8 /* Cue */,
 				EF079D8B2F1BFFC600986EF8 /* Model */,
 				A0B5EBE1344F4A75A1BF3132 /* CueWidgets */,
+				EFDFA59C302A84EE00A5094A /* CueSheildConfiguration */,
+				EFDFA5AF302A864000A5094A /* CueSheildAction */,
 				EF32251F2F1EF02B0054901C /* Frameworks */,
 				EF079D732F1BE5EC00986EF8 /* Products */,
 				EF8BA31C302899A20085FDC0 /* vanor-ui-library */,
@@ -156,6 +257,8 @@
 				EF079D722F1BE5EC00986EF8 /* Kyu.app */,
 				EF079D8A2F1BFFC600986EF8 /* Model.framework */,
 				5EF28C33E86148EBACD08CB9 /* CueWidgets.appex */,
+				EFDFA597302A84EE00A5094A /* CueSheildConfiguration.appex */,
+				EFDFA5AD302A864000A5094A /* CueSheildAction.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -165,6 +268,8 @@
 			children = (
 				EF2950FA2F38BDF800FEAD32 /* WidgetKit.framework */,
 				EF2950FC2F38BDF800FEAD32 /* SwiftUI.framework */,
+				EFDFA598302A84EE00A5094A /* ManagedSettings.framework */,
+				EFDFA59A302A84EE00A5094A /* ManagedSettingsUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -218,6 +323,8 @@
 			dependencies = (
 				EF079D8F2F1BFFC600986EF8 /* PBXTargetDependency */,
 				A1EE6D2C16724179B5B09605 /* PBXTargetDependency */,
+				EFDFA5A2302A84EE00A5094A /* PBXTargetDependency */,
+				EFDFA5B5302A864000A5094A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				EF079D742F1BE5EC00986EF8 /* Cue */,
@@ -258,6 +365,50 @@
 			productReference = EF079D8A2F1BFFC600986EF8 /* Model.framework */;
 			productType = "com.apple.product-type.framework";
 		};
+		EFDFA596302A84EE00A5094A /* CueSheildConfiguration */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EFDFA5A5302A84EE00A5094A /* Build configuration list for PBXNativeTarget "CueSheildConfiguration" */;
+			buildPhases = (
+				EFDFA593302A84EE00A5094A /* Sources */,
+				EFDFA594302A84EE00A5094A /* Frameworks */,
+				EFDFA595302A84EE00A5094A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				EFDFA59C302A84EE00A5094A /* CueSheildConfiguration */,
+			);
+			name = CueSheildConfiguration;
+			packageProductDependencies = (
+			);
+			productName = CueSheildConfiguration;
+			productReference = EFDFA597302A84EE00A5094A /* CueSheildConfiguration.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		EFDFA5AC302A864000A5094A /* CueSheildAction */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EFDFA5B8302A864000A5094A /* Build configuration list for PBXNativeTarget "CueSheildAction" */;
+			buildPhases = (
+				EFDFA5A9302A864000A5094A /* Sources */,
+				EFDFA5AA302A864000A5094A /* Frameworks */,
+				EFDFA5AB302A864000A5094A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				EFDFA5AF302A864000A5094A /* CueSheildAction */,
+			);
+			name = CueSheildAction;
+			packageProductDependencies = (
+			);
+			productName = CueSheildAction;
+			productReference = EFDFA5AD302A864000A5094A /* CueSheildAction.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -265,7 +416,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2620;
+				LastSwiftUpdateCheck = 2700;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					1A94673A093E485AA8C85308 = {
@@ -276,6 +427,12 @@
 					};
 					EF079D892F1BFFC600986EF8 = {
 						CreatedOnToolsVersion = 26.0;
+					};
+					EFDFA596302A84EE00A5094A = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					EFDFA5AC302A864000A5094A = {
+						CreatedOnToolsVersion = 27.0;
 					};
 				};
 			};
@@ -302,6 +459,8 @@
 				EF079D712F1BE5EC00986EF8 /* Kyu */,
 				EF079D892F1BFFC600986EF8 /* Model */,
 				1A94673A093E485AA8C85308 /* CueWidgets */,
+				EFDFA596302A84EE00A5094A /* CueSheildConfiguration */,
+				EFDFA5AC302A864000A5094A /* CueSheildAction */,
 			);
 		};
 /* End PBXProject section */
@@ -322,6 +481,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		EF079D882F1BFFC600986EF8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EFDFA595302A84EE00A5094A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EFDFA5AB302A864000A5094A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -352,6 +525,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EFDFA593302A84EE00A5094A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EFDFA5A9302A864000A5094A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -369,6 +556,16 @@
 			isa = PBXTargetDependency;
 			target = EF079D892F1BFFC600986EF8 /* Model */;
 			targetProxy = EF079D8E2F1BFFC600986EF8 /* PBXContainerItemProxy */;
+		};
+		EFDFA5A2302A84EE00A5094A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EFDFA596302A84EE00A5094A /* CueSheildConfiguration */;
+			targetProxy = EFDFA5A1302A84EE00A5094A /* PBXContainerItemProxy */;
+		};
+		EFDFA5B5302A864000A5094A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EFDFA5AC302A864000A5094A /* CueSheildAction */;
+			targetProxy = EFDFA5B4302A864000A5094A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -562,7 +759,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Cue/Cue.entitlements;
+				CODE_SIGN_ENTITLEMENTS = KyuDebug.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 9;
@@ -719,6 +916,132 @@
 			};
 			name = Release;
 		};
+		EFDFA5A6302A84EE00A5094A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CueSheildConfiguration/CueSheildConfigurationDebug.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8T963ZW2EJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CueSheildConfiguration/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CueSheildConfiguration;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Krishna.cue-it.CueSheildConfiguration";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		EFDFA5A7302A84EE00A5094A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CueSheildConfiguration/CueSheildConfiguration.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8T963ZW2EJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CueSheildConfiguration/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CueSheildConfiguration;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Krishna.cue-it.CueSheildConfiguration";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		EFDFA5B9302A864000A5094A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CueSheildAction/CueSheildActionDebug.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8T963ZW2EJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CueSheildAction/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CueSheildAction;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Krishna.cue-it.CueSheildAction";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		EFDFA5BA302A864000A5094A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CueSheildAction/CueSheildAction.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8T963ZW2EJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CueSheildAction/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CueSheildAction;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Krishna.cue-it.CueSheildAction";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -754,6 +1077,24 @@
 			buildConfigurations = (
 				EF079D932F1BFFC600986EF8 /* Debug */,
 				EF079D942F1BFFC600986EF8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EFDFA5A5302A84EE00A5094A /* Build configuration list for PBXNativeTarget "CueSheildConfiguration" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EFDFA5A6302A84EE00A5094A /* Debug */,
+				EFDFA5A7302A84EE00A5094A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EFDFA5B8302A864000A5094A /* Build configuration list for PBXNativeTarget "CueSheildAction" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EFDFA5B9302A864000A5094A /* Debug */,
+				EFDFA5BA302A864000A5094A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

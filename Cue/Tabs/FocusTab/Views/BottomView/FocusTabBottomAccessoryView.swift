@@ -88,7 +88,7 @@ struct FocusTabBottomAccessoryView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
                 HStack(alignment: .center, spacing: 8) {
-                    LaunchControlButton(image: playPauseButtonSybmol , size: .small) {
+                    LaunchControlButton(symbol: .same(playPauseButtonSybmol), size: .small) {
                         if coordinator.state == .resume || coordinator.state == .start {
                             coordinator.pauseTimer()
                         } else if coordinator.state == .pause {
@@ -96,7 +96,7 @@ struct FocusTabBottomAccessoryView: View {
                         }
                     }
                     
-                    LaunchControlButton(image: .stopFill, size: .small) {
+                    LaunchControlButton(symbol: .same(.stopFill), size: .small) {
                         // Need to implement stop
                         coordinator.cancelAndReset()
                     }
@@ -115,7 +115,7 @@ struct FocusTabBottomAccessoryView: View {
 
 
 #Preview {
-    @Previewable @State var control = FocusSessionCoordinator(alarmCoordinator: nil, liveActivityCoordinator: nil)
+    @Previewable @State var control = FocusSessionCoordinator(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil)
     FocusTabBottomAccessoryView(coordinator: control)
         .environment(control)
         .clipShape(Capsule())

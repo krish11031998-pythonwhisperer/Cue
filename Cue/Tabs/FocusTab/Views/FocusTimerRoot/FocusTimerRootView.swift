@@ -8,6 +8,13 @@
 import SwiftUI
 import VanorUI
 import Model
+import FamilyControls
+
+extension FamilyActivitySelection {
+    var isEmpty: Bool {
+        self.applications.isEmpty && self.categories.isEmpty && self.webDomains.isEmpty
+    }
+}
 
 struct FocusCountdownTopGradient: Shape {
     nonisolated func path(in rect: CGRect) -> Path {
@@ -98,18 +105,22 @@ struct FocusTimerRootView: View {
         .safeAreaBar(edge: .bottom, alignment: .center, spacing: 8) {
             FloatingFocusTimerFooterView(viewModel: viewModel, coordinator: coordinator)
         }
-        .sheet(item: $viewModel.sheetPresentation, content: { sheet in
+        .sheet(item: $viewModel.sheetPresentation) { sheet in
             switch sheet {
             case .pomodoroSessionEditor:
                 PomodoroSessionEditorView()
                     .fittedPresentationDetent()
+            case .appBlock:
+                BlockAppView(selectedActivities: coordinator.shieldActivities) {
+                    self.coordinator.shieldActivities = $0
+                    self.coordinator.appShieldIsOn = !$0.isEmpty
+                }
+                .presentationDetents([.fraction(1)])
             }
-        })
+        }
         .onChange(of: viewModel.selectedTimerItem, initial: true) { _, newValue in
-//            guard case .reminder(let reminderModel) = newValue else { return }
-//            let tasks = reminderModel.tasks
-//            coordinator.numberOfTasks = tasks.count
             coordinator.sessionAttributes = viewModel.focusSessionAttributes()
+            coordinator.shieldConfiguration = viewModel.appShieldConfiguration()
         }
         .onChange(of: reminders, initial: true) { oldValue, newValue in
             viewModel.updateWithReminders(newValue)
@@ -160,6 +171,8 @@ struct FocusTimerRootView: View {
                         // Present Sheet
                         print("(DEBUG) present sheet with reminders")
                         viewModel.presentAction(sessionType: coordinator.selectedTimerType)
+                    } presentBlockAppsSheet: {
+                        viewModel.presentAppBlock()
                     }
                     .transition(.popIn)
                 case .pause, .resume, .start:
@@ -203,12 +216,12 @@ struct FocusTimerRootView: View {
                 
                 Spacer()
                 
-                LaunchControlButton(image: .lockAppDashed, size: .regular) {
+                LaunchControlButton(symbol: .same(.lockAppDashed), size: .regular) {
                     // Disable App Blocking
                     return
                 }
-                
-                LaunchControlButton(image: .alarmWavesLeftAndRight, size: .regular) {
+
+                LaunchControlButton(symbol: .same(.alarmWavesLeftAndRight), size: .regular) {
                     // Diable Alarm
                     return
                 }
@@ -265,10 +278,12 @@ struct FocusTimerRootView: View {
 }
 
 #Preview {
-    @Previewable @State var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil)
+    @Previewable @State var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil)
     FocusTimerRootView(coordinator: coordinator, reminders: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()])
         .safeAreaBar(edge: .bottom) {
             FocusTimerLaunchControl(coordinator: coordinator) {
+                //
+            } presentBlockAppsSheet: {
                 //
             }
             .fixedSize(horizontal: false, vertical: true)

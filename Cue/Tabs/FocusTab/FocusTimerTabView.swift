@@ -54,5 +54,5 @@ struct FocusTimerTabView: View {
 
 
 #Preview {
-    FocusTimerTabView(coordinator: .init(alarmCoordinator: nil, liveActivityCoordinator: nil))
+    FocusTimerTabView(coordinator: .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil))
 }

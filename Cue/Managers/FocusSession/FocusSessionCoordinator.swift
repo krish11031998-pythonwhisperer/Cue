@@ -10,6 +10,7 @@ import VanorUI
 import SwiftUI
 internal import AlarmKit
 import AsyncAlgorithms
+import FamilyControls
 
 enum FocusTimerType: CaseIterable, Identifiable {
     case classic
@@ -136,6 +137,10 @@ class FocusSessionCoordinator: FocusSessionControl {
     @ObservationIgnored
     var sessionAttributes: FocusSessionAttributes?
     @ObservationIgnored
+    var shieldConfiguration: CueShieldConfigurationModel?
+    @ObservationIgnored
+    var shieldActivities: FamilyActivitySelection = .init() 
+    @ObservationIgnored
     var numberOfTasks: Int {
         get { sessionAttributes?.numberOfTasks ?? 0 }
         set { }
@@ -147,13 +152,17 @@ class FocusSessionCoordinator: FocusSessionControl {
     
     var canShowAlarm: Bool = false
     var isAlarmOn: Bool = false
+    var appShieldIsOn: Bool = false
     
     private let alarmCoordinator: FocusTimerAlarmCoordinator?
     private let liveActivityCoordindator: FocusTimerLiveActivityCoordinator?
+    private let appShieldCoordinator: FocusAppShieldCoordinator?
     
-    init(alarmCoordinator: FocusTimerAlarmCoordinator?, liveActivityCoordinator: FocusTimerLiveActivityCoordinator?) {
+    init(alarmCoordinator: FocusTimerAlarmCoordinator?, liveActivityCoordinator: FocusTimerLiveActivityCoordinator?,
+         appShieldCoordinator: FocusAppShieldCoordinator?) {
         self.alarmCoordinator = alarmCoordinator
         self.liveActivityCoordindator = liveActivityCoordinator
+        self.appShieldCoordinator = appShieldCoordinator
         self.timerDuration = FocusSessionCoordinator.defaultTimer
         self.breakDuration = FocusSessionCoordinator.defaultBreakTimer
     }
@@ -168,6 +177,7 @@ class FocusSessionCoordinator: FocusSessionControl {
         session?.startTimer()
         setupAlarmForSession()
         setupLiveActivity()
+        applyAppShield()
         session?.control = self
     }
     
@@ -185,6 +195,7 @@ class FocusSessionCoordinator: FocusSessionControl {
             self.session?.resetTimer()
         }
         endLiveActivity()
+        removeAppShield()
         self.session = nil
     }
     
@@ -260,7 +271,6 @@ class FocusSessionCoordinator: FocusSessionControl {
         liveAcitivityObservation = Task { @MainActor [weak self] in
             for await progress in observationStream {
                 guard !Task.isCancelled else { return }
-//                print("(DEBUG) progress: ", progress)
                 self?.liveActivityCoordindator?.updateLiveAcitivity(for: activityID, content: .init(restTime: 0, endDate: endTime, progress: progress, completedTasks: 2))
             }
         }
@@ -330,6 +340,19 @@ class FocusSessionCoordinator: FocusSessionControl {
     func cancelAlarm() {
         guard let alarmID = session?.alarmID else { return }
         alarmCoordinator?.cancelAlarm(alarmID)
+    }
+    
+    
+    // MARK: - AppShield
+    
+    func applyAppShield() {
+        guard appShieldIsOn, let shieldConfiguration else { return }
+        appShieldCoordinator?.saveShieldConfiguration(shieldConfiguration)
+        appShieldCoordinator?.applyRestrictions(shieldActivities)
+    }
+    
+    func removeAppShield() {
+        appShieldCoordinator?.removeRestrictions()
     }
     
     

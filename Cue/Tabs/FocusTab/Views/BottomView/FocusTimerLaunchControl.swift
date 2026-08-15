@@ -85,20 +85,22 @@ struct FocusTimerLaunchControl: View {
     @State private var expandTimeArc: Bool = false
     @State private var presentTimerSelectionMenu: Bool = false
     let presentReminderSelectionSheet: () -> Void
+    let presentBlockAppsSheet: () -> Void
     
-    init(coordinator: FocusSessionCoordinator, presentReminderSelectionSheet: @escaping () -> Void) {
+    init(coordinator: FocusSessionCoordinator, presentReminderSelectionSheet: @escaping () -> Void, presentBlockAppsSheet: @escaping () -> Void) {
         self.coordinator = coordinator
         self.presentReminderSelectionSheet = presentReminderSelectionSheet
+        self.presentBlockAppsSheet = presentBlockAppsSheet
     }
     
     var body: some View {
         ZStack(alignment: .center) {
             switch coordinator.selectedTimerType {
             case .classic:
-                ClassicSessionLaunchControlView(coordinator: coordinator)
+                ClassicSessionLaunchControlView(coordinator: coordinator, presentBlockAppSheet: presentBlockAppsSheet)
                     .transition(.blurReplace)
             case .pomodoro:
-                PomodoroSessionLaunchControlView(coordinator: coordinator, presentPomodoroSetupSheet: presentReminderSelectionSheet)
+                PomodoroSessionLaunchControlView(coordinator: coordinator, presentPomodoroSetupSheet: presentReminderSelectionSheet, presentBlockAppSheet: presentBlockAppsSheet)
                     .transition(.blurReplace)
             }
         }
@@ -119,6 +121,7 @@ struct FocusTimerLaunchControl: View {
     struct BaseLaunchControlView<TimestampView: View>: View {
         
         @Bindable var coordinator: FocusSessionCoordinator
+        let presentBlockAppSheet: () -> Void
         @ViewBuilder
         var timestamp: () -> TimestampView
         
@@ -130,8 +133,16 @@ struct FocusTimerLaunchControl: View {
                         width * 0.4
                     }
                 HStack(alignment: .center, spacing: 8) {
-#warning("In to be included to for future use")
-                    LaunchControlButton(image: coordinator.selectedTimerType.icon, size: .capsule, menu: {
+                    
+                    LaunchControlButton(symbol: .same(.lockAppDashed),
+                                        isSelected: coordinator.appShieldIsOn,
+                                        size: .capsule,
+                                        action: presentBlockAppSheet)
+                        .frame(maxWidth: .infinity, alignment: .center)
+
+                    LaunchControlButton(symbol: .same(coordinator.selectedTimerType.icon),
+                                        size: .capsule,
+                                        menu: {
                         ForEach(FocusTimerType.allCases.reversed()) { focusTimerType in
                             Button {
                                 // button Action
@@ -145,12 +156,13 @@ struct FocusTimerLaunchControl: View {
                     })
                     .frame(maxWidth: .infinity, alignment: .center)
                     
-                    LaunchControlButton(image: .alarmWavesLeftAndRight, size: .capsule) {
+                    LaunchControlButton(symbol: .init(base: .alarmWavesLeftAndRight, selected: .alarmWavesLeftAndRightFill),
+                                        isSelected: coordinator.isAlarmOn,
+                                        size: .capsule) {
                         // Want an alarm
                         coordinator.toggleAlarm()
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .environment(\.launchControlButtonIsSelected, coordinator.isAlarmOn)
                     .disabled(!coordinator.canShowAlarm)
                 }
             }
@@ -165,13 +177,19 @@ struct FocusTimerLaunchControl: View {
         @Namespace private var animation
         @Bindable var coordinator: FocusSessionCoordinator
         @State private var expandTimeArc: Bool = false
+        let presentBlockAppSheet: () -> Void
+        
+        init(coordinator: FocusSessionCoordinator, presentBlockAppSheet: @escaping () -> Void) {
+            self.coordinator = coordinator
+            self.presentBlockAppSheet = presentBlockAppSheet
+        }
         
         var body: some View {
             ZStack(alignment: .center) {
                 if !expandTimeArc {
-                    BaseLaunchControlView(coordinator: coordinator) {
+                    BaseLaunchControlView(coordinator: coordinator, presentBlockAppSheet: presentBlockAppSheet) {
                         HStack(alignment: .center, spacing: 8) {
-                            LaunchControlButton(image: .minus, size: .small, action: coordinator.decrement)
+                            LaunchControlButton(symbol: .same(.minus), size: .small, action: coordinator.decrement)
                             
                             LaunchControlTimeView(duration: coordinator.timerDuration, durationString: coordinator.timerDurationString)
                                 .matchedGeometryEffect(id: "launchControlTime", in: animation, properties: .frame, anchor: .leading, isSource: !expandTimeArc)
@@ -180,7 +198,7 @@ struct FocusTimerLaunchControl: View {
                                     expandTimeArc.toggle()
                                 }
                             
-                            LaunchControlButton(image: .plus, size: .small, action: coordinator.increment)
+                            LaunchControlButton(symbol: .same(.plus), size: .small, action: coordinator.increment)
                         }
                     }
                 } else {
@@ -199,9 +217,10 @@ struct FocusTimerLaunchControl: View {
         
         @Bindable var coordinator: FocusSessionCoordinator
         let presentPomodoroSetupSheet: () -> Void
+        let presentBlockAppSheet: () -> Void
         
         var body: some View {
-            BaseLaunchControlView(coordinator: coordinator) {
+            BaseLaunchControlView(coordinator: coordinator, presentBlockAppSheet: presentBlockAppSheet) {
                 Button (action: presentPomodoroSetupSheet) {
                     PomodoroLaunchControlTimeView(durationDescriptionString: coordinator.pomodoroSessionDescription)
                 }
@@ -286,9 +305,11 @@ struct FocusTimerLaunchControl: View {
 }
 
 #Preview {
-    @Previewable @State var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil)
+    @Previewable @State var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil)
     FocusTimerLaunchControl(coordinator: coordinator) {
         print("Presenting")
+    } presentBlockAppsSheet: {
+        print("Presenting App block")        
     }
     .padding(.horizontal, 32)
     .fixedSize(horizontal: false, vertical: true)

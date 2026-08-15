@@ -8,6 +8,7 @@
 internal import AlarmKit
 import SwiftUI
 import VanorUI
+import FamilyControls
 
 @MainActor
 protocol FocusTimerAlarmCoordinator {
