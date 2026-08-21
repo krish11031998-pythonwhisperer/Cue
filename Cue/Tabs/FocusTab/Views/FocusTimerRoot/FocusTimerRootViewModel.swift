@@ -76,11 +76,12 @@ class FocusTimerRootViewModel {
     var sheetPresentation: Sheet?
     var timerItems: [TimerType] = [.focus]
     var selectedTimerItem: TimerType = .focus
+    var sessionTaskPresentationDetent: PresentationDetent = .medium
     @ObservationIgnored
     var currentSelectedReminderIdx: Int = 0
     var panGestureTranslation: CGFloat = 0
     
-
+    
     init(reminders: [ReminderModel]) {
         self.selectedTimerItem = .focus
         self.timerItems = [.focus] + reminders.map { .reminder($0) }
@@ -132,6 +133,15 @@ class FocusTimerRootViewModel {
             return .init(name: "Focus", color: Color.proSky, icon: .symbol(.timer), sessionType: nil, numberOfTasks: 0)
         case .reminder(let reminderModel):
             return .init(name: reminderModel.title, color: .init(color: reminderModel.color), icon: .init(reminderModel.icon) ?? Icon.symbol(.timer), sessionType: nil, numberOfTasks: reminderModel.tasks.count)
+        }
+    }
+    
+    func selectedReminder() -> ReminderModel? {
+        switch selectedTimerItem {
+        case .focus:
+            return nil
+        case .reminder(let reminderModel):
+            return reminderModel
         }
     }
     

@@ -181,7 +181,7 @@ struct PomodoroSessionEditorView: View {
 fileprivate struct TestView: View {
     
     @State private var presentSheet: Bool = false
-    @State private var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil)
+    @State private var coordinator: FocusSessionCoordinator = .previawableSessionCoordinator
     
     var body: some View {
         Button {
@@ -203,7 +203,7 @@ fileprivate struct TestView: View {
 }
 
 #Preview {
-    PomodoroSessionEditorView(coordinator: .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil))
+    PomodoroSessionEditorView(coordinator: .previawableSessionCoordinator)
 //        .environment(FocusSessionCoordinator(alarmCoordinator: CueAlarmManager()))
 }
 

@@ -26,25 +26,6 @@ struct FocusTimerTabView: View {
                 await viewModel.fetchRemindersForToday()
             }
             .tabBarMinimizeBehavior(.automatic)
-            .sheet(isPresented: $coordinator.showTasksSheet) {
-                NavigationView {
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 8) {
-                            
-                        }
-                    }
-                    .navigationTitle("Tasks")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button(role: .close) {
-                                coordinator.showTasksSheet = false
-                            }
-                        }
-                    }
-                }
-                .presentationDetents([.medium])
-            }
             .onChange(of: viewModel.calendarDay?.reminders, initial: true) { oldValue, newValue in
                 print("(DEBUG) reminders: \(newValue?.count ?? 0)")
             }
@@ -54,5 +35,5 @@ struct FocusTimerTabView: View {
 
 
 #Preview {
-    FocusTimerTabView(coordinator: .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil))
+    FocusTimerTabView(coordinator: .previawableSessionCoordinator)
 }

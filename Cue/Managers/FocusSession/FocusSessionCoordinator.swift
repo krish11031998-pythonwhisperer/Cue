@@ -11,6 +11,7 @@ import SwiftUI
 internal import AlarmKit
 import AsyncAlgorithms
 import FamilyControls
+import Model
 
 enum FocusTimerType: CaseIterable, Identifiable {
     case classic
@@ -86,21 +87,28 @@ class FocusSessionCoordinator: FocusSessionControl {
         session?.startTime
     }
     
+    var endTime: Date? {
+        session?.endTime
+    }
+    
     var currentSessionIndex: Int {
-        session?.currentSessionIndex ?? 0
+        session?.currentClassicSessionIndex ?? 0
     }
     
     
     // MARK: Others
     
     private var timerDurationString: String? {
-        guard let startTime, let totalDuration = session?.totalDuration else { return nil }
+        guard let startTime, let endTime, let totalDuration = session?.totalDuration else { return nil }
         let dateFormatter: DateFormatter = .init()
         dateFormatter.dateFormat = "hh:mm"
         
         let startTimeString = dateFormatter.string(from: startTime)
-        let endTimeString = dateFormatter.string(from: startTime.addingTimeInterval(totalDuration))
+        let endTimeString = dateFormatter.string(from: endTime)
         
+        let durationFromStartToEnd = endTime.timeIntervalSince(startTime)
+        #warning("Will Come Back to this")
+//        let diffString = (durationFromStartToEnd - totalDuration).timerDurationString
         return "\(startTimeString) → \(endTimeString)"
     }
     
@@ -120,7 +128,7 @@ class FocusSessionCoordinator: FocusSessionControl {
     
     // MARK: - Properties
     
-    private var session: FocusSession?
+    private(set) var session: FocusSession?
     var timerDuration: TimeInterval
     
     // Pomodoro timer related variables
@@ -154,6 +162,12 @@ class FocusSessionCoordinator: FocusSessionControl {
     @ObservationIgnored
     private var liveAcitivityObservation: Task<Void, Never>?
     
+    @ObservationIgnored
+    var reminderModel: ReminderModel? {
+        get { storeCoordinator?.reminder }
+        set { storeCoordinator?.reminder = newValue }
+    }
+    
     var sessionAttributes: FocusSessionAttributes?
     var canShowAlarm: Bool = false
     var isAlarmOn: Bool = false
@@ -162,12 +176,16 @@ class FocusSessionCoordinator: FocusSessionControl {
     private let alarmCoordinator: FocusTimerAlarmCoordinator?
     private let liveActivityCoordindator: FocusTimerLiveActivityCoordinator?
     private let appShieldCoordinator: FocusAppShieldCoordinator?
+    private let storeCoordinator: StoreCoordinator?
     
-    init(alarmCoordinator: FocusTimerAlarmCoordinator?, liveActivityCoordinator: FocusTimerLiveActivityCoordinator?,
-         appShieldCoordinator: FocusAppShieldCoordinator?) {
+    init(alarmCoordinator: FocusTimerAlarmCoordinator?,
+         liveActivityCoordinator: FocusTimerLiveActivityCoordinator?,
+         appShieldCoordinator: FocusAppShieldCoordinator?,
+         storeCoordinator: StoreCoordinator?) {
         self.alarmCoordinator = alarmCoordinator
         self.liveActivityCoordindator = liveActivityCoordinator
         self.appShieldCoordinator = appShieldCoordinator
+        self.storeCoordinator = storeCoordinator
         self.timerDuration = FocusSessionCoordinator.defaultTimer
         self.breakDuration = FocusSessionCoordinator.defaultBreakTimer
     }
@@ -188,13 +206,16 @@ class FocusSessionCoordinator: FocusSessionControl {
     
     func pauseTimer() {
         self.session?.pauseTimer()
+        updateStateOfLiveActivity()
     }
     
     func resumeTimer() {
         self.session?.resumeTimer()
+        updateStateOfLiveActivity()
     }
     
     func reset() {
+        logCompletedReminderTasks()
         self.timerDuration = FocusSessionCoordinator.defaultTimer
         if case .classic = selectedTimerType {
             self.session?.resetTimer()
@@ -210,8 +231,7 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
     
     func presentTaskSheet() {
-        guard numberOfTasks > 0 else { return }
-        
+//        guard numberOfTasks > 0 else { return }
         switch state {
         case .idle, .reset:
             showTasksSheet = false
@@ -260,23 +280,41 @@ class FocusSessionCoordinator: FocusSessionControl {
 //        updateLiveActivityWithProgress()
     }
     
-    private func updateLiveActivityWithProgress() {
-        liveAcitivityObservation?.cancel()
-        guard let session,
-              let activityID = session.liveActivityID,
-              let endTime = session.endTime else { return }
-        
-        let observationStream = Observations({ [weak self] in
-            self?.session?.timerProgress ?? 0
-        })
-        ._throttle(for: .seconds(1), latest: true)
-        
-        liveAcitivityObservation = Task { @MainActor [weak self] in
-            for await progress in observationStream {
-                guard !Task.isCancelled else { return }
-                self?.liveActivityCoordindator?.updateLiveAcitivity(for: activityID, content: .init(restTime: 0, endDate: endTime, progress: progress, completedTasks: 2))
-            }
+//    private func updateLiveActivityWithProgress() {
+//        liveAcitivityObservation?.cancel()
+//        guard let session,
+//              let activityID = session.liveActivityID,
+//              let endTime = session.endTime else { return }
+//        
+//        let observationStream = Observations({ [weak self] in
+//            self?.session?.timerProgress ?? 0
+//        })
+//        ._throttle(for: .seconds(1), latest: true)
+//        
+//        liveAcitivityObservation = Task { @MainActor [weak self] in
+//            for await progress in observationStream {
+//                guard !Task.isCancelled else { return }
+//                self?.liveActivityCoordindator?.updateLiveAcitivity(for: activityID, content: .init(restTime: 0, endDate: endTime, progress: progress, completedTasks: 2, timerState: .active))
+//            }
+//        }
+//    }
+    
+    private func updateStateOfLiveActivity() {
+        guard let session, let activityID = session.liveActivityID else { return }
+        let isPaused: Bool
+        switch session.state {
+        case .resume:
+            isPaused = false
+        case .pause:
+            isPaused = true
+        case .idle, .start, .reset:
+            return
         }
+        
+        guard let endTime = session.endTime else { return }
+        let activityState = FocusSessionLiveActivityAttributes.ContentState(restTime: 0, endDate: endTime, progress: session.timerProgress, completedTasks: 0, isPaused: isPaused)
+        print("(DEBUG) state: ", state)
+        liveActivityCoordindator?.updateLiveAcitivity(for: activityID, content: activityState)
     }
     
     private func endLiveActivity() {
@@ -459,9 +497,35 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
     
     
+    // MARK: - ReminderModel
+    
+    var completedReminderTasks: Set<ReminderTaskModel> {
+        get { .init(storeCoordinator?.completedTasks ?? []) }
+        set { storeCoordinator?.completedTasks = .init(newValue) }
+    }
+    var reminderTasks: [ReminderTaskModel] {
+        storeCoordinator?.reminderTasks ?? []
+    }
+    func logReminderModel(_ reminderModel: ReminderTaskModel) {
+        Task { @MainActor [weak self] in
+            await self?.storeCoordinator?.saveTask(reminderModel)
+        }
+    }
+    private func logCompletedReminderTasks() {
+        for task in completedReminderTasks {
+            logReminderModel(task)
+        }
+    }
+    
+    
     // MARK: - FocusSessionControl
     
     func onCompletion() {
         self.reset()
     }
+}
+
+
+extension FocusSessionCoordinator {
+    static let previawableSessionCoordinator = FocusSessionCoordinator(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil, storeCoordinator: nil)
 }

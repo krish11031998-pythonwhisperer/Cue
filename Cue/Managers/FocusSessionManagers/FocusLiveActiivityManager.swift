@@ -28,7 +28,7 @@ class FocusLiveActivityManager: FocusTimerLiveActivityCoordinator {
         
         let colorHex = sessionAttributes.color.baseColor.getHexString()
         
-        let state = FocusSessionLiveActivityAttributes.ContentState(restTime: 0, endDate: endDate, progress: 0, completedTasks: 0)
+        let state = FocusSessionLiveActivityAttributes.ContentState(restTime: 0, endDate: endDate, progress: 0, completedTasks: 0, isPaused: false)
         
         guard let sessionType = sessionAttributes.sessionType else { fatalError("sessionType cannot be nil") }
         
@@ -56,6 +56,7 @@ class FocusLiveActivityManager: FocusTimerLiveActivityCoordinator {
         let activity = liveActivities[activityID]
         Task { @MainActor in
             let newContentState = ActivityContent(state: content, staleDate: nil)
+            print("(DEBUG) newContentState: ", newContentState)
             await activity?.update(newContentState)
         }
     }

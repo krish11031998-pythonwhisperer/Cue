@@ -343,7 +343,7 @@ struct FocusTimerLaunchControl: View {
 }
 
 #Preview {
-    @Previewable @State var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil)
+    @Previewable @State var coordinator: FocusSessionCoordinator = .previawableSessionCoordinator
     FocusTimerLaunchControl(coordinator: coordinator) {
         print("Presenting")
     } presentBlockAppsSheet: {

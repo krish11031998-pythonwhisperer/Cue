@@ -120,7 +120,7 @@ struct FocusTabBottomAccessoryView: View {
 
 
 #Preview {
-    @Previewable @State var control = FocusSessionCoordinator(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil)
+    @Previewable @State var control = FocusSessionCoordinator.previawableSessionCoordinator
     FocusTabBottomAccessoryView(coordinator: control)
         .environment(control)
         .clipShape(Capsule())

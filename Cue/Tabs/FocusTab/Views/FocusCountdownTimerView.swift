@@ -53,17 +53,16 @@ struct FocusCountdownTimerView: View {
     #endif
     
     var body: some View {
-        
         ZStack(alignment: .center) {
             FocusCountdownView(countdownViewType: countdownViewType,
                                targetDuration: coordinator.timerDuration,
                                theme: theme) {
                 InnerContent(countdownViewType: countdownViewType, theme: theme, icon: icon, frame: $frame)
             }
-                               .environment(\.focusTimerStateFromCoordinator, coordinator.state.uiState)
-                               .environment(\.focusTimerProgressFromCoordinator, coordinator.progress)
-                               .opacity(isIdle ? 0.275 : 1)
-                               .blur(radius: isIdle ? 5 : 0)
+            .environment(\.focusTimerStateFromCoordinator, coordinator.state.uiState)
+            .environment(\.focusTimerProgressFromCoordinator, coordinator.progress)
+            .opacity(isIdle ? 0.275 : 1)
+            .blur(radius: isIdle ? 5 : 0)
             
             if coordinator.state == .idle || coordinator.state == .reset {
                 switch state {
@@ -305,6 +304,6 @@ struct FocusCountdownTimerView: View {
 #Preview {
     FocusCountdownTimerView()
         .environment(FocusTimerRootViewModel(reminders: [.exampleOne(), .exampleTwo(), .exampleThree()]))
-        .environment(FocusSessionCoordinator(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil))
+        .environment(FocusSessionCoordinator.previawableSessionCoordinator)
         .padding(.all, 20)
 }

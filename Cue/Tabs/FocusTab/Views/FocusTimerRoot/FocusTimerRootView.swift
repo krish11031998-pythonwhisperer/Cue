@@ -68,7 +68,7 @@ struct FocusTimerRootView: View {
         coordinator.state == .idle || coordinator.state == .reset
     }
     
-    private var linearGradientBackground: LinearGradient {
+    private var linearGradientBackground: some View {
         let mainColor: LCHColor
         switch viewModel.selectedTimerItem {
         case .focus:
@@ -77,7 +77,13 @@ struct FocusTimerRootView: View {
             mainColor = .init(color: reminderModel.color)
         }
         
-        return LinearGradient(stops: [.init(color: mainColor.backgroundTertiary, location: 0), .init(color: mainColor.backgroundSecondary, location: 0.37), .init(color: mainColor.backgroundPrimary, location: 0.67)], startPoint: .top, endPoint: .bottom)
+        return LinearGradient(stops: [
+            .init(color: mainColor.backgroundPrimary, location: 0),
+            .init(color: mainColor.backgroundPrimary.opacity(0.6), location: 0.1),
+            .init(color: mainColor.backgroundPrimary.opacity(0.3), location: 0.2),
+            .init(color: mainColor.backgroundPrimary.opacity(0.1), location: 0.5)],
+                       startPoint: .top,
+                       endPoint: .bottom)
     }
     
     var body: some View {
@@ -119,7 +125,18 @@ struct FocusTimerRootView: View {
                 .presentationDetents([.fraction(1)])
             }
         }
+        .sheet(isPresented: $coordinator.showTasksSheet, onDismiss: {
+            self.viewModel.sessionTaskPresentationDetent = .medium
+        }) {
+            OngoingSessionOverviewSheet(selectedPresentationDetent: viewModel.sessionTaskPresentationDetent)
+                .environment(coordinator)
+                .presentationDetents([.medium, .large], selection: $viewModel.sessionTaskPresentationDetent)
+                .presentationContentInteraction(.resizes)
+                .interactiveDismissDisabled(true)
+                .presentationDragIndicator(.hidden)
+        }
         .onChange(of: viewModel.selectedTimerItem, initial: true) { _, newValue in
+            coordinator.reminderModel = viewModel.selectedReminder()
             coordinator.sessionAttributes = viewModel.focusSessionAttributes()
             coordinator.shieldConfiguration = viewModel.appShieldConfiguration()
         }
@@ -178,17 +195,8 @@ struct FocusTimerRootView: View {
                     }
                     .transition(.popIn)
                 case .pause, .resume, .start:
-                    Group {
-                        switch coordinator.selectedTimerType {
-                        case .classic:
-                            ClassicFocusSessionTimerView(viewModel: viewModel, coordinator: coordinator, icon: viewModel.selectedTimerItem.icon, title: viewModel.selectedTimerItem.title)
-                        case .pomodoro:
-                            PomodoroFocusSessionTimerView(viewModel: viewModel, coordinator: coordinator,
-                                                          icon: viewModel.selectedTimerItem.icon,
-                                                          title: viewModel.selectedTimerItem.title)
-                        }
-                    }
-                    .transition(.popIn)
+                    OngoingSessionFloatingView(viewModel: viewModel, coordinator: coordinator, icon: viewModel.selectedTimerItem.icon, title: viewModel.selectedTimerItem.title)
+                     .transition(.popIn)
                 }
             }
             .padding(.bottom, 8)
@@ -200,7 +208,7 @@ struct FocusTimerRootView: View {
     
     // MARK: - Classic Focus Session Timer View
     
-    struct ClassicFocusSessionTimerView: View {
+    struct OngoingSessionFloatingView: View {
         @Environment(\.theme) var theme
         
         @Bindable var viewModel: FocusTimerRootViewModel
@@ -210,17 +218,23 @@ struct FocusTimerRootView: View {
         @State private var presentAppShieldPopover: Bool = false
         @State private var presentAlarmPopover: Bool = false
         
+        var bottomFooterSession: FocusSessionType {
+            switch coordinator.selectedTimerType {
+            case .classic:
+                return .classic
+            case .pomodoro:
+                return .pomodoro(currentIndex: coordinator.currentSessionIndex,
+                                 total: coordinator.pomodoroSessionCount)
+            }
+        }
+        
         var body: some View {
             HStack(alignment: .center, spacing: 8) {
-                ReminderIconView(icon: icon,
-                                 foregroundColor: theme.foregroundPrimary,
-                                 backgroundColor: theme.backgroundSecondary,
-                                 font: .headline)
-                .frame(width: 44, height: 44, alignment: .center)
-                
-                Text(title)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(theme.foregroundPrimary)
+                SessionOverviewBottomEdgeView(name: coordinator.sessionAttributes?.name,
+                                              viewType: .overview,
+                                              sessionType: bottomFooterSession,
+                                              icon: coordinator.sessionAttributes?.icon)
+                    .environment(coordinator)
                 
                 Spacer()
                 
@@ -267,94 +281,10 @@ struct FocusTimerRootView: View {
             
         }
     }
-    
-    struct PomodoroFocusSessionTimerView: View {
-        
-        @Environment(\.theme) var theme
-        @Bindable var viewModel: FocusTimerRootViewModel
-        var coordinator: FocusSessionCoordinator
-        let icon: Icon
-        let title: String
-        
-        private var currentSessionIndex: Int {
-            coordinator.currentSessionIndex
-        }
-        
-        private var sessionCount: Int {
-            coordinator.pomodoroSessionCount
-        }
-        
-        var totalDuration: TimeInterval {
-            return Double(sessionCount) * coordinator.timerDuration + Double(sessionCount - 1) * coordinator.breakDuration
-        }
-        
-        var sessionDurationFactor: CGFloat {
-            let sessionDuration = coordinator.timerDuration
-            return CGFloat(sessionDuration/totalDuration)
-        }
-        
-        var breakDurationFactor: CGFloat {
-            let breakDuration = coordinator.breakDuration
-            return CGFloat(breakDuration/totalDuration)
-        }
-        
-        struct BlinkingCapsule: View {
-            @State private var blink: Bool = false
-            let color: Color
-            
-            init(color: Color) {
-                self.color = color
-            }
-            
-            var body: some View {
-                Capsule()
-                    .fill(color)
-                    .animation(.easeInOut(duration: 0.75).repeatForever(autoreverses: true)) { content in
-                        content
-                            .opacity(blink ? 0.3 : 1)
-                    }
-                    .onAppear {
-                        self.blink = true
-                    }
-            }
-        }
-        
-        @ViewBuilder
-        func capsule(for index: Int) -> some View {
-            let capsuleColor = index % 2 == 0 ? theme.surfacePrimary : theme.surfaceSecondary
-            if index < currentSessionIndex {
-                Capsule()
-                    .fill(index % 2 == 0 ? theme.baseColor : theme.surfacePrimary)
-            } else if index == currentSessionIndex {
-                BlinkingCapsule(color: capsuleColor)
-            } else {
-                Capsule()
-                    .fill(capsuleColor)
-            }
-        }
-        
-        var body: some View {
-            VStack(alignment: .center, spacing: 8) {
-                ClassicFocusSessionTimerView(viewModel: viewModel, coordinator: coordinator, icon: icon, title: title)
-                
-                GeometryReader { proxy in
-                    let availableWidth = proxy.size.width - CGFloat((sessionCount * 2 - 1) * 2)
-                    let sessionWidth = availableWidth * sessionDurationFactor
-                    let breakWidth = availableWidth * breakDurationFactor
-                    HStack(alignment: .center, spacing: 2) {
-                        ForEach(0..<(sessionCount + sessionCount - 1)) { index in
-                            capsule(for: index)
-                                .frame(width:  index % 2 == 0 ? sessionWidth : breakWidth, height: 4, alignment: .center)
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 #Preview {
-    @Previewable @State var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil)
+    @Previewable @State var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil, storeCoordinator: nil)
     FocusTimerRootView(coordinator: coordinator, reminders: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()])
         .safeAreaBar(edge: .bottom) {
             FocusTimerLaunchControl(coordinator: coordinator) {
