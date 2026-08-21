@@ -11,29 +11,37 @@ import Foundation
 @Observable
 class ClassicFocusSession: FocusSession, @MainActor Hashable {
     
-    var currentSessionIndex: Int = 0
+    var currentSessionIndex: Int {
+        0
+    }
+    
+    var currentClassicSessionIndex: Int {
+        0
+    }
     weak var control: FocusSessionControl? = nil
     var state: FocusSessionState = .idle
     var startTime: Date? = nil
     var timerDuration: TimeInterval = 0.0
     var breakDuration: TimeInterval = 0.0
-    var elapsedTimeBetweenPauses: TimeInterval = 0.0
+    
+    @ObservationIgnored
+    private var pausedAtTime: Date?
     @ObservationIgnored
     var alarmID: UUID?
     @ObservationIgnored
     var liveActivityID: UUID?
-    private var elapsedTime: TimeInterval = 0.0
-    internal var onCompletion: (() -> Void)?
-    
-    var endTime: Date? {
-        let distantFuture: TimeInterval = timerDuration
-        return startTime?.addingTimeInterval(distantFuture)
-    }
-    
     @ObservationIgnored
     private var timer: Timer?
     @ObservationIgnored
     private var accumalatedRestTime: TimeInterval = 0
+    
+    private var elapsedTime: TimeInterval = 0.0
+    internal var onCompletion: (() -> Void)?
+    
+    var endTime: Date? {
+        let distantFuture: TimeInterval = timerDuration + accumalatedRestTime
+        return startTime?.addingTimeInterval(distantFuture)
+    }
     
     var timerProgress: Double {
         elapsedTime / timerDuration
@@ -44,8 +52,10 @@ class ClassicFocusSession: FocusSession, @MainActor Hashable {
     }
     
     func startTimer() {
-        let date = Date()
-        self.startTime = date
+        if startTime == nil {
+            let date = Date()
+            self.startTime = date
+        }
         self.state = .start
         fireTimer()
     }
@@ -57,15 +67,17 @@ class ClassicFocusSession: FocusSession, @MainActor Hashable {
     
     func pauseTimer() {
         self.state = .pause
-        self.elapsedTimeBetweenPauses = self.elapsedTime
-        self.startTime = nil
+        self.pausedAtTime = Date()
         self.timer?.invalidate()
         self.timer = nil
     }
     
     func resumeTimer() {
         self.state = .resume
-        self.startTime = Date()
+        if let pausedAtTime {
+            self.accumalatedRestTime += Date.now.timeIntervalSince(pausedAtTime)
+            self.pausedAtTime = nil
+        }
         self.fireTimer()
     }
     
@@ -79,27 +91,25 @@ class ClassicFocusSession: FocusSession, @MainActor Hashable {
     }
     
     private func fireTimer() {
-        let timerDuration = timerDuration
-        
-        timer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true, block: { timer in
-            Task { @MainActor in
-                
-                guard let startTime = self.startTime else {
-                    fatalError("Can't have a timer without startDate")
-                }
-                
-                guard self.isOnResume else { return }
-                let timeIntervalSinceStart = Date.now.timeIntervalSince(startTime)
-                
-                let progress = timeIntervalSinceStart + self.elapsedTimeBetweenPauses
-                guard progress >= timerDuration else {
-                    self.elapsedTime = Double(min(timerDuration, progress))
-                    return
-                }
-                self.control?.onCompletion()
-            }
-        })
-        timer?.fire()
+        let newTimer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(updateElapsedTime), userInfo: nil, repeats: true)
+        RunLoop.main.add(newTimer, forMode: .common)
+        timer = newTimer
+    }
+    
+    @objc func updateElapsedTime() {
+        guard let startTime = self.startTime else {
+            fatalError("Can't have a timer without startDate")
+        }
+
+        guard self.isOnResume else { return }
+        let timeIntervalSinceStart = Date.now.timeIntervalSince(startTime)
+
+        let progress = timeIntervalSinceStart - accumalatedRestTime
+        guard progress >= timerDuration else {
+            self.elapsedTime = Double(min(timerDuration, progress))
+            return
+        }
+        self.control?.onCompletion()
     }
     
     static func == (lhs: ClassicFocusSession, rhs: ClassicFocusSession) -> Bool {

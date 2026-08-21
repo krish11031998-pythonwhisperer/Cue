@@ -76,10 +76,20 @@ class FocusTimerRootViewModel {
     var sheetPresentation: Sheet?
     var timerItems: [TimerType] = [.focus]
     var selectedTimerItem: TimerType = .focus
+    var sessionTaskPresentationDetent: PresentationDetent = .medium
     @ObservationIgnored
     var currentSelectedReminderIdx: Int = 0
     var panGestureTranslation: CGFloat = 0
     
+    
+    var sessionTasksForTimerItem: [ReminderTaskModel] {
+        switch selectedTimerItem {
+        case .focus:
+            return []
+        case .reminder(let reminderModel):
+            return reminderModel.tasks
+        }
+    }
 
     init(reminders: [ReminderModel]) {
         self.selectedTimerItem = .focus

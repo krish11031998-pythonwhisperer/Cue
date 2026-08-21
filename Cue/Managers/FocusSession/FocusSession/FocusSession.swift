@@ -15,11 +15,12 @@ protocol FocusSessionControl: AnyObject {
 
 @MainActor
 protocol FocusSession: AnyObject {
-    var startTime: Date? { get set }
+    var startTime: Date? { get }
     var endTime: Date? { get }
     var alarmID: UUID? { get set }
     var liveActivityID: UUID? { get set }
-    var currentSessionIndex: Int { get set }
+    var currentSessionIndex: Int { get }
+    var currentClassicSessionIndex: Int { get }
     var control: FocusSessionControl? { get set }
     var state: FocusSessionState { get set }
     var timerProgress: Double { get }

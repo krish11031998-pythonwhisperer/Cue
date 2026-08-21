@@ -60,10 +60,10 @@ struct FocusCountdownTimerView: View {
                                theme: theme) {
                 InnerContent(countdownViewType: countdownViewType, theme: theme, icon: icon, frame: $frame)
             }
-                               .environment(\.focusTimerStateFromCoordinator, coordinator.state.uiState)
-                               .environment(\.focusTimerProgressFromCoordinator, coordinator.progress)
-                               .opacity(isIdle ? 0.275 : 1)
-                               .blur(radius: isIdle ? 5 : 0)
+            .environment(\.focusTimerStateFromCoordinator, coordinator.state.uiState)
+            .environment(\.focusTimerProgressFromCoordinator, coordinator.progress)
+            .opacity(isIdle ? 0.275 : 1)
+            .blur(radius: isIdle ? 5 : 0)
             
             if coordinator.state == .idle || coordinator.state == .reset {
                 switch state {

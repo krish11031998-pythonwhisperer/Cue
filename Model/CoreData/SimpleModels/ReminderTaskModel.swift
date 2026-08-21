@@ -25,3 +25,10 @@ public struct ReminderTaskModel: Hashable, Sendable {
         self.objectId = reminderTask.objectID
     }
 }
+
+
+extension ReminderTaskModel: Identifiable {
+    public var id: String {
+        "\(title)_\(icon.emoji ?? icon.symbol ?? "no_icon")"
+    }
+}

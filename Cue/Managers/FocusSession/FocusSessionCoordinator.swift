@@ -86,21 +86,28 @@ class FocusSessionCoordinator: FocusSessionControl {
         session?.startTime
     }
     
+    var endTime: Date? {
+        session?.endTime
+    }
+    
     var currentSessionIndex: Int {
-        session?.currentSessionIndex ?? 0
+        session?.currentClassicSessionIndex ?? 0
     }
     
     
     // MARK: Others
     
     private var timerDurationString: String? {
-        guard let startTime, let totalDuration = session?.totalDuration else { return nil }
+        guard let startTime, let endTime, let totalDuration = session?.totalDuration else { return nil }
         let dateFormatter: DateFormatter = .init()
         dateFormatter.dateFormat = "hh:mm"
         
         let startTimeString = dateFormatter.string(from: startTime)
-        let endTimeString = dateFormatter.string(from: startTime.addingTimeInterval(totalDuration))
+        let endTimeString = dateFormatter.string(from: endTime)
         
+        let durationFromStartToEnd = endTime.timeIntervalSince(startTime)
+        #warning("Will Come Back to this")
+//        let diffString = (durationFromStartToEnd - totalDuration).timerDurationString
         return "\(startTimeString) → \(endTimeString)"
     }
     
@@ -120,7 +127,7 @@ class FocusSessionCoordinator: FocusSessionControl {
     
     // MARK: - Properties
     
-    private var session: FocusSession?
+    private(set) var session: FocusSession?
     var timerDuration: TimeInterval
     
     // Pomodoro timer related variables
@@ -210,8 +217,7 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
     
     func presentTaskSheet() {
-        guard numberOfTasks > 0 else { return }
-        
+//        guard numberOfTasks > 0 else { return }
         switch state {
         case .idle, .reset:
             showTasksSheet = false
