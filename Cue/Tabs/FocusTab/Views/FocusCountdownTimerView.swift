@@ -304,6 +304,6 @@ struct FocusCountdownTimerView: View {
 #Preview {
     FocusCountdownTimerView()
         .environment(FocusTimerRootViewModel(reminders: [.exampleOne(), .exampleTwo(), .exampleThree()]))
-        .environment(FocusSessionCoordinator(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil))
+        .environment(FocusSessionCoordinator.previawableSessionCoordinator)
         .padding(.all, 20)
 }

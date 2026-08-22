@@ -8,6 +8,7 @@
 import SwiftUI
 import VanorUI
 import Combine
+import Model
 
 @Observable
 @MainActor
@@ -52,6 +53,7 @@ class MainTabViewModel {
     @ObservationIgnored
     var presentPayWallAfterFirstOnboarding: Bool
     
+    let storeManager: FocusStoreManager
     let focusAlarmManager: FocusAlarmManager
     let focusTimerCoordinator: FocusSessionCoordinator
     let hasShowOnboarding: Bool
@@ -62,9 +64,13 @@ class MainTabViewModel {
         let alarmManager = FocusAlarmManager()
         let appShieldManager = CueAppBlockManager()
         let liveActivityManager = FocusLiveActivityManager()
+        let focusStoreManager = FocusStoreManager()
         self.focusTimerCoordinator = .init(alarmCoordinator: alarmManager,
-                                           liveActivityCoordinator: liveActivityManager, appShieldCoordinator: appShieldManager)
+                                           liveActivityCoordinator: liveActivityManager,
+                                           appShieldCoordinator: appShieldManager,
+                                           storeCoordinator: focusStoreManager)
         self.focusAlarmManager = alarmManager
+        self.storeManager = focusStoreManager
         
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
         presentPayWallAfterFirstOnboarding = !hasShowOnboarding

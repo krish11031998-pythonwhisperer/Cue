@@ -225,10 +225,27 @@ import UIKit
         return reminderLog
     }
     
+    // Async Variant
+    
+    @discardableResult
+    public func logReminderTask(at date: Date, for reminderTaskID: NSManagedObjectID) async -> Bool {
+        return await withCheckedContinuation { continuation in
+            logReminderTask(at: date, for: reminderTaskID) { completed in
+                continuation.resume(returning: completed)
+            }
+        }
+    }
+    
     public func deleteTaskLogsFor(at date: Date, for reminderTaskID: NSManagedObjectID, completion: ((Bool) -> Void)?) {
         let reminderTask = ReminderTask.fetch(context: viewContext, for: reminderTaskID)
         ReminderTaskLog.deleteLog(at: date, reminderTask: reminderTask, context: viewContext)
         viewContext.saveContext(with: completion)
+    }
+
+    public func fetchReminderTaskLogs(for reminderID: NSManagedObjectID) -> [ReminderTaskLog] {
+        let reminder = Reminder.fetch(context: viewContext, for: reminderID)
+        let predicate = NSPredicate(format: "reminderTask.reminder == %@", reminder)
+        return ReminderTaskLog.fetch(context: viewContext, predicate: predicate) ?? []
     }
     
     

@@ -128,13 +128,13 @@ struct FocusTimerRootView: View {
         .sheet(isPresented: $coordinator.showTasksSheet, onDismiss: {
             self.viewModel.sessionTaskPresentationDetent = .medium
         }) {
-            OngoingSessionOverviewSheet(sessionTasks: viewModel.sessionTasksForTimerItem,
-                                        selectedPresentationDetent: viewModel.sessionTaskPresentationDetent)
+            OngoingSessionOverviewSheet(selectedPresentationDetent: viewModel.sessionTaskPresentationDetent)
                 .environment(coordinator)
                 .presentationDetents([.medium, .large], selection: $viewModel.sessionTaskPresentationDetent)
                 .presentationContentInteraction(.resizes)
         }
         .onChange(of: viewModel.selectedTimerItem, initial: true) { _, newValue in
+            coordinator.reminderModel = viewModel.selectedReminder()
             coordinator.sessionAttributes = viewModel.focusSessionAttributes()
             coordinator.shieldConfiguration = viewModel.appShieldConfiguration()
         }
@@ -282,7 +282,7 @@ struct FocusTimerRootView: View {
 }
 
 #Preview {
-    @Previewable @State var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil)
+    @Previewable @State var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil, storeCoordinator: nil)
     FocusTimerRootView(coordinator: coordinator, reminders: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()])
         .safeAreaBar(edge: .bottom) {
             FocusTimerLaunchControl(coordinator: coordinator) {

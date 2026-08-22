@@ -162,6 +162,7 @@ struct MainTab: View {
         })
         .task {
             self.viewModel.focusAlarmManager.alarmManager = store.alarmManager
+            self.viewModel.storeManager.store = store
         }
     }
     

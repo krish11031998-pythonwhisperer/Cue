@@ -76,13 +76,15 @@ struct OngoingSessionOverviewSheet: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.theme) var theme
     
-    let sessionTasks: [ReminderTaskModel]
     let selectedPresentationDetent: PresentationDetent
     @State private var viewModel: OngoingSessionOverviewSheetModel = .init()
-    
-    init(sessionTasks: [ReminderTaskModel], selectedPresentationDetent: PresentationDetent) {
-        self.sessionTasks = sessionTasks
+
+    init(selectedPresentationDetent: PresentationDetent) {
         self.selectedPresentationDetent = selectedPresentationDetent
+    }
+
+    var sessionTasks: [ReminderTaskModel] {
+        coordinator.reminderTasks
     }
     
     var name: String? {
@@ -234,47 +236,20 @@ struct OngoingSessionOverviewSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(role: .close) {
-                        dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save", systemSymbol: .squareAndArrowDown) {
                         Task { @MainActor in
-                            await viewModel.saveTasks()
+                            coordinator.completedReminderTasks = viewModel.completedTasks
                             dismiss()
                         }
                     }
-                    .disabled(viewModel.isSaving)
-                    .tint(theme.baseColor)
-                    .buttonStyle(.glassProminent)
                 }
             }
             .safeAreaInset(edge: .bottom, alignment: .center, spacing: 8) {
-                VStack(alignment: .leading, spacing: 14) {
-                    SessionOverviewBottomEdgeView(name: name, viewType: .sheetOverview(timeIntervalRange), sessionType: sessionType, icon: icon)
-                    HStack(alignment: .center, spacing: 4) {
-                        if let startDate = coordinator.session?.startTime, let duration = coordinator.session?.timerDuration {
-                            SessionOverviewBottomEdgeAccesoryView(viewInfo: .alarm(startDate.addingTimeInterval(duration)))
-                        }
-                        
-                        SessionOverviewBottomEdgeAccesoryView(viewInfo: .appSheild(coordinator.shieldActivities))
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding(.top, 24)
-                .padding(.horizontal, 24)
-                .fixedSize(horizontal: false, vertical: true)
-                .background(alignment: .bottom, content: {
-                    Rectangle()
-                        .fill(Material.thin)
-                        .mask(alignment: .top) {
-                            LinearGradient(stops: [.init(color: Color.clear, location: 0), .init(color: Color.black, location: 0.2)], startPoint: .top, endPoint: .bottom)
-                        }
-                        .ignoresSafeArea(edges: .bottom)
-                })
-                .opacity((0...0.2).normalize(for: 1 - viewModel.phaseFactor))
-                .animation(nil, value: viewModel.phaseFactor)
+                SafeAreaBottomView(name: name ?? "N/A",
+                                   timeIntervalRange: timeIntervalRange,
+                                   sessionType: sessionType,
+                                   icon: icon ?? .unavailableIcon,
+                                   shieldActivities: coordinator.shieldActivities,
+                                   phaseFactor: viewModel.phaseFactor)
             }
             .sheet(item: $viewModel.presentation, onDismiss: nil) { presentation in
                 switch presentation {
@@ -288,7 +263,55 @@ struct OngoingSessionOverviewSheet: View {
                 }
             }
         }
+        .onAppear {
+            viewModel.completedTasks = coordinator.completedReminderTasks
+        }
     }
+    
+    
+    // MARK: - Log Reminder Tasks
+    
+    private func logReminderTasks() {
+        viewModel.completedTasks
+    }
+    
+    
+    // MARK: - SafeBottomAreaView
+    
+    struct SafeAreaBottomView: View {
+        
+        let name: String
+        let timeIntervalRange: ClosedRange<Date>
+        let sessionType: FocusSessionType
+        let icon: Icon
+        let shieldActivities: FamilyActivitySelection
+        let phaseFactor: CGFloat
+        
+        var body: some View {
+            VStack(alignment: .leading, spacing: 14) {
+                SessionOverviewBottomEdgeView(name: name, viewType: .sheetOverview(timeIntervalRange), sessionType: sessionType, icon: icon)
+                HStack(alignment: .center, spacing: 4) {
+                    SessionOverviewBottomEdgeAccesoryView(viewInfo: .alarm(timeIntervalRange.lowerBound))
+                    SessionOverviewBottomEdgeAccesoryView(viewInfo: .appSheild(shieldActivities))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.top, 24)
+            .padding(.horizontal, 24)
+            .fixedSize(horizontal: false, vertical: true)
+            .background(alignment: .bottom, content: {
+                Rectangle()
+                    .fill(Material.thin)
+                    .mask(alignment: .top) {
+                        LinearGradient(stops: [.init(color: Color.clear, location: 0), .init(color: Color.black, location: 0.2)], startPoint: .top, endPoint: .bottom)
+                    }
+                    .ignoresSafeArea(edges: .bottom)
+            })
+            .opacity((0...0.2).normalize(for: 1 - phaseFactor))
+            .animation(nil, value: phaseFactor)
+        }
+    }
+    
 }
 
 

@@ -11,6 +11,7 @@ import SwiftUI
 internal import AlarmKit
 import AsyncAlgorithms
 import FamilyControls
+import Model
 
 enum FocusTimerType: CaseIterable, Identifiable {
     case classic
@@ -161,6 +162,12 @@ class FocusSessionCoordinator: FocusSessionControl {
     @ObservationIgnored
     private var liveAcitivityObservation: Task<Void, Never>?
     
+    @ObservationIgnored
+    var reminderModel: ReminderModel? {
+        get { storeCoordinator?.reminder }
+        set { storeCoordinator?.reminder = newValue }
+    }
+    
     var sessionAttributes: FocusSessionAttributes?
     var canShowAlarm: Bool = false
     var isAlarmOn: Bool = false
@@ -169,12 +176,16 @@ class FocusSessionCoordinator: FocusSessionControl {
     private let alarmCoordinator: FocusTimerAlarmCoordinator?
     private let liveActivityCoordindator: FocusTimerLiveActivityCoordinator?
     private let appShieldCoordinator: FocusAppShieldCoordinator?
+    private let storeCoordinator: StoreCoordinator?
     
-    init(alarmCoordinator: FocusTimerAlarmCoordinator?, liveActivityCoordinator: FocusTimerLiveActivityCoordinator?,
-         appShieldCoordinator: FocusAppShieldCoordinator?) {
+    init(alarmCoordinator: FocusTimerAlarmCoordinator?,
+         liveActivityCoordinator: FocusTimerLiveActivityCoordinator?,
+         appShieldCoordinator: FocusAppShieldCoordinator?,
+         storeCoordinator: StoreCoordinator?) {
         self.alarmCoordinator = alarmCoordinator
         self.liveActivityCoordindator = liveActivityCoordinator
         self.appShieldCoordinator = appShieldCoordinator
+        self.storeCoordinator = storeCoordinator
         self.timerDuration = FocusSessionCoordinator.defaultTimer
         self.breakDuration = FocusSessionCoordinator.defaultBreakTimer
     }
@@ -465,9 +476,30 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
     
     
+    // MARK: - ReminderModel
+    
+    var completedReminderTasks: Set<ReminderTaskModel> {
+        get { .init(storeCoordinator?.completedTasks ?? []) }
+        set { storeCoordinator?.completedTasks = .init(newValue) }
+    }
+    var reminderTasks: [ReminderTaskModel] {
+        storeCoordinator?.reminderTasks ?? []
+    }
+    func logReminderModel(_ reminderModel: ReminderTaskModel) {
+        Task { @MainActor [weak self] in
+            await self?.storeCoordinator?.saveTask(reminderModel)
+        }
+    }
+    
+    
     // MARK: - FocusSessionControl
     
     func onCompletion() {
         self.reset()
     }
+}
+
+
+extension FocusSessionCoordinator {
+    static let previawableSessionCoordinator = FocusSessionCoordinator(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil, storeCoordinator: nil)
 }

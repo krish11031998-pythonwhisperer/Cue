@@ -9,6 +9,7 @@ internal import AlarmKit
 import SwiftUI
 import VanorUI
 import FamilyControls
+import Model
 
 @MainActor
 protocol FocusTimerAlarmCoordinator {
@@ -23,4 +24,16 @@ protocol FocusTimerLiveActivityCoordinator {
     func setupLiveActivity(for activityID: UUID, sessionAttributes: FocusSessionAttributes, startDate: Date, endDate: Date)
     func endLiveActivity(for activityID: UUID)
     func updateLiveAcitivity(for activityID: UUID, content: FocusSessionLiveActivityAttributes.ContentState)
+}
+
+
+@MainActor
+protocol StoreCoordinator: AnyObject {
+    var store: Store? { get set }
+    var reminder: ReminderModel? { get set }
+    var reminderTasks: [ReminderTaskModel] { get }
+    var completedTasks: [ReminderTaskModel] { get set }
+    var sessionAttributes: FocusSessionAttributes? { get }
+    func saveTask(_ task: ReminderTaskModel) async
+    func logReminder()
 }
