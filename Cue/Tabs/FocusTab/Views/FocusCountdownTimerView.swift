@@ -53,7 +53,6 @@ struct FocusCountdownTimerView: View {
     #endif
     
     var body: some View {
-        
         ZStack(alignment: .center) {
             FocusCountdownView(countdownViewType: countdownViewType,
                                targetDuration: coordinator.timerDuration,

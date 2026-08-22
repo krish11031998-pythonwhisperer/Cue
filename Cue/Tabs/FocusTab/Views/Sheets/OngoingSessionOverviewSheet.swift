@@ -14,7 +14,16 @@ import FamilyControls
 @MainActor
 class OngoingSessionOverviewSheetModel {
     
+    enum Presentation: Int, Identifiable {
+        case appSheild = 0
+        
+        var id: Int {
+            rawValue
+        }
+    }
+    
     var selectedDetent: PresentationDetent = .medium
+    var presentation: Presentation? = nil
     var completedTasks: Set<ReminderTaskModel> = .init()
     var isSaving: Bool = false
     var headerSize: CGSize = .zero
@@ -95,7 +104,8 @@ struct OngoingSessionOverviewSheet: View {
     
     var timeIntervalRange: ClosedRange<Date> {
         guard let session = coordinator.session else {
-            fatalError("Can't have `nil` as session")
+            dismiss()
+            return .init(uncheckedBounds: (Date.now.startOfDay, Date.now.endOfDay))
         }
         
         switch coordinator.selectedTimerType {
@@ -116,23 +126,31 @@ struct OngoingSessionOverviewSheet: View {
         }
     }
     
+    var contentTopMargin: CGFloat {
+        viewModel.headerSize.height * viewModel.phaseFactor
+    }
+    
+    var sessionActions: [SessionOverviewHeaderView.AccessoryAction] {
+        let alarmAction = SessionOverviewHeaderView.AccessoryAction.alarm(timeIntervalRange.upperBound, coordinator.isAlarmOn) {
+            coordinator.toggleAlarm()
+        }
+        
+        let applicationSheild = SessionOverviewHeaderView.AccessoryAction.appSheild(coordinator.shieldActivities, coordinator.appShieldIsOn) {
+            if coordinator.appShieldIsOn {
+                coordinator.removeAppShield()
+            } else {
+                viewModel.presentation = .appSheild
+            }
+        }
+        
+        return [alarmAction, applicationSheild]
+    }
+    
     var body: some View {
         NavigationView {
             ZStack(alignment: .top) {
                 Color.cueItBackground
                     .ignoresSafeArea(edges: .vertical)
-                    .opacity(viewModel.phaseFactor)
-                
-                SessionOverviewHeaderView(name: name,
-                                          sessionType: sessionType,
-                                          icon: icon,
-                                          timeIntervalRange: timeIntervalRange,
-                                          timeProgress: coordinator.progress)
-                    .popIn(percent: 1 - viewModel.phaseFactor)
-                    .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
-                        viewModel.headerSize = newValue
-                    }
-                    .padding(.horizontal, 24)
                     .opacity(viewModel.phaseFactor)
                 
                 ScrollView {
@@ -142,9 +160,7 @@ struct OngoingSessionOverviewSheet: View {
                                 VStack(spacing: 4) {
                                     ForEach(sessionTasks) { sessionTask in
                                         ReminderTaskView(model: viewModel.sessionRowModel(sessionTask))
-                                            .transaction { txn in
-                                                txn.disablesAnimations = true
-                                            }
+                                            .fixedSize(horizontal: false, vertical: true)
                                     }
                                     .modifier(RowBackground())
                                 }
@@ -153,7 +169,7 @@ struct OngoingSessionOverviewSheet: View {
                                 Text("Subtasks")
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundColor(theme.foregroundSecondary)
-                                    .padding(.top, (viewModel.headerSize.height + 16) * viewModel.phaseFactor)
+                                    .padding(.top, contentTopMargin)
                                     .padding(.bottom, 16)
                             }
                         }
@@ -161,7 +177,7 @@ struct OngoingSessionOverviewSheet: View {
                         .padding(.top, 16)
                     } else {
                         ContentUnavailableView("No tasks to track in this session", systemSymbol: .checkmarkCircle, description: nil)
-                            .padding(.top, (viewModel.headerSize.height + 16) * viewModel.phaseFactor)
+                            .padding(.top, contentTopMargin)
                             .frame(maxHeight: .infinity, alignment: .center)
                     }
                 }
@@ -185,6 +201,11 @@ struct OngoingSessionOverviewSheet: View {
                         print("(DEBUG) Phase: \(newPhase) - \(selectedPresentationDetent)")
                         viewModel.canStartTracking = false
                         viewModel.totalChange = 0
+                        Task { @MainActor in
+                            withAnimation(.default) {
+                                viewModel.phaseFactor = selectedPresentationDetent == .large ? 1 : 0
+                            }
+                        }
                     case .interacting:
                         print("(DEBUG) Phase: \(newPhase) - \(selectedPresentationDetent)")
                         viewModel.canStartTracking = true
@@ -192,6 +213,21 @@ struct OngoingSessionOverviewSheet: View {
                         break
                     }
                 }
+                
+                SessionOverviewHeaderView(name: name,
+                                          sessionType: sessionType,
+                                          icon: icon,
+                                          timeIntervalRange: timeIntervalRange,
+                                          timeProgress: coordinator.progress,
+                                          actions: sessionActions)
+                    .popIn(percent: 1 - viewModel.phaseFactor)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 24)
+                    .background(.cueItBackground.opacity(viewModel.phaseFactor == 1 ? 1 : 0), in: .rect)
+                    .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
+                        viewModel.headerSize = newValue
+                    }
+                    .opacity(viewModel.phaseFactor)
             }
             .navigationTitle("Session Overview")
             .navigationBarTitleDisplayMode(.inline)
@@ -226,8 +262,43 @@ struct OngoingSessionOverviewSheet: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .padding(.top, 24)
                 .padding(.horizontal, 24)
+                .fixedSize(horizontal: false, vertical: true)
+                .background(alignment: .bottom, content: {
+                    Rectangle()
+                        .fill(Material.thin)
+                        .mask(alignment: .top) {
+                            LinearGradient(stops: [.init(color: Color.clear, location: 0), .init(color: Color.black, location: 0.2)], startPoint: .top, endPoint: .bottom)
+                        }
+                        .ignoresSafeArea(edges: .bottom)
+                })
+                .opacity((0...0.2).normalize(for: 1 - viewModel.phaseFactor))
+                .animation(nil, value: viewModel.phaseFactor)
+            }
+            .sheet(item: $viewModel.presentation, onDismiss: nil) { presentation in
+                switch presentation {
+                case .appSheild:
+                    BlockAppView(selectedActivities: coordinator.shieldActivities) { activities in
+                        coordinator.shieldActivities = activities
+                        if coordinator.appShieldIsOn {
+                            coordinator.applyAppShieldForOngoingSession()
+                        }
+                    }
+                }
             }
         }
+    }
+}
+
+
+extension ClosedRange where Self.Bound == CGFloat {
+    func normalize(for value: Self.Bound) -> Self.Bound {
+        let min = lowerBound as Self.Bound
+        let max = upperBound as Self.Bound
+        let denom = max - min
+        let num = value - min
+        
+        return num / denom
     }
 }
