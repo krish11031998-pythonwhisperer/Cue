@@ -206,13 +206,16 @@ class FocusSessionCoordinator: FocusSessionControl {
     
     func pauseTimer() {
         self.session?.pauseTimer()
+        updateStateOfLiveActivity()
     }
     
     func resumeTimer() {
         self.session?.resumeTimer()
+        updateStateOfLiveActivity()
     }
     
     func reset() {
+        logCompletedReminderTasks()
         self.timerDuration = FocusSessionCoordinator.defaultTimer
         if case .classic = selectedTimerType {
             self.session?.resetTimer()
@@ -277,23 +280,41 @@ class FocusSessionCoordinator: FocusSessionControl {
 //        updateLiveActivityWithProgress()
     }
     
-    private func updateLiveActivityWithProgress() {
-        liveAcitivityObservation?.cancel()
-        guard let session,
-              let activityID = session.liveActivityID,
-              let endTime = session.endTime else { return }
-        
-        let observationStream = Observations({ [weak self] in
-            self?.session?.timerProgress ?? 0
-        })
-        ._throttle(for: .seconds(1), latest: true)
-        
-        liveAcitivityObservation = Task { @MainActor [weak self] in
-            for await progress in observationStream {
-                guard !Task.isCancelled else { return }
-                self?.liveActivityCoordindator?.updateLiveAcitivity(for: activityID, content: .init(restTime: 0, endDate: endTime, progress: progress, completedTasks: 2))
-            }
+//    private func updateLiveActivityWithProgress() {
+//        liveAcitivityObservation?.cancel()
+//        guard let session,
+//              let activityID = session.liveActivityID,
+//              let endTime = session.endTime else { return }
+//        
+//        let observationStream = Observations({ [weak self] in
+//            self?.session?.timerProgress ?? 0
+//        })
+//        ._throttle(for: .seconds(1), latest: true)
+//        
+//        liveAcitivityObservation = Task { @MainActor [weak self] in
+//            for await progress in observationStream {
+//                guard !Task.isCancelled else { return }
+//                self?.liveActivityCoordindator?.updateLiveAcitivity(for: activityID, content: .init(restTime: 0, endDate: endTime, progress: progress, completedTasks: 2, timerState: .active))
+//            }
+//        }
+//    }
+    
+    private func updateStateOfLiveActivity() {
+        guard let session, let activityID = session.liveActivityID else { return }
+        let isPaused: Bool
+        switch session.state {
+        case .resume:
+            isPaused = false
+        case .pause:
+            isPaused = true
+        case .idle, .start, .reset:
+            return
         }
+        
+        guard let endTime = session.endTime else { return }
+        let activityState = FocusSessionLiveActivityAttributes.ContentState(restTime: 0, endDate: endTime, progress: session.timerProgress, completedTasks: 0, isPaused: isPaused)
+        print("(DEBUG) state: ", state)
+        liveActivityCoordindator?.updateLiveAcitivity(for: activityID, content: activityState)
     }
     
     private func endLiveActivity() {
@@ -488,6 +509,11 @@ class FocusSessionCoordinator: FocusSessionControl {
     func logReminderModel(_ reminderModel: ReminderTaskModel) {
         Task { @MainActor [weak self] in
             await self?.storeCoordinator?.saveTask(reminderModel)
+        }
+    }
+    private func logCompletedReminderTasks() {
+        for task in completedReminderTasks {
+            logReminderModel(task)
         }
     }
     

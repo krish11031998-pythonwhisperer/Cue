@@ -132,6 +132,8 @@ struct FocusTimerRootView: View {
                 .environment(coordinator)
                 .presentationDetents([.medium, .large], selection: $viewModel.sessionTaskPresentationDetent)
                 .presentationContentInteraction(.resizes)
+                .interactiveDismissDisabled(true)
+                .presentationDragIndicator(.hidden)
         }
         .onChange(of: viewModel.selectedTimerItem, initial: true) { _, newValue in
             coordinator.reminderModel = viewModel.selectedReminder()

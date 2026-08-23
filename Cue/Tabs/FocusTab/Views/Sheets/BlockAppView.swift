@@ -15,6 +15,7 @@ struct BlockAppView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
     @State private var selectedActivities: FamilyActivitySelection
+    @State private var selectedActivitiesDidChange: Bool = false
     let doneAction: (FamilyActivitySelection) -> Void
     
     init(selectedActivities: FamilyActivitySelection, doneAction: @escaping (FamilyActivitySelection) -> Void) {
@@ -58,7 +59,7 @@ struct BlockAppView: View {
                             dismiss()
                         }
                         .tint(theme.baseColor)
-                        .disabled(selectedActivities.isEmpty)
+                        .disabled(!selectedActivitiesDidChange)
                     }
                 }
                 .safeAreaBar(edge: .top, alignment: .center, spacing: 8) {
@@ -74,6 +75,9 @@ struct BlockAppView: View {
                     .animation(.easeInOut, value: selectedActivities)
                 }
                 .scrollEdgeEffectStyle(.soft, for: .top)
+                .onChange(of: selectedActivities) { oldValue, newValue in
+                    self.selectedActivitiesDidChange = true
+                }
         }
     }
     

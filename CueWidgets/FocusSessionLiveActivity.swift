@@ -40,6 +40,10 @@ struct FocusSessionLiveActivity: Widget {
          using: FocusSessionLiveActivityAttributes.previewableView()) {
     FocusSessionLiveActivity()
 } contentStates: {
-    FocusSessionLiveActivityAttributes.ContentState(restTime: 0, endDate: Date.now.addingTimeInterval(100 * 60), progress: 0.5, completedTasks: 2)
+    FocusSessionLiveActivityAttributes.ContentState(restTime: 0,
+                                                    endDate: Date.now.addingTimeInterval(100 * 60),
+                                                    progress: 0.5,
+                                                    completedTasks: 2,
+                                                    isPaused: false)
     
 }

@@ -48,7 +48,7 @@ class FocusStoreManager: StoreCoordinator {
     
     private func updateCompletedTasksForReminder() {
         guard let reminder, let store else { return }
-        let loggedTaskIDs = Set(store.fetchReminderTaskLogs(for: reminder.objectId).map { $0.reminderTask.objectID })
+        let loggedTaskIDs = Set(store.fetchReminderTaskLogs(at: .now, for: reminder.objectId).map { $0.reminderTask.objectID })
         completedTasks = reminder.tasks.filter { loggedTaskIDs.contains($0.objectId) }
     }
 }

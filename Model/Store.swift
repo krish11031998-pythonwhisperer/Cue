@@ -242,9 +242,11 @@ import UIKit
         viewContext.saveContext(with: completion)
     }
 
-    public func fetchReminderTaskLogs(for reminderID: NSManagedObjectID) -> [ReminderTaskLog] {
+    public func fetchReminderTaskLogs(at date: Date, for reminderID: NSManagedObjectID) -> [ReminderTaskLog] {
         let reminder = Reminder.fetch(context: viewContext, for: reminderID)
-        let predicate = NSPredicate(format: "reminderTask.reminder == %@", reminder)
+        let datePredicate = NSPredicate(format: "date >= %@ AND date < %@", date.startOfDay as NSDate, date.endOfDay as NSDate)
+        let reminderPredicate = NSPredicate(format: "reminderTask.reminder == %@", reminder)
+        let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [datePredicate, reminderPredicate])
         return ReminderTaskLog.fetch(context: viewContext, predicate: predicate) ?? []
     }
     

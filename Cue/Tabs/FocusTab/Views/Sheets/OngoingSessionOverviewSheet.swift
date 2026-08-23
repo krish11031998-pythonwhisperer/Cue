@@ -129,19 +129,23 @@ struct OngoingSessionOverviewSheet: View {
     }
     
     var contentTopMargin: CGFloat {
-        viewModel.headerSize.height * viewModel.phaseFactor
+        viewModel.headerSize.height * (1 - viewModel.phaseFactor)
     }
     
     var sessionActions: [SessionOverviewHeaderView.AccessoryAction] {
-        let alarmAction = SessionOverviewHeaderView.AccessoryAction.alarm(timeIntervalRange.upperBound, coordinator.isAlarmOn) {
-            coordinator.toggleAlarm()
+        let alarmAction = SessionOverviewHeaderView.AccessoryAction.alarm(timeIntervalRange.upperBound, coordinator.isAlarmOn) { turnOn in
+            if turnOn {
+                coordinator.setupAlarmForOngoingSesion()
+            } else {
+                coordinator.cancelScheduledAlarm()
+            }
         }
         
-        let applicationSheild = SessionOverviewHeaderView.AccessoryAction.appSheild(coordinator.shieldActivities, coordinator.appShieldIsOn) {
-            if coordinator.appShieldIsOn {
-                coordinator.removeAppShield()
-            } else {
+        let applicationSheild = SessionOverviewHeaderView.AccessoryAction.appSheild(coordinator.shieldActivities, coordinator.appShieldIsOn) { turnOn in
+            if turnOn {
                 viewModel.presentation = .appSheild
+            } else {
+                coordinator.removeAppShield()
             }
         }
         
@@ -156,34 +160,35 @@ struct OngoingSessionOverviewSheet: View {
                     .opacity(viewModel.phaseFactor)
                 
                 ScrollView {
-                    if !sessionTasks.isEmpty {
-                        LazyVStack(alignment: .leading, spacing: 0) {
-                            Section {
-                                VStack(spacing: 4) {
-                                    ForEach(sessionTasks) { sessionTask in
-                                        ReminderTaskView(model: viewModel.sessionRowModel(sessionTask))
-                                            .fixedSize(horizontal: false, vertical: true)
+                    Group {
+                        if !sessionTasks.isEmpty {
+                            LazyVStack(alignment: .leading, spacing: 0) {
+                                Section {
+                                    VStack(spacing: 4) {
+                                        ForEach(sessionTasks) { sessionTask in
+                                            ReminderTaskView(model: viewModel.sessionRowModel(sessionTask))
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+                                        .modifier(RowBackground())
                                     }
-                                    .modifier(RowBackground())
+                                    .clipShape(RoundedRectangle(cornerRadius: 24))
+                                } header: {
+                                    Text("Subtasks")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundColor(theme.foregroundSecondary)
+                                        .padding(.bottom, 16)
                                 }
-                                .clipShape(RoundedRectangle(cornerRadius: 24))
-                            } header: {
-                                Text("Subtasks")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(theme.foregroundSecondary)
-                                    .padding(.top, contentTopMargin)
-                                    .padding(.bottom, 16)
                             }
+                            .padding(.horizontal, 24)
+                            .padding(.top, 16)
+                        } else {
+                            ContentUnavailableView("No tasks to track in this session", systemSymbol: .checkmarkCircle, description: nil)
+                                .frame(maxHeight: .infinity, alignment: .center)
                         }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 16)
-                    } else {
-                        ContentUnavailableView("No tasks to track in this session", systemSymbol: .checkmarkCircle, description: nil)
-                            .padding(.top, contentTopMargin)
-                            .frame(maxHeight: .infinity, alignment: .center)
                     }
+                    .offset(x: 0, y: -contentTopMargin)
                 }
-                .scrollEdgeEffectStyle(.soft, for: .vertical)
+                .scrollEdgeEffectHidden()
                 .onScrollGeometryChange(for: CGSize.self) {
                     return $0.containerSize
                 } action: { oldValue, newValue in
@@ -212,24 +217,10 @@ struct OngoingSessionOverviewSheet: View {
                         print("(DEBUG) Phase: \(newPhase) - \(selectedPresentationDetent)")
                         viewModel.canStartTracking = true
                     case .tracking, .decelerating, .animating:
+                        print("(DEBUG) Phase - \(newPhase)")
                         break
                     }
                 }
-                
-                SessionOverviewHeaderView(name: name,
-                                          sessionType: sessionType,
-                                          icon: icon,
-                                          timeIntervalRange: timeIntervalRange,
-                                          timeProgress: coordinator.progress,
-                                          actions: sessionActions)
-                    .popIn(percent: 1 - viewModel.phaseFactor)
-                    .padding(.vertical, 12)
-                    .padding(.horizontal, 24)
-                    .background(.cueItBackground.opacity(viewModel.phaseFactor == 1 ? 1 : 0), in: .rect)
-                    .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
-                        viewModel.headerSize = newValue
-                    }
-                    .opacity(viewModel.phaseFactor)
             }
             .navigationTitle("Session Overview")
             .navigationBarTitleDisplayMode(.inline)
@@ -243,21 +234,35 @@ struct OngoingSessionOverviewSheet: View {
                     }
                 }
             }
+            .safeAreaInset(edge: .top, alignment: .center, spacing: 8, content: {
+                SafeTopAreaView(name: name,
+                                sessionType: sessionType,
+                                icon: icon,
+                                timeIntervalRange: timeIntervalRange,
+                                timeProgress: coordinator.progress,
+                                actions: sessionActions,
+                                phaseFactor: viewModel.phaseFactor,
+                                headerSize: $viewModel.headerSize)
+            })
             .safeAreaInset(edge: .bottom, alignment: .center, spacing: 8) {
                 SafeAreaBottomView(name: name ?? "N/A",
                                    timeIntervalRange: timeIntervalRange,
                                    sessionType: sessionType,
                                    icon: icon ?? .unavailableIcon,
                                    shieldActivities: coordinator.shieldActivities,
-                                   phaseFactor: viewModel.phaseFactor)
+                                   phaseFactor: viewModel.phaseFactor,
+                                   isAlarmOn: coordinator.isAlarmOn,
+                                   isAppSheildOn: coordinator.appShieldIsOn)
             }
             .sheet(item: $viewModel.presentation, onDismiss: nil) { presentation in
                 switch presentation {
                 case .appSheild:
                     BlockAppView(selectedActivities: coordinator.shieldActivities) { activities in
                         coordinator.shieldActivities = activities
-                        if coordinator.appShieldIsOn {
+                        if !activities.isEmpty {
                             coordinator.applyAppShieldForOngoingSession()
+                        } else {
+                            coordinator.removeAppShield()
                         }
                     }
                 }
@@ -276,6 +281,46 @@ struct OngoingSessionOverviewSheet: View {
     }
     
     
+    // MARK: - SafeTopAreaView
+
+    struct SafeTopAreaView: View {
+
+        let name: String?
+        let sessionType: FocusSessionType
+        let icon: Icon?
+        let timeIntervalRange: ClosedRange<Date>
+        let timeProgress: CGFloat
+        let actions: [SessionOverviewHeaderView.AccessoryAction]
+        let phaseFactor: CGFloat
+        @Binding var headerSize: CGSize
+
+        var body: some View {
+            SessionOverviewHeaderView(name: name,
+                                      sessionType: sessionType,
+                                      icon: icon,
+                                      timeIntervalRange: timeIntervalRange,
+                                      timeProgress: timeProgress,
+                                      actions: actions)
+                .popIn(percent: 1 - phaseFactor)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 24)
+                .background(alignment: .bottom, content: {
+                    Rectangle()
+                        .fill(.cueItBackground.opacity(phaseFactor))
+                        .mask(alignment: .top) {
+                            LinearGradient(stops: [.init(color: Color.black, location: 0.975), .init(color: Color.clear, location: 1)], startPoint: .top, endPoint: .bottom)
+                        }
+                        .ignoresSafeArea(edges: .top)
+                })
+                .disabled(phaseFactor != 1)
+                .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
+                    headerSize = newValue
+                }
+                .opacity(phaseFactor)
+        }
+    }
+
+
     // MARK: - SafeBottomAreaView
     
     struct SafeAreaBottomView: View {
@@ -286,13 +331,15 @@ struct OngoingSessionOverviewSheet: View {
         let icon: Icon
         let shieldActivities: FamilyActivitySelection
         let phaseFactor: CGFloat
-        
+        let isAlarmOn: Bool
+        let isAppSheildOn: Bool
+
         var body: some View {
             VStack(alignment: .leading, spacing: 14) {
                 SessionOverviewBottomEdgeView(name: name, viewType: .sheetOverview(timeIntervalRange), sessionType: sessionType, icon: icon)
                 HStack(alignment: .center, spacing: 4) {
-                    SessionOverviewBottomEdgeAccesoryView(viewInfo: .alarm(timeIntervalRange.lowerBound))
-                    SessionOverviewBottomEdgeAccesoryView(viewInfo: .appSheild(shieldActivities))
+                    SessionOverviewBottomEdgeAccesoryView(viewInfo: .alarm(timeIntervalRange.lowerBound), isActive: isAlarmOn)
+                    SessionOverviewBottomEdgeAccesoryView(viewInfo: .appSheild(shieldActivities), isActive: isAppSheildOn)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
