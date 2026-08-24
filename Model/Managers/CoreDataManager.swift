@@ -27,6 +27,8 @@ class CoreDataManager {
         setupContainer()
         #warning("Add Transformers here")
         CueIconTransformer.register()
+        CueReminderScheduleTransformer.register()
+        FamilyActivitySelectionTransformer.register()
     }
     
     static var storeURL: URL {
