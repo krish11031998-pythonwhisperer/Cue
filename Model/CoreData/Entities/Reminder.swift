@@ -21,6 +21,7 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     @NSManaged public private(set) var snoozeDurationRawValue: NSNumber!
     @NSManaged public private(set) var tags: NSSet!
     @NSManaged public private(set) var cueColorName: String!
+    @NSManaged public private(set) var focusSession: FocusSession?
     
     public var tasks: [ReminderTask] {
         reminderTasks.array as! [ReminderTask]
@@ -136,6 +137,10 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     
     func removeTags() {
         self.mutatableTags.removeAllObjects()
+    }
+
+    public func setFocusSession(_ focusSession: FocusSession?) {
+        self.focusSession = focusSession
     }
     
     

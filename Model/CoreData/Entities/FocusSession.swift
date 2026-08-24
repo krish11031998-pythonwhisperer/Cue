@@ -17,6 +17,7 @@ public final class FocusSession: NSManagedObject, CoreDataEntity, Identifiable {
     @NSManaged public private(set) var breakDurationRawValue: NSNumber!
     @NSManaged public private(set) var blockedAppsBox: FamilyActivitySelectionBox?
     @NSManaged public private(set) var alarmRawValue: NSNumber!
+    @NSManaged public private(set) var reminder: Reminder?
 
     public var blockedApps: FamilyActivitySelection? {
         get {
@@ -89,6 +90,13 @@ public final class FocusSession: NSManagedObject, CoreDataEntity, Identifiable {
         self.breakDuration = breakDuration
         self.blockedApps = blockedApps
         self.alarm = alarm
+    }
+
+
+    // MARK: - Update
+
+    public func setReminder(_ reminder: Reminder?) {
+        self.reminder = reminder
     }
 
 
