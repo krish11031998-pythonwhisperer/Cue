@@ -10,6 +10,7 @@ import CoreData
 internal import UserNotifications
 import AlarmKit
 import UIKit
+import FamilyControls
 
 @Observable
 @MainActor public class Store: NotificationManagerDelegate, AlarmManagerDelegate {
@@ -17,6 +18,7 @@ import UIKit
     public var user: User? = nil
     public var reminders: [Reminder] = []
     public var tags: [CueTag] = []
+    public var focusSessions: [FocusSession] = []
     public var presentCreateReminder: Bool = false
     @ObservationIgnored
     public private(set) var notificationManager: NotificationManager
@@ -39,6 +41,7 @@ import UIKit
         self.retrieveUser()
         self.reminders = Reminder.fetchAll(context: self.viewContext)
         self.tags = CueTag.fetchAll(context: self.viewContext)
+        self.focusSessions = FocusSession.fetchAll(context: self.viewContext)
         self.notificationManager.delegate = self
         observingTask()
     }
@@ -50,7 +53,8 @@ import UIKit
         let remindersChangeStream: AsyncStream<()> = self.viewContext.changesStream(for: Reminder.self, changeTypes: [.inserted, .deleted, .updated])
         let reminderTasksChangeStream: AsyncStream<()> = self.viewContext.changesStream(for: ReminderTask.self, changeTypes: [.inserted, .deleted, .updated])
         let tagsChangeStream: AsyncStream<()> = self.viewContext.changesStream(for: CueTag.self, changeTypes: [.inserted, .deleted, .updated])
-        
+        let focusSessionsChangeStream: AsyncStream<()> = self.viewContext.changesStream(for: FocusSession.self, changeTypes: [.inserted, .deleted, .updated])
+
         Task { @MainActor [weak self] in
             for await _ in remindersChangeStream {
                 if let context = self?.viewContext {
@@ -74,6 +78,15 @@ import UIKit
                 if let context = self?.viewContext {
                     let tags = CueTag.fetchAll(context: context)
                     self?.tags = tags
+                }
+            }
+        }
+
+        Task { @MainActor [weak self] in
+            for await _ in focusSessionsChangeStream {
+                if let context = self?.viewContext {
+                    let focusSessions = FocusSession.fetchAll(context: context)
+                    self?.focusSessions = focusSessions
                 }
             }
         }
@@ -269,8 +282,44 @@ import UIKit
     public func fetchTag(_ id: NSManagedObjectID) -> CueTag {
         CueTag.fetch(context: viewContext, for: id)
     }
-    
-    
+
+
+    // MARK: - FocusSessions
+
+    @discardableResult
+    public func createFocusSession(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, reminder: Reminder? = nil) -> FocusSession {
+        let focusSession = FocusSession.createFocusSession(context: viewContext, name: name, sessionType: sessionType, timerDuration: timerDuration, breakDuration: breakDuration, blockedApps: blockedApps, alarm: alarm)
+        focusSession.setReminder(reminder)
+        viewContext.saveContext()
+        NotificationCenter.default.post(.init(focusSessionEvent: .addedFocusSession, focusSession: .init(from: focusSession)))
+        return focusSession
+    }
+
+    public func fetchFocusSession(_ id: NSManagedObjectID) -> FocusSession {
+        FocusSession.fetch(context: viewContext, for: id)
+    }
+
+    public func updateFocusSession(for id: NSManagedObjectID, transform: (FocusSession) -> Void) {
+        let focusSession = FocusSession.fetch(context: viewContext, for: id)
+        focusSession.update(context: viewContext, transform: transform)
+        NotificationCenter.default.post(.init(focusSessionEvent: .updatedFocusSession, focusSession: .init(from: focusSession)))
+    }
+
+    public func setReminder(_ reminder: Reminder?, forFocusSession id: NSManagedObjectID) {
+        let focusSession = FocusSession.fetch(context: viewContext, for: id)
+        focusSession.setReminder(reminder)
+        viewContext.saveContext()
+        NotificationCenter.default.post(.init(focusSessionEvent: .updatedFocusSession, focusSession: .init(from: focusSession)))
+    }
+
+    public func deleteFocusSession(focusSessionID: NSManagedObjectID) {
+        let focusSession = FocusSession.fetch(context: viewContext, for: focusSessionID)
+        let focusSessionModel = FocusSessionModel(from: focusSession)
+        focusSession.delete(context: viewContext)
+        NotificationCenter.default.post(.init(focusSessionEvent: .deletedFocusSession, focusSession: focusSessionModel))
+    }
+
+
     // MARK: - User
     
     public func updateUser(transform: @escaping (User) -> Void) {

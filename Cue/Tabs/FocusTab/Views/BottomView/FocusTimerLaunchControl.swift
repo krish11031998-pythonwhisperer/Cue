@@ -16,14 +16,54 @@ fileprivate extension FocusTimerType {
     }
 }
 
-fileprivate extension FocusSessionCoordinator {
+protocol TimerAdjustmentManager: AnyObject, Observable {
+    var timerDuration: TimeInterval { get set }
+    var maxBound: TimeInterval { get }
+    var minBound: TimeInterval { get }
+    var step: TimeInterval { get }
+    
+    func increment()
+    func decrement()
+}
+
+extension TimerAdjustmentManager {
+    func increment() {
+        timerDuration = min(maxBound, timerDuration + step)
+    }
+    
+    func decrement() {
+        timerDuration = max(minBound, timerDuration - step)
+    }
+}
+
+extension FocusSessionCoordinator: TimerAdjustmentManager {
     static let hourMark: TimeInterval = 3_600
     /// First 12 steps is the first hour , the rest step is 1 hour each.
     static let firstHourInFraction: CGFloat = 12 / 35
     static let fractionPerStep: CGFloat = 1 / 35
     
-    var timerDurationString: String {
+    fileprivate var timerDurationAsString: String {
         timerDuration.timerDurationString
+    }
+    
+    var step: TimeInterval {
+        if timerDuration < Self.hourMark {
+            return 5 * 60
+        } else {
+            return 60 * 60
+        }
+    }
+    
+    var minBound: TimeInterval {
+        #if DEBUG
+        return 1 * 60
+        #else
+        return 5 * 60
+        #endif
+    }
+    
+    var maxBound: TimeInterval {
+        return 24 * 60 * 60
     }
     
     var startingDurationForSlider: CGFloat {
@@ -37,21 +77,21 @@ fileprivate extension FocusSessionCoordinator {
         }
     }
     
-    func increment() {
-        if timerDuration >= Self.hourMark {
-            timerDuration += 60 * 60
-        } else {
-            timerDuration += 5 * 60
-        }
-    }
-    
-    func decrement() {
-        if timerDuration > Self.hourMark {
-            timerDuration -= 60 * 60
-        } else {
-            timerDuration = max(1 * 60, timerDuration - 5 * 60)
-        }
-    }
+//    func increment() {
+//        if timerDuration >= Self.hourMark {
+//            timerDuration += 60 * 60
+//        } else {
+//            timerDuration += 5 * 60
+//        }
+//    }
+//    
+//    func decrement() {
+//        if timerDuration > Self.hourMark {
+//            timerDuration -= 60 * 60
+//        } else {
+//            timerDuration = max(1 * 60, timerDuration - 5 * 60)
+//        }
+//    }
     
     func sliderFractionToTimeDuration(fraction: CGFloat) {
         let stepForFraction = (fraction / Self.fractionPerStep).rounded(.toNearestOrAwayFromZero)
@@ -226,7 +266,7 @@ struct FocusTimerLaunchControl: View {
                         HStack(alignment: .center, spacing: 8) {
                             LaunchControlButton(symbol: .same(.minus), size: .small, action: coordinator.decrement)
                             
-                            LaunchControlTimeView(duration: coordinator.timerDuration, durationString: coordinator.timerDurationString)
+                            LaunchControlTimeView(duration: coordinator.timerDuration, durationString: coordinator.timerDurationAsString)
                                 .matchedGeometryEffect(id: "launchControlTime", in: animation, properties: .frame, anchor: .leading, isSource: !expandTimeArc)
                                 .contentShape(Rectangle())
                                 .onTapGesture {
@@ -278,7 +318,7 @@ struct FocusTimerLaunchControl: View {
         var body: some View {
             HStack(alignment: .center, spacing: 8) {
                 LaunchControlTimeView(duration: coordinator.timerDuration,
-                                      durationString: coordinator.timerDurationString)
+                                      durationString: coordinator.timerDurationAsString)
                 .matchedGeometryEffect(id: "launchControlTime", in: animation, properties: .frame, anchor: .leading, isSource: expandTimeArc)
                 .contentShape(Rectangle())
                 .onTapGesture {

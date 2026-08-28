@@ -231,7 +231,6 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
     
     func presentTaskSheet() {
-//        guard numberOfTasks > 0 else { return }
         switch state {
         case .idle, .reset:
             showTasksSheet = false
@@ -279,25 +278,6 @@ class FocusSessionCoordinator: FocusSessionControl {
         liveActivityCoordindator?.setupLiveActivity(for: activityID, sessionAttributes: sessionAttributes, startDate: startTime, endDate: endDate)
 //        updateLiveActivityWithProgress()
     }
-    
-//    private func updateLiveActivityWithProgress() {
-//        liveAcitivityObservation?.cancel()
-//        guard let session,
-//              let activityID = session.liveActivityID,
-//              let endTime = session.endTime else { return }
-//        
-//        let observationStream = Observations({ [weak self] in
-//            self?.session?.timerProgress ?? 0
-//        })
-//        ._throttle(for: .seconds(1), latest: true)
-//        
-//        liveAcitivityObservation = Task { @MainActor [weak self] in
-//            for await progress in observationStream {
-//                guard !Task.isCancelled else { return }
-//                self?.liveActivityCoordindator?.updateLiveAcitivity(for: activityID, content: .init(restTime: 0, endDate: endTime, progress: progress, completedTasks: 2, timerState: .active))
-//            }
-//        }
-//    }
     
     private func updateStateOfLiveActivity() {
         guard let session, let activityID = session.liveActivityID else { return }
