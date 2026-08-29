@@ -287,8 +287,8 @@ import FamilyControls
     // MARK: - FocusSessions
 
     @discardableResult
-    public func createFocusSession(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, reminder: Reminder? = nil) -> FocusSession {
-        let focusSession = FocusSession.createFocusSession(context: viewContext, name: name, sessionType: sessionType, timerDuration: timerDuration, breakDuration: breakDuration, blockedApps: blockedApps, alarm: alarm)
+    public func createFocusSession(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, sessionCount: Int?, reminder: Reminder? = nil) -> FocusSession {
+        let focusSession = FocusSession.createFocusSession(context: viewContext, name: name, sessionType: sessionType, timerDuration: timerDuration, breakDuration: breakDuration, blockedApps: blockedApps, alarm: alarm, sessionCount: sessionCount)
         focusSession.setReminder(reminder)
         viewContext.saveContext()
         NotificationCenter.default.post(.init(focusSessionEvent: .addedFocusSession, focusSession: .init(from: focusSession)))

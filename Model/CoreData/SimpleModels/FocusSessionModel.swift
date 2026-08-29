@@ -17,14 +17,16 @@ public struct FocusSessionModel: Hashable, @unchecked Sendable {
     public let breakDuration: TimeInterval
     public let blockedApps: FamilyActivitySelection?
     public let alarm: FocusSessionAlarmOption
+    public let sessionCount: Int?
 
-    public init(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption) {
+    public init(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, sessionCount: Int?) {
         self.name = name
         self.sessionType = sessionType
         self.timerDuration = timerDuration
         self.breakDuration = breakDuration
         self.blockedApps = blockedApps
         self.alarm = alarm
+        self.sessionCount = sessionCount
         self.objectId = nil
     }
 
@@ -35,6 +37,7 @@ public struct FocusSessionModel: Hashable, @unchecked Sendable {
         self.breakDuration = session.breakDuration
         self.blockedApps = session.blockedApps
         self.alarm = session.alarm
+        self.sessionCount = session.sessionCount
         self.objectId = session.objectID
     }
 
@@ -44,7 +47,8 @@ public struct FocusSessionModel: Hashable, @unchecked Sendable {
         lhs.timerDuration == rhs.timerDuration &&
         lhs.breakDuration == rhs.breakDuration &&
         lhs.blockedApps == rhs.blockedApps &&
-        lhs.alarm == rhs.alarm
+        lhs.alarm == rhs.alarm &&
+        lhs.sessionCount == rhs.sessionCount
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -53,5 +57,6 @@ public struct FocusSessionModel: Hashable, @unchecked Sendable {
         hasher.combine(timerDuration)
         hasher.combine(breakDuration)
         hasher.combine(alarm)
+        hasher.combine(sessionCount)
     }
 }

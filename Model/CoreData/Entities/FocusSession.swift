@@ -11,13 +11,14 @@ import FamilyControls
 
 @objc(FocusSession)
 public final class FocusSession: NSManagedObject, CoreDataEntity, Identifiable {
-    @NSManaged public private(set) var name: String!
+    @NSManaged public var name: String!
     @NSManaged public private(set) var sessionType: NSNumber!
     @NSManaged public private(set) var timerDurationRawValue: NSNumber!
     @NSManaged public private(set) var breakDurationRawValue: NSNumber!
     @NSManaged public private(set) var blockedAppsBox: FamilyActivitySelectionBox?
     @NSManaged public private(set) var alarmRawValue: NSNumber!
     @NSManaged public private(set) var reminder: Reminder?
+    @NSManaged public private(set) var sessionCountRawValue: NSNumber?
 
     public var blockedApps: FamilyActivitySelection? {
         get {
@@ -69,10 +70,20 @@ public final class FocusSession: NSManagedObject, CoreDataEntity, Identifiable {
         }
     }
 
+    public var sessionCount: Int? {
+        get {
+            sessionCountRawValue?.intValue
+        }
+
+        set {
+            sessionCountRawValue = newValue.map { NSNumber(value: $0) }
+        }
+    }
+
 
     // MARK: - Create
 
-    static func createFocusSession(context: NSManagedObjectContext, name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption) -> FocusSession {
+    static func createFocusSession(context: NSManagedObjectContext, name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, sessionCount: Int?) -> FocusSession {
         let session = create(context: context)
         session.name = name
         session.focusSessionType = sessionType
@@ -80,16 +91,18 @@ public final class FocusSession: NSManagedObject, CoreDataEntity, Identifiable {
         session.breakDuration = breakDuration
         session.blockedApps = blockedApps
         session.alarm = alarm
+        session.sessionCount = sessionCount
         return session
     }
 
-    public func updateProperties(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption) {
+    public func updateProperties(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, sessionCount: Int?) {
         self.name = name
         self.focusSessionType = sessionType
         self.timerDuration = timerDuration
         self.breakDuration = breakDuration
         self.blockedApps = blockedApps
         self.alarm = alarm
+        self.sessionCount = sessionCount
     }
 
 
