@@ -54,6 +54,17 @@ struct SmallLabelStyle: LabelStyle {
     }
 }
 
+extension FocusTimerType {
+    static func sessionType(_ timerType: FocusSessionKind) -> Self {
+        switch timerType {
+        case .classic:
+            return .classic
+        case .pomodoro:
+            return .pomodoro
+        }
+    }
+}
+
 @Observable
 @MainActor
 class CreateFocusSessionViewModel: TimerAdjustmentManager {
@@ -73,12 +84,23 @@ class CreateFocusSessionViewModel: TimerAdjustmentManager {
     var alarmKind: FocusSessionAlarmOption = .off
     var presentation: Presentation? = nil
     var familySelection: FamilyActivitySelection = .init()
+    @ObservationIgnored
+    var store: Store?
     
     var step: TimeInterval {
         if timerDuration < Self.hourMark {
             return 5 * 60
         } else {
             return 15 * 60
+        }
+    }
+    
+    var focusSessionKind: FocusSessionKind {
+        switch timerType {
+        case .classic:
+            return .classic
+        case .pomodoro:
+            return .pomodoro
         }
     }
     
@@ -105,6 +127,43 @@ class CreateFocusSessionViewModel: TimerAdjustmentManager {
     func decrementSessionCount() {
         sessionCount -= 1
     }
+    
+    func prefillFocusSession(_ focusSessionModel: FocusSessionModel) {
+        self.title = focusSessionModel.name
+        self.timerDuration = focusSessionModel.timerDuration
+        self.breakDuration = focusSessionModel.breakDuration
+        if let sessionCount = focusSessionModel.sessionCount {
+            self.sessionCount = sessionCount
+        }
+        self.sessionCount = focusSessionModel.sessionCount ?? 2
+        self.timerType = .sessionType(focusSessionModel.sessionType)
+        self.alarmKind = focusSessionModel.alarm
+        if let blockedApps = focusSessionModel.blockedApps {
+            self.familySelection = blockedApps
+        }
+    }
+    
+    func createOrUpdateFocusSession(for mode: CreateFocusSessionSheet.Mode) {
+        switch mode {
+        case .create:
+            store?.createFocusSession(name: title,
+                                      sessionType: focusSessionKind,
+                                      timerDuration: timerDuration,
+                                      breakDuration: breakDuration,
+                                      blockedApps: familySelection,
+                                      alarm: alarmKind,
+                                      sessionCount: focusSessionKind == .pomodoro ? sessionCount : nil)
+        case .edit(let focusSession):
+            store?.updateFocusSession(for: focusSession.objectId) { focusSession in
+                focusSession.name = self.title
+                focusSession.timerDuration = self.timerDuration
+                focusSession.breakDuration = self.breakDuration
+                focusSession.alarm = self.alarmKind
+                focusSession.blockedApps = self.familySelection
+                focusSession.sessionCount = self.sessionCount
+            }
+        }
+    }
 }
 
 struct CreateFocusSessionSheet: View {
@@ -112,6 +171,12 @@ struct CreateFocusSessionSheet: View {
     @Environment(\.dismiss) var dismiss
     @Environment(Store.self) var store
     @State private var viewModel: CreateFocusSessionViewModel = .init()
+    let mode: Mode
+    
+    enum Mode: Hashable {
+        case create
+        case edit(FocusSessionModel)
+    }
     
     var theme: LCHColor {
         switch viewModel.timerType {
@@ -120,6 +185,10 @@ struct CreateFocusSessionSheet: View {
         case .pomodoro:
             return Color.proRed
         }
+    }
+    
+    init(mode: Mode) {
+        self.mode = mode
     }
     
     var body: some View {
@@ -188,15 +257,7 @@ struct CreateFocusSessionSheet: View {
                     Spacer()
                     
                     Button {
-                        let focusSessionKind: FocusSessionKind = {
-                            switch viewModel.timerType {
-                            case .classic:
-                                return .classic
-                            case .pomodoro:
-                                return .pomodoro
-                            }
-                        }()
-                        store.createFocusSession(name: viewModel.title, sessionType: focusSessionKind, timerDuration: viewModel.timerDuration, breakDuration: viewModel.breakDuration, blockedApps: viewModel.familySelection, alarm: viewModel.alarmKind)
+                        viewModel.createOrUpdateFocusSession(for: mode)
                     } label: {
                         Image(systemSymbol: .checkmark)
                             .font(.title2.weight(.semibold))
@@ -223,6 +284,16 @@ struct CreateFocusSessionSheet: View {
             }
         }
         .environment(\.theme, theme)
+        .task(id: mode) {
+            if viewModel.store == nil {
+                viewModel.store = store
+            }
+            
+            guard case .edit(let focusSessionModel) = mode else {
+                return
+            }
+            self.viewModel.prefillFocusSession(focusSessionModel)
+        }
     }
     
     
@@ -282,7 +353,6 @@ struct CreateFocusSessionSheet: View {
     // MARK: - Timer Increment View
     
     struct TimerIncrementView: View {
-        
         let timerDuration: TimeInterval
         let increment: () -> Void
         let decrement: () -> Void
@@ -640,6 +710,7 @@ struct CreateFocusSessionSheet: View {
 
 fileprivate struct TestView: View {
     
+    let mode: CreateFocusSessionSheet.Mode
     @State private var presentSheet: Bool = false
     
     var body: some View {
@@ -652,17 +723,28 @@ fileprivate struct TestView: View {
         }
         .buttonStyle(.glassProminent)
         .sheet(isPresented: $presentSheet) {
-            CreateFocusSessionSheet()
+            CreateFocusSessionSheet(mode: mode)
                 .presentationDetents([.large])
                 .presentationBackground {
                     Color.clear
                 }
         }
     }
-    
 }
 
-#Preview {
-    TestView()
+
+#Preview("Create") {
+    TestView(mode: .create)
+        .environment(Store())
+}
+
+#Preview("Edit (Classic)") {
+    TestView(mode: .edit(.init(name: "Deep Focus", sessionType: .classic, timerDuration: 3 * 60 * 60, breakDuration: 15 * 60, blockedApps: nil, alarm: .endOfSession, sessionCount: nil)))
+        .environment(Store())
+}
+
+
+#Preview("Edit (Pomodoro)") {
+    TestView(mode: .edit(.init(name: "Let's do this!", sessionType: .pomodoro, timerDuration: 45 * 60, breakDuration: 15 * 60, blockedApps: nil, alarm: .endOfSession, sessionCount: 4)))
         .environment(Store())
 }
