@@ -11,7 +11,7 @@ import Model
 
 struct FocusCountdownTimerView: View {
     
-    typealias TimerType = FocusTimerRootViewModel.TimerType
+    typealias TimerType = FTQuickStartViewModel.TimerType
     
     enum ViewState: Equatable {
         case idle
@@ -19,7 +19,7 @@ struct FocusCountdownTimerView: View {
         case transitioningBetweenReminders
     }
     
-    @Environment(FocusTimerRootViewModel.self) var viewModel
+    @Environment(FTQuickStartViewModel.self) var viewModel
     @Environment(FocusSessionCoordinator.self) var coordinator
     @State private var frame: CGRect = .zero
     @State private var state: ViewState = .idle
@@ -303,7 +303,7 @@ struct FocusCountdownTimerView: View {
 
 #Preview {
     FocusCountdownTimerView()
-        .environment(FocusTimerRootViewModel(reminders: [.exampleOne(), .exampleTwo(), .exampleThree()]))
+        .environment(FTQuickStartViewModel(reminders: [.exampleOne(), .exampleTwo(), .exampleThree()]))
         .environment(FocusSessionCoordinator.previawableSessionCoordinator)
         .padding(.all, 20)
 }

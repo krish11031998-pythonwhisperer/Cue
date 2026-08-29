@@ -1,5 +1,5 @@
 //
-//  FocusTimerRootViewModel.swift
+//  FTQuickStartViewModel.swift
 //  Cue
 //
 //  Created by Krishna Venkatramani on 21/06/2026.
@@ -14,7 +14,7 @@ import ManagedSettings
 
 @MainActor
 @Observable
-class FocusTimerRootViewModel {
+class FTQuickStartViewModel {
     
     static let translationsXThreshold: CGFloat = 100
     

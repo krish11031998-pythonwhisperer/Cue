@@ -18,8 +18,8 @@ extension ReminderModel: Identifiable {
 struct FocusReminderCarouselSelectorView: View {
     
     static let itemSize: CGSize = .init(width: 72, height: 72)
-    let selectedItem: FocusTimerRootViewModel.TimerType?
-    let items: [FocusTimerRootViewModel.TimerType]
+    let selectedItem: FTQuickStartViewModel.TimerType?
+    let items: [FTQuickStartViewModel.TimerType]
     @State private var scrollContainerSize: CGSize = .zero
     
     var body: some View {
@@ -51,7 +51,7 @@ struct FocusReminderCarouselSelectorView: View {
 
 
 #Preview {
-    @Previewable @State var selectedItem: FocusTimerRootViewModel.TimerType?
+    @Previewable @State var selectedItem: FTQuickStartViewModel.TimerType?
 
     FocusReminderCarouselSelectorView(selectedItem: selectedItem, items: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()].map { .reminder($0) })
         .border(Color.red, width: 2)

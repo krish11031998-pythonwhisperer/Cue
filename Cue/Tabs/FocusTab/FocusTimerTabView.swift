@@ -21,7 +21,7 @@ struct FocusTimerTabView: View {
     }
     
     var body: some View {
-        FocusTimerRootView(coordinator: coordinator, reminders: viewModel.calendarDay?.reminders ?? [])
+        FTQuickStartView(coordinator: coordinator, reminders: viewModel.calendarDay?.reminders ?? [])
             .task {
                 await viewModel.fetchRemindersForToday()
             }

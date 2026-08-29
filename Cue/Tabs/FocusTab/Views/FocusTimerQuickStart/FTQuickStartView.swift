@@ -1,5 +1,5 @@
 //
-//  FocusTimerRootView.swift
+//  FTQuickStartView.swift
 //  Cue
 //
 //  Created by Krishna Venkatramani on 01/06/2026.
@@ -26,10 +26,10 @@ struct FocusCountdownTopGradient: Shape {
     }
 }
 
-struct FocusTimerRootView: View {
+struct FTQuickStartView: View {
 
     @Bindable private var coordinator: FocusSessionCoordinator
-    @State private var viewModel: FocusTimerRootViewModel = .init()
+    @State private var viewModel: FTQuickStartViewModel = .init()
     let reminders: [ReminderModel]
     @Environment(\.colorScheme) var colorScheme
     
@@ -154,13 +154,13 @@ struct FocusTimerRootView: View {
             }
             return
         }
-        let diff = min(1, max(0, abs(x)/FocusTimerRootViewModel.translationsXThreshold))
+        let diff = min(1, max(0, abs(x)/FTQuickStartViewModel.translationsXThreshold))
         viewModel.panGestureTranslation = diff
     }
     
     private func hasEnded(_ point: CGPoint) {
         let x = point.x
-        guard abs(x) > FocusTimerRootViewModel.translationsXThreshold else {
+        guard abs(x) > FTQuickStartViewModel.translationsXThreshold else {
             withAnimation(.snappy) {
                 self.viewModel.panGestureTranslation = 0
             }
@@ -174,10 +174,10 @@ struct FocusTimerRootView: View {
     
     struct FloatingFocusTimerFooterView: View {
         
-        @Bindable private var viewModel: FocusTimerRootViewModel
+        @Bindable private var viewModel: FTQuickStartViewModel
         @Bindable private var coordinator: FocusSessionCoordinator
         
-        init(viewModel: FocusTimerRootViewModel, coordinator: FocusSessionCoordinator) {
+        init(viewModel: FTQuickStartViewModel, coordinator: FocusSessionCoordinator) {
             self.viewModel = viewModel
             self.coordinator = coordinator
         }
@@ -211,7 +211,7 @@ struct FocusTimerRootView: View {
     struct OngoingSessionFloatingView: View {
         @Environment(\.theme) var theme
         
-        @Bindable var viewModel: FocusTimerRootViewModel
+        @Bindable var viewModel: FTQuickStartViewModel
         var coordinator: FocusSessionCoordinator
         var icon: Icon
         let title: String
@@ -285,7 +285,7 @@ struct FocusTimerRootView: View {
 
 #Preview {
     @Previewable @State var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil, storeCoordinator: nil)
-    FocusTimerRootView(coordinator: coordinator, reminders: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()])
+    FTQuickStartView(coordinator: coordinator, reminders: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()])
         .safeAreaBar(edge: .bottom) {
             FocusTimerLaunchControl(coordinator: coordinator) {
                 //
