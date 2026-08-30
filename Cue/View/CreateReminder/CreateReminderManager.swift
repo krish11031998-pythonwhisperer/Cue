@@ -11,6 +11,7 @@ import SwiftUI
 import FoundationModels
 import CoreData
 internal import AlarmKit
+import FamilyControls
 
 struct CreateReminderTask: Identifiable, Equatable {
     let title: String
@@ -55,6 +56,7 @@ protocol CreateReminderManager: AnyObject {
     var reminderSubtasksSession: ReminderSubtaskSession { get set }
     var suggestionTask: Task<Void, Never>? { get set }
     var isLoadingSuggestions: Bool { get set }
+    var appBlockSelection: FamilyActivitySelection? { get set }
     
     var canCreateReminder: Bool { get }
     var canLoadSuggestions: Bool { get }
@@ -66,6 +68,11 @@ protocol CreateReminderManager: AnyObject {
 }
 
 extension CreateReminderManager {
+    
+    var appBlockSelection: FamilyActivitySelection? {
+        get { nil }
+        set { }
+    }
     
     var color: Color {
         get { colorModel.color }

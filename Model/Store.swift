@@ -299,6 +299,10 @@ import FamilyControls
         FocusSession.fetch(context: viewContext, for: id)
     }
 
+    public func fetchAllFocusSessions() -> [FocusSession] {
+        FocusSession.fetchAll(context: viewContext)
+    }
+
     public func updateFocusSession(for id: NSManagedObjectID, transform: (FocusSession) -> Void) {
         let focusSession = FocusSession.fetch(context: viewContext, for: id)
         focusSession.update(context: viewContext, transform: transform)

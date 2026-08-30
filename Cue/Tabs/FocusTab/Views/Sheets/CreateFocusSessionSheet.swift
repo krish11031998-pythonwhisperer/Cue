@@ -739,12 +739,12 @@ fileprivate struct TestView: View {
 }
 
 #Preview("Edit (Classic)") {
-    TestView(mode: .edit(.init(name: "Deep Focus", sessionType: .classic, timerDuration: 3 * 60 * 60, breakDuration: 15 * 60, blockedApps: nil, alarm: .endOfSession, sessionCount: nil)))
+    TestView(mode: .edit(.init(name: "Deep Focus", sessionType: .classic, timerDuration: 3 * 60 * 60, breakDuration: 15 * 60, blockedApps: nil, alarm: .endOfSession, sessionCount: nil, reminder: nil)))
         .environment(Store())
 }
 
 
 #Preview("Edit (Pomodoro)") {
-    TestView(mode: .edit(.init(name: "Let's do this!", sessionType: .pomodoro, timerDuration: 45 * 60, breakDuration: 15 * 60, blockedApps: nil, alarm: .endOfSession, sessionCount: 4)))
+    TestView(mode: .edit(.init(name: "Let's do this!", sessionType: .pomodoro, timerDuration: 45 * 60, breakDuration: 15 * 60, blockedApps: nil, alarm: .endOfSession, sessionCount: 4, reminder: nil)))
         .environment(Store())
 }

@@ -21,6 +21,9 @@ struct FocusTimerTabView: View {
     }
     
     var body: some View {
+        #if NEW_COUNTDOWN_TIMER
+        FocusRootView()
+        #else
         FTQuickStartView(coordinator: coordinator, reminders: viewModel.calendarDay?.reminders ?? [])
             .task {
                 await viewModel.fetchRemindersForToday()
@@ -29,6 +32,7 @@ struct FocusTimerTabView: View {
             .onChange(of: viewModel.calendarDay?.reminders, initial: true) { oldValue, newValue in
                 print("(DEBUG) reminders: \(newValue?.count ?? 0)")
             }
+        #endif
     }
     
 }
