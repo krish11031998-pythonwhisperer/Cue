@@ -181,8 +181,62 @@ struct FTQuickStartView: View {
             self.viewModel = viewModel
             self.coordinator = coordinator
         }
-        
+
+        // NOTE: Must stay a computed property so every `coordinator` read below happens
+        // during `body` evaluation — that is what keeps SwiftUI observation alive for
+        // appShieldIsOn / isAlarmOn / currentSessionIndex.
+        private var ongoingModel: FTOngoingSessionFloatingView.Model {
+            let sessionType: FocusSessionType
+            switch coordinator.selectedTimerType {
+            case .classic:
+                sessionType = .classic
+            case .pomodoro:
+                sessionType = .pomodoro(currentIndex: coordinator.currentSessionIndex,
+                                        total: coordinator.pomodoroSessionCount)
+            }
+
+            return .init(
+                name: coordinator.sessionAttributes?.name,
+                icon: coordinator.sessionAttributes?.icon,
+                sessionType: sessionType,
+                appShieldIsOn: coordinator.appShieldIsOn,
+                isAlarmOn: coordinator.isAlarmOn,
+                enableAppShield: {
+                    viewModel.presentAppBlock {
+                        coordinator.applyAppShieldForOngoingSession()
+                    }
+                },
+                disableAppShield: { coordinator.removeAppShield() },
+                enableAlarm: { coordinator.setupAlarmForOngoingSesion() },
+                disableAlarm: { coordinator.cancelScheduledAlarm() }
+            )
+        }
+
         var body: some View {
+            #if NEW_COUNTDOWN_TIMER
+            VStack(alignment: .center, spacing: 8) {
+                switch coordinator.state {
+                case .idle, .reset:
+                    FocusTimerLaunchControl(coordinator: coordinator) {
+                        // Present Sheet
+                        print("(DEBUG) present sheet with reminders")
+                        viewModel.presentAction(sessionType: coordinator.selectedTimerType)
+                    } presentBlockAppsSheet: {
+                        viewModel.presentAppBlock(nil)
+                    }
+                    .transition(.popIn)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                case .pause, .resume, .start:
+                    FTOngoingSessionFloatingView(model: ongoingModel)
+                     .transition(.popIn)
+                     .fixedSize(horizontal: false, vertical: true)
+                }
+
+                FloatingSecondaryView(coordinator: coordinator)
+            }
+            .padding(.horizontal, 16)
+            #else
             ZStack(alignment: .center) {
                 switch coordinator.state {
                 case .idle, .reset:
@@ -195,92 +249,99 @@ struct FTQuickStartView: View {
                     }
                     .transition(.popIn)
                 case .pause, .resume, .start:
-                    OngoingSessionFloatingView(viewModel: viewModel, coordinator: coordinator, icon: viewModel.selectedTimerItem.icon, title: viewModel.selectedTimerItem.title)
+                    FTOngoingSessionFloatingView(model: ongoingModel)
                      .transition(.popIn)
                 }
             }
             .padding(.bottom, 8)
             .padding(.horizontal, 20)
             .fixedSize(horizontal: false, vertical: true)
+            #endif
         }
     }
     
     
-    // MARK: - Classic Focus Session Timer View
     
-    struct OngoingSessionFloatingView: View {
+    #if NEW_COUNTDOWN_TIMER
+    // MARK: FloatingBottomView
+    
+    struct FloatingSecondaryView: View {
+        var coordinator: FocusSessionCoordinator
         @Environment(\.theme) var theme
         
-        @Bindable var viewModel: FTQuickStartViewModel
-        var coordinator: FocusSessionCoordinator
-        var icon: Icon
-        let title: String
-        @State private var presentAppShieldPopover: Bool = false
-        @State private var presentAlarmPopover: Bool = false
-        
-        var bottomFooterSession: FocusSessionType {
-            switch coordinator.selectedTimerType {
-            case .classic:
-                return .classic
-            case .pomodoro:
-                return .pomodoro(currentIndex: coordinator.currentSessionIndex,
-                                 total: coordinator.pomodoroSessionCount)
+        var body: some View {
+            switch coordinator.state {
+            case .idle, .reset:
+                Button {
+                    // Start Timer
+                    coordinator.startTimer()
+                } label: {
+                    Text("Start Timer")
+                        .font(.headline)
+                        .foregroundStyle(theme.foregroundPrimary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                        .background(alignment: .center) {
+                            LinearGradient(colors: [theme.surfaceTertiary, theme.surfacePrimary], startPoint: .top, endPoint: .bottom)
+                                .aspectRatio(contentMode: .fill)
+                        }
+                }
+                .controlSize(.large)
+            case .pause, .resume, .start:
+                OngoingTimerControl(coordinator: coordinator) {
+                    coordinator.presentTaskSheet()
+                }
             }
         }
         
-        var body: some View {
-            HStack(alignment: .center, spacing: 8) {
-                SessionOverviewBottomEdgeView(name: coordinator.sessionAttributes?.name,
-                                              viewType: .overview,
-                                              sessionType: bottomFooterSession,
-                                              icon: coordinator.sessionAttributes?.icon)
-                    .environment(coordinator)
-                
-                Spacer()
-                
-                LaunchControlButton(symbol: .same(.lockAppDashed), isSelected: coordinator.appShieldIsOn, size: .regular) {
-                    // Disable App Blocking
-                    if coordinator.appShieldIsOn {
-                        presentAppShieldPopover = true
-                    } else {
-                        // Present App Sheild popover
-                        viewModel.presentAppBlock {
-                            coordinator.applyAppShieldForOngoingSession()
+        struct OngoingTimerControl: View {
+            var coordinator: FocusSessionCoordinator
+            let actionOnTap: Callback
+            
+            var playPauseButtonSybmol: SFSymbol {
+                switch coordinator.state {
+                case .idle, .pause, .reset:
+                    return .playFill
+                case .start, .resume:
+                    return .pauseFill
+                }
+            }
+            
+            var body: some View {
+                HStack(alignment: .center, spacing: 0) {
+                    Text(coordinator.informationString)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    HStack(alignment: .center, spacing: 8) {
+                        LaunchControlButton(symbol: .same(playPauseButtonSybmol), size: .small) {
+                            if coordinator.state == .resume || coordinator.state == .start {
+                                coordinator.pauseTimer()
+                            } else if coordinator.state == .pause {
+                                coordinator.resumeTimer()
+                            }
+                        }
+                        
+                        LaunchControlButton(symbol: .same(.stopFill), size: .small) {
+                            // Need to implement stop
+                            coordinator.cancelAndReset()
                         }
                     }
                 }
-                .confirmationDialog("Turn off App Shield", isPresented: $presentAppShieldPopover, titleVisibility: .visible, actions: {
-                    Button("Turn Off", role: .destructive) {
-                        // turn off AppSheild
-                        coordinator.removeAppShield()
-                    }
-                }, message: {
-                    Text("Are you sure you want to turn of the App Shield?")
-                        .font(.body)
-                })
-
-                LaunchControlButton(symbol: .same(.alarmWavesLeftAndRight), isSelected: coordinator.isAlarmOn, size: .regular) {
-                    // Diable Alarm
-                    if coordinator.isAlarmOn {
-                        presentAlarmPopover = true
-                    } else {
-                        coordinator.setupAlarmForOngoingSesion()
-                    }
+                .padding(.horizontal, 16)
+                .frame(maxHeight: .infinity, alignment: .center)
+                .contentShape(Capsule())
+                .onTapGesture {
+                    coordinator.presentTaskSheet()
                 }
-                .confirmationDialog("Turn off Alarm", isPresented: $presentAlarmPopover, titleVisibility: .visible, actions: {
-                    Button("Turn Off", role: .destructive) {
-                        // turn off Alarm
-                        coordinator.cancelScheduledAlarm()
-                    }
-                }, message: {
-                    Text("Turning off the alarm(s) during your focus session would mean you won't notified abouyt the end of the session")
-                        .font(.body)
-                })
             }
-            .transition(.popIn)
             
         }
     }
+    
+    
+    #endif
+    
 }
 
 #Preview {
