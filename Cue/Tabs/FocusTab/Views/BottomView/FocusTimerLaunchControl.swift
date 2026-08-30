@@ -77,22 +77,6 @@ extension FocusSessionCoordinator: TimerAdjustmentManager {
         }
     }
     
-//    func increment() {
-//        if timerDuration >= Self.hourMark {
-//            timerDuration += 60 * 60
-//        } else {
-//            timerDuration += 5 * 60
-//        }
-//    }
-//    
-//    func decrement() {
-//        if timerDuration > Self.hourMark {
-//            timerDuration -= 60 * 60
-//        } else {
-//            timerDuration = max(1 * 60, timerDuration - 5 * 60)
-//        }
-//    }
-    
     func sliderFractionToTimeDuration(fraction: CGFloat) {
         let stepForFraction = (fraction / Self.fractionPerStep).rounded(.toNearestOrAwayFromZero)
         if fraction < Self.firstHourInFraction {
@@ -154,7 +138,6 @@ struct FocusTimerLaunchControl: View {
     
     
     // MARK: - Child View
-    
     
     // MARK: BaseLaunchControlView
     
@@ -281,7 +264,6 @@ struct FocusTimerLaunchControl: View {
                 }
             }
             .animation(.snappy(duration: 0.35, extraBounce: 0.1), value: expandTimeArc)
-            
         }
     }
     

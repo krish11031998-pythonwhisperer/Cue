@@ -14,7 +14,7 @@ protocol FocusSessionControl: AnyObject {
 }
 
 @MainActor
-protocol FocusSession: AnyObject {
+protocol FocusSession: AnyObject, Observable {
     var startTime: Date? { get }
     var endTime: Date? { get }
     var alarmID: UUID? { get set }
