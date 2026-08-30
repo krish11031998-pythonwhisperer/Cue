@@ -114,16 +114,6 @@ class FTQuickStartViewModel {
         self.timerItems = newUpdatedItems
     }
     
-    func presentAction(sessionType: FocusTimerType) {
-        switch sessionType {
-        case .classic:
-            // Do nothing for now
-            break
-        case .pomodoro:
-            sheetPresentation = .pomodoroSessionEditor
-        }
-    }
-    
     
     // MARK: - Focus Session Attributes
     
@@ -193,17 +183,5 @@ class FTQuickStartViewModel {
                                                                              response: .close),
                                                         secondaryButton: nil)
         return configuration
-    }
-    
-    func presentAppBlock(_ completion: Callback?) {
-        Task { @MainActor in
-            do {
-                guard try await CueAppBlockManager.retrieveAuthorization() == .approved else { return }
-                self.sheetPresentation = .appBlock(completion)
-            } catch {
-                #warning("Present an error alert")
-                print("(ERROR) While retrieving Authorization for App block: ", error.localizedDescription)
-            }
-        }
     }
 }

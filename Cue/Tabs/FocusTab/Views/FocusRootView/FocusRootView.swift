@@ -12,8 +12,13 @@ import SwiftUI
 
 struct FocusRootView: View {
     
+    @Bindable var coordinator: FocusSessionCoordinator
     @Environment(Store.self) var store
     @State private var viewModel: FocusRootViewModel = .init()
+    
+    init(coordinator: FocusSessionCoordinator) {
+        self.coordinator = coordinator
+    }
     
     var navBarTitle: AttributedString {
         .init("Focus Session", attributes: .init([.font: Font.bitcountRegular(style: .largeTitle)]))
@@ -45,6 +50,14 @@ struct FocusRootView: View {
                 CreateFocusSessionSheet(mode: .create)
             }
         })
+        .fullScreenCover(item: $viewModel.fullScreenPresentation, content: { fullScreenPresentation in
+            switch fullScreenPresentation {
+            case .startFocusSession(let focusSessionModel):
+                FTActiveSessionView(coordinator: coordinator, focusSessionModel: focusSessionModel)
+            case .ongoingSession:
+                EmptyView()
+            }
+        })
         .task {
             if viewModel.store == nil {
                 viewModel.store = store
@@ -70,7 +83,22 @@ class FocusRootViewModel {
         }
     }
     
+    enum FullScreenPresentation: Identifiable {
+        case startFocusSession(FocusSessionModel)
+        case ongoingSession
+        
+        var id: String {
+            switch self {
+            case .startFocusSession(let focusSessionModel):
+                return "startFocusSession_\(focusSessionModel.id)"
+            case .ongoingSession:
+                return "ongoingSession"
+            }
+        }
+    }
+    
     var presentation: Presentation? = nil
+    var fullScreenPresentation: FullScreenPresentation? = nil
     var sections: [DiffableCollectionSection] = []
     @ObservationIgnored
     var store: Store?
@@ -94,9 +122,10 @@ class FocusRootViewModel {
         let focusSessionsWithRoutines = focusSessions.filter { $0.reminder != nil }
         guard !focusSessionsWithRoutines.isEmpty else { return nil }
         
-        let action: (FocusSessionModel) -> Callback = { focusSessionModel in
-            {
+        let action: (FocusSessionModel) -> Callback = { [weak self] focusSessionModel in
+            { [weak self] in
                 // do something here
+                self?.fullScreenPresentation = .startFocusSession(focusSessionModel)
             }
         }
         
@@ -144,9 +173,10 @@ class FocusRootViewModel {
         let customFocusSessions = focusSession.filter { $0.reminder == nil }
         guard !customFocusSessions.isEmpty else { return nil }
         
-        let action: (FocusSessionModel) -> Callback = { focusSessionModel in
-            {
+        let action: (FocusSessionModel) -> Callback = { [weak self] focusSessionModel in
+            { [weak self] in
                 // do something here
+                self?.fullScreenPresentation = .startFocusSession(focusSessionModel)
             }
         }
         
@@ -163,6 +193,7 @@ class FocusRootViewModel {
             let cardModel: CustomFocusSessionCard.Model = .init(sessionType: sessionType, name: $0.name, timerDuration: $0.timerDuration, action: action($0))
             return DiffableCollectionItem<CustomFocusSessionCard>(cardModel)
         }
+        
         let layout: NSCollectionLayoutSection = {
             let group = NSCollectionLayoutGroup.custom(layoutSize: .init(widthDimension: .fractionalWidth(0.92), heightDimension: .fractionalWidth(1.08))) { env in
                 let spacing: CGFloat = 8
@@ -219,35 +250,5 @@ final class FocusSectionHeaderView: UICollectionViewCell, ConfigurableCollection
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .margins(.vertical, .zero)
-    }
-}
-
-
-struct FocusSessionCard: View {
-    let focusSession: FocusSessionModel
-    
-    var sessionIcon: SFSymbol {
-        switch focusSession.sessionType {
-        case .classic:
-            return .timer
-        case .pomodoro:
-            return .circleDashed
-        @unknown default:
-            return .timer
-        }
-    }
-    
-    var body: some View {
-        ZStack(alignment: .center) {
-            // Add an image
-            
-            VStack(alignment: .leading, spacing: 0) {
-                Text(focusSession.name)
-                    .font(.title3.weight(.semibold))
-                
-                Label(focusSession.timerDuration.longTimerDurationString, systemSymbol: sessionIcon)
-                    .font(.caption.weight(.semibold))
-            }
-        }
     }
 }

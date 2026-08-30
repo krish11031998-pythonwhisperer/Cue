@@ -12,42 +12,10 @@ internal import AlarmKit
 import AsyncAlgorithms
 import FamilyControls
 import Model
+import ManagedSettings
 
-enum FocusTimerType: CaseIterable, Identifiable {
-    case classic
-    case pomodoro
-    
-    var icon: SFSymbol {
-        switch self {
-        case .classic:
-            return .hourglass
-        case .pomodoro:
-            return .circleDashed
-        }
-    }
-    
-    var title: String {
-        switch self {
-        case .classic:
-            return "Classic"
-        case .pomodoro:
-            return "Pomodoro"
-        }
-    }
-    
-    var description: String {
-        switch self {
-        case .classic:
-            return "A simple timer that counts down once"
-        case .pomodoro:
-            return "Timer with short breaks in-between."
-        }
-    }
-    
-    var id: String {
-        title
-    }
-}
+// NOTE: `FocusTimerType` now lives in VanorUI (Resources/FocusTimerType.swift) so that
+// FTLaunchControlView can branch its layout on it.
 
 @Observable
 @MainActor
@@ -502,6 +470,103 @@ class FocusSessionCoordinator: FocusSessionControl {
     
     func onCompletion() {
         self.reset()
+    }
+    
+    
+    // MARK: - FocusSessionModel
+    
+    func startWithFocusSessionModel(_ focusSessionModel: FocusSessionModel) {
+        switch focusSessionModel.sessionType {
+        case .classic:
+            selectedTimerType = .classic
+        case .pomodoro:
+            selectedTimerType = .pomodoro
+        @unknown default:
+            selectedTimerType = .classic
+        }
+
+        timerDuration = focusSessionModel.timerDuration
+        breakDuration = focusSessionModel.breakDuration
+        
+        pomodoroSessionCount = focusSessionModel.sessionCount ?? 2
+        switch focusSessionModel.alarm {
+        case .off:
+            isAlarmOn = false
+        case .endOfSession:
+            alarmAt = .endOfSession
+            isAlarmOn = true
+        case .betweenSessions:
+            alarmAt = .betweenPomodoroSessions
+            isAlarmOn = true
+        @unknown default:
+            isAlarmOn = false
+        }
+        
+        if let blockedApps = focusSessionModel.blockedApps {
+            shieldActivities = blockedApps
+            appShieldIsOn = true
+        } else {
+            shieldActivities = .init()
+            appShieldIsOn = false
+        }
+        
+        setupLiveActivityAttributes(for: focusSessionModel)
+        setupAppShieldConfiguration(for: focusSessionModel)
+        startTimer()
+    }
+    
+    private func setupLiveActivityAttributes(for focusSessionModel: FocusSessionModel) {
+        if let reminderModel = focusSessionModel.reminder {
+            sessionAttributes = .init(name: reminderModel.title, color: .init(color: reminderModel.color), icon: .init(reminderModel.icon) ?? Icon.symbol(.timer), sessionType: nil, numberOfTasks: reminderModel.tasks.count)
+        } else {
+            sessionAttributes = .init(name: focusSessionModel.name, color: Color.proSky, icon: .symbol(.timer), sessionType: nil, numberOfTasks: 0)
+        }
+    }
+    
+    private func setupAppShieldConfiguration(for focusSessionModel: FocusSessionModel) {
+        let focusSession: CueShieldConfigurationModel.FocusSession
+        let theme: LCHColor
+        let title: String
+        let subtitle: String
+        
+        if let reminderModel = focusSessionModel.reminder {
+            let reminderImage: UIImage?
+            if let symbol = reminderModel.icon.symbol {
+                reminderImage = .init(systemName: symbol)
+            } else if let emoji = reminderModel.icon.emoji{
+                reminderImage = UIImage.imageFromEmoji(.init(emoji), fontSize: nil, size: .init(squared: 48))
+            } else {
+                reminderImage = nil
+            }
+            
+            theme = .init(color: reminderModel.color)
+            focusSession = .init(icon: reminderImage ?? .init(systemSymbol: .questionmark),
+                                 color: theme.backgroundTertiary)
+            title = "Stay Focused on \(reminderModel.title)"
+        } else {
+            theme = Color.proSky
+            let symbolColor = UIColor(theme.foregroundPrimary.resolved(for: .dark))
+            let image = UIImage(systemSymbol: .timer).withTintColor(symbolColor, renderingMode: .alwaysTemplate).resized(size: .init(squared: 48))
+            focusSession = .init(icon: image,
+                                 color: theme.backgroundTertiary)
+            title = "Stay Focused"
+        }
+        
+        subtitle = "\nYou are currently in a focus session and have blocked \(CueShieldConfigurationModel.placeholder)"
+        let titleColor = theme.foregroundSecondary.resolved(for: .dark)
+        let subtitleColor = theme.foregroundTertiary.resolved(for: .dark)
+        let primaryButtonForeground = Color.white
+        let primaryButtonBackground = theme.baseColor
+        
+        let configuration = CueShieldConfigurationModel(focusSession: focusSession,
+                                                        title: .init(title: title, color: titleColor),
+                                                        subtitle: .init(title: subtitle, color: subtitleColor),
+                                                        primaryButton: .init(title: "Remain Focused",
+                                                                             foreground: primaryButtonForeground,
+                                                                             background: primaryButtonBackground,
+                                                                             response: .close),
+                                                        secondaryButton: nil)
+        shieldConfiguration = configuration
     }
 }
 

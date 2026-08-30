@@ -24,7 +24,25 @@ struct FocusTabBottomAccessoryView: View {
     private var transition: AnyTransition {
         .asymmetric(insertion: .scale(scale: 0.95, anchor: .center).combined(with: .opacity), removal: .scale(scale: 1.1).combined(with: .opacity))
     }
-    
+
+    // NOTE: computed, so every `coordinator` read happens during `body` evaluation —
+    // that is what keeps SwiftUI observation alive for `state` / `informationString`.
+    private var ongoingSessionControlModel: FTOngoingSessionControl.Model {
+        .init(
+            informationString: coordinator.informationString,
+            isRunning: coordinator.state == .start || coordinator.state == .resume,
+            togglePlayPause: {
+                if coordinator.state == .resume || coordinator.state == .start {
+                    coordinator.pauseTimer()
+                } else if coordinator.state == .pause {
+                    coordinator.resumeTimer()
+                }
+            },
+            stop: { coordinator.cancelAndReset() },
+            onTap: { coordinator.presentTaskSheet() }
+        )
+    }
+
     var body: some View {
         ZStack {
             switch coordinator.state {
@@ -32,7 +50,7 @@ struct FocusTabBottomAccessoryView: View {
                 StartTimerButton(sessionAttributes: coordinator.sessionAttributes, action: coordinator.startTimer)
                     .transition(transition)
             case .start, .resume, .pause:
-                OngoaingTimerControl(coordinator: coordinator, actionOnTap: coordinator.presentTaskSheet)
+                FTOngoingSessionControl(model: ongoingSessionControlModel)
                     .transition(transition)
             }
         }
@@ -67,54 +85,6 @@ struct FocusTabBottomAccessoryView: View {
                 .contentShape(Capsule())
                 .onTapGesture(perform: action)
         }
-    }
-    
-    
-    // MARK: - Ongoing Timer Control
-    
-    struct OngoaingTimerControl: View {
-        @Bindable var coordinator: FocusSessionCoordinator
-        let actionOnTap: Callback
-        
-        var playPauseButtonSybmol: SFSymbol {
-            switch coordinator.state {
-            case .idle, .pause, .reset:
-                return .playFill
-            case .start, .resume:
-                return .pauseFill
-            }
-        }
-        
-        var body: some View {
-            HStack(alignment: .center, spacing: 0) {
-                Text(coordinator.informationString)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                HStack(alignment: .center, spacing: 8) {
-                    LaunchControlButton(symbol: .same(playPauseButtonSybmol), size: .small) {
-                        if coordinator.state == .resume || coordinator.state == .start {
-                            coordinator.pauseTimer()
-                        } else if coordinator.state == .pause {
-                            coordinator.resumeTimer()
-                        }
-                    }
-                    
-                    LaunchControlButton(symbol: .same(.stopFill), size: .small) {
-                        // Need to implement stop
-                        coordinator.cancelAndReset()
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .frame(maxHeight: .infinity, alignment: .center)
-            .contentShape(Capsule())
-            .onTapGesture {
-                coordinator.presentTaskSheet()
-            }
-        }
-        
     }
 }
 

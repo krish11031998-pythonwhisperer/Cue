@@ -22,7 +22,7 @@ struct FocusTimerTabView: View {
     
     var body: some View {
         #if NEW_COUNTDOWN_TIMER
-        FocusRootView()
+        FocusRootView(coordinator: coordinator)
         #else
         FTQuickStartView(coordinator: coordinator, reminders: viewModel.calendarDay?.reminders ?? [])
             .task {
