@@ -12,8 +12,10 @@ import FamilyControls
 
 @Observable
 @MainActor
-class OngoingSessionOverviewSheetModel {
-    
+class OngoingSessionOverviewSheetModel: ScrollViewPhaseTracker {
+
+    let factor: CGFloat = .totalHeight * 0.35
+
     enum Presentation: Int, Identifiable {
         case appSheild = 0
         
@@ -22,7 +24,7 @@ class OngoingSessionOverviewSheetModel {
         }
     }
     
-    var selectedDetent: PresentationDetent = .medium
+    var selectedPresentationDetent: PresentationDetent = .medium
     var presentation: Presentation? = nil
     var completedTasks: Set<ReminderTaskModel> = .init()
     var isSaving: Bool = false
@@ -66,6 +68,8 @@ class OngoingSessionOverviewSheetModel {
                      viewType: .checklist(completedTasks.contains(sessionTask), callback),
                      action: callback)
     }
+    
+    var largestDetent: PresentationDetent { .large }
 }
 
 struct OngoingSessionOverviewSheet: View {
@@ -76,12 +80,7 @@ struct OngoingSessionOverviewSheet: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.theme) var theme
     
-    let selectedPresentationDetent: PresentationDetent
     @State private var viewModel: OngoingSessionOverviewSheetModel = .init()
-
-    init(selectedPresentationDetent: PresentationDetent) {
-        self.selectedPresentationDetent = selectedPresentationDetent
-    }
 
     var sessionTasks: [ReminderTaskModel] {
         coordinator.reminderTasks
@@ -189,38 +188,7 @@ struct OngoingSessionOverviewSheet: View {
                     .offset(x: 0, y: -contentTopMargin)
                 }
                 .scrollEdgeEffectHidden()
-                .onScrollGeometryChange(for: CGSize.self) {
-                    return $0.containerSize
-                } action: { oldValue, newValue in
-                    guard viewModel.canStartTracking else { return }
-                    let diff = abs(oldValue.height - newValue.height) + viewModel.totalChange
-                    viewModel.totalChange = min(diff, factor)
-                    let calculatedFactor = min(1, viewModel.totalChange / factor)
-                    if oldValue.height < newValue.height {
-                        viewModel.phaseFactor = calculatedFactor
-                    } else if oldValue.height > newValue.height {
-                        viewModel.phaseFactor = 1 - calculatedFactor
-                    }
-                }
-                .onScrollPhaseChange { oldPhase, newPhase in
-                    switch newPhase {
-                    case .idle:
-                        print("(DEBUG) Phase: \(newPhase) - \(selectedPresentationDetent)")
-                        viewModel.canStartTracking = false
-                        viewModel.totalChange = 0
-                        Task { @MainActor in
-                            withAnimation(.default) {
-                                viewModel.phaseFactor = selectedPresentationDetent == .large ? 1 : 0
-                            }
-                        }
-                    case .interacting:
-                        print("(DEBUG) Phase: \(newPhase) - \(selectedPresentationDetent)")
-                        viewModel.canStartTracking = true
-                    case .tracking, .decelerating, .animating:
-                        print("(DEBUG) Phase - \(newPhase)")
-                        break
-                    }
-                }
+                .scrollPhaseTracker(viewModel)
             }
             .navigationTitle("Session Overview")
             .navigationBarTitleDisplayMode(.inline)
@@ -268,6 +236,10 @@ struct OngoingSessionOverviewSheet: View {
                 }
             }
         }
+        .onDisappear(perform: {
+            viewModel.selectedPresentationDetent = .medium
+        })
+        .presentationDetents([.medium, .large], selection: $viewModel.selectedPresentationDetent)
         .onAppear {
             viewModel.completedTasks = coordinator.completedReminderTasks
         }

@@ -58,6 +58,13 @@ struct FTSessionView<Content: View>: View {
                 presentAction(sessionType: sessionType)
             }
         }
+        .sheet(isPresented: $coordinator.showTasksSheet) {
+            OngoingSessionOverviewSheet()
+                .environment(coordinator)
+                .presentationContentInteraction(.resizes)
+                .interactiveDismissDisabled(true)
+                .presentationDragIndicator(.hidden)
+        }
         .sheet(item: $sheetPresentation) { sheet in
             switch sheet {
             case .pomodoroSessionEditor:
@@ -114,7 +121,7 @@ struct FTSessionView<Content: View>: View {
             // NOTE: Must stay a computed property so every `coordinator` read below happens
             // during `body` evaluation — that is what keeps SwiftUI observation alive for
             // appShieldIsOn / isAlarmOn / currentSessionIndex.
-            private var ongoingModel: FTOngoingSessionFloatingView.Model {
+            private var ongoingModel: FTOSInfoView.Model {
                 let sessionType: FocusSessionType
                 switch coordinator.selectedTimerType {
                 case .classic:
@@ -142,7 +149,7 @@ struct FTSessionView<Content: View>: View {
             }
 
             // NOTE: computed, for the same observation reason as `ongoingModel` above.
-            private var launchControlModel: FTLaunchControlView.Model {
+            private var launchControlModel: FTLaunchControl.Model {
                 .init(
                     selectedTimerType: coordinator.selectedTimerType,
                     timerDuration: coordinator.timerDuration,
@@ -175,17 +182,17 @@ struct FTSessionView<Content: View>: View {
                     ZStack(alignment: .center) {
                         switch coordinator.state {
                         case .idle, .reset:
-                            FTLaunchControlView(model: launchControlModel)
+                            FTLaunchControl(model: launchControlModel)
                                 .transition(.popIn)
                         case .pause, .resume, .start:
-                            FTOngoingSessionFloatingView(model: ongoingModel)
+                            FTOSInfoView(model: ongoingModel)
                                 .transition(.popIn)
                         }
                     }
                     .animation(.easeInOut, value: coordinator.state)
                     .fixedSize(horizontal: false, vertical: true)
                 case .activeSession:
-                    FTOngoingSessionFloatingView(model: ongoingModel)
+                    FTOSInfoView(model: ongoingModel)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -230,12 +237,12 @@ struct FTSessionView<Content: View>: View {
                         switch coordinator.state {
                         case .idle, .reset:
                             FTStartTimerButton(model: .init(viewMode: .bottomFloatingView, action: coordinator.startTimer))
-                                .transition(.popIn.combined(with: .opacity))
+                                .transition(.opacity)
                         case .pause, .resume, .start:
                             FTOngoingSessionControl(model: ongoingSessionControlModel)
                                 .padding(.init(top: 8, leading: 0, bottom: 8, trailing: 0))
                                 .glassEffect(.regular, in: .capsule)
-                                .transition(.popIn.combined(with: .opacity))
+                                .transition(.opacity)
                         }
                     }
                     .animation(.easeInOut, value: coordinator.state)

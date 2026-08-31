@@ -76,7 +76,6 @@ class FTQuickStartViewModel {
     var sheetPresentation: Sheet?
     var timerItems: [TimerType] = [.focus]
     var selectedTimerItem: TimerType = .focus
-    var sessionTaskPresentationDetent: PresentationDetent = .medium
     @ObservationIgnored
     var currentSelectedReminderIdx: Int = 0
     var panGestureTranslation: CGFloat = 0
