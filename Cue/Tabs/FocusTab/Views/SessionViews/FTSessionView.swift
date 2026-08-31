@@ -30,13 +30,27 @@ struct FTSessionView<Content: View>: View {
         }
     }
     
+    @Environment(\.dismiss) var dismiss
     @State private var sheetPresentation: Presentation? = nil
     @Bindable var coordinator: FocusSessionCoordinator
     let viewType: ViewType
     @ViewBuilder var content: () -> Content
     
     var body: some View {
-        content()
+        NavigationView {
+            content()
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemSymbol: .chevronDown)
+                                .font(.headline)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+        }
         .safeAreaBar(edge: .bottom, alignment: .center, spacing: 8) {
             FloatingFocusTimerFooterView(coordinator: coordinator, viewType: viewType) { completion in
                 presentAppBlock(completion)
@@ -58,6 +72,7 @@ struct FTSessionView<Content: View>: View {
                 .presentationDetents([.fraction(1)])
             }
         }
+    
     }
 
     // MARK: - Floating Focus Timer View
@@ -78,116 +93,168 @@ struct FTSessionView<Content: View>: View {
             self.presentAppBlock = presentAppBlock
             self.presentAction = presentAction
         }
-
-        // NOTE: Must stay a computed property so every `coordinator` read below happens
-        // during `body` evaluation — that is what keeps SwiftUI observation alive for
-        // appShieldIsOn / isAlarmOn / currentSessionIndex.
-        private var ongoingModel: FTOngoingSessionFloatingView.Model {
-            let sessionType: FocusSessionType
-            switch coordinator.selectedTimerType {
-            case .classic:
-                sessionType = .classic
-            case .pomodoro:
-                sessionType = .pomodoro(currentIndex: coordinator.currentSessionIndex,
-                                        total: coordinator.pomodoroSessionCount)
+        
+        var body: some View {
+            VStack(alignment: .center, spacing: 8) {
+                FTSessionInfoFooterView(viewType: viewType, coordinator: coordinator, presentAppBlock: presentAppBlock, presentAction: presentAction)
+                FTSessionControlFooterView(viewType: viewType, coordinator: coordinator)
             }
-
-            return .init(
-                name: coordinator.sessionAttributes?.name,
-                icon: coordinator.sessionAttributes?.icon,
-                sessionType: sessionType,
-                appShieldIsOn: coordinator.appShieldIsOn,
-                isAlarmOn: coordinator.isAlarmOn,
-                enableAppShield: {
-                    presentAppBlock {
-                        coordinator.applyAppShieldForOngoingSession()
-                    }
-                },
-                disableAppShield: { coordinator.removeAppShield() },
-                enableAlarm: { coordinator.setupAlarmForOngoingSesion() },
-                disableAlarm: { coordinator.cancelScheduledAlarm() }
-            )
-        }
-
-        // NOTE: computed, for the same observation reason as `ongoingModel` above.
-        private var launchControlModel: FTLaunchControlView.Model {
-            .init(
-                selectedTimerType: coordinator.selectedTimerType,
-                timerDuration: coordinator.timerDuration,
-                timerDurationString: coordinator.timerDurationAsString,
-                sliderProgress: coordinator.startingDurationForSlider,
-                pomodoroDescription: coordinator.pomodoroSessionDescription,
-                appShieldIsOn: coordinator.appShieldIsOn,
-                isAlarmOn: coordinator.isAlarmOn,
-                canShowAlarm: coordinator.canShowAlarm,
-                selectTimerType: { coordinator.selectedTimerType = $0 },
-                increment: coordinator.increment,
-                decrement: coordinator.decrement,
-                updateDurationFromSlider: { coordinator.sliderFractionToTimeDuration(fraction: $0) },
-                presentBlockAppsSheet: { presentAppBlock(nil) },
-                presentPomodoroSetupSheet: {
-                    // Present Sheet
-                    presentAction(coordinator.selectedTimerType)
-                },
-                toggleAlarm: { coordinator.toggleAlarm() },
-                turnOffAlarm: { coordinator.isAlarmOn = false },
-                setAlarmEndOfSession: { coordinator.updateAlarmAt(.endOfSession) },
-                setAlarmBetweenSessions: { coordinator.updateAlarmAt(.betweenPomodoroSessions) },
-                checkIfCanSetAlarm: { await coordinator.checkIfCanSetAlarm() }
-            )
+            .padding(.horizontal, 16)
         }
         
-        // NOTE: computed, so every `coordinator` read happens during `body` evaluation —
-        // that is what keeps SwiftUI observation alive for `state` / `informationString`.
-        private var ongoingSessionControlModel: FTOngoingSessionControl.Model {
-            .init(
-                informationString: coordinator.informationString,
-                isRunning: coordinator.state == .start || coordinator.state == .resume,
-                togglePlayPause: {
-                    if coordinator.state == .resume || coordinator.state == .start {
-                        coordinator.pauseTimer()
-                    } else if coordinator.state == .pause {
-                        coordinator.resumeTimer()
-                    }
-                },
-                stop: {
-                    coordinator.cancelAndReset()
-                    if viewType == .activeSession {
-                        dismiss()
-                    }
-                },
-                onTap: { coordinator.presentTaskSheet() }
-            )
-        }
-
-        var body: some View {
-            switch viewType {
-            case .quickStart:
-                ZStack(alignment: .center) {
-                    switch coordinator.state {
-                    case .idle, .reset:
-                        FTLaunchControlView(model: launchControlModel)
-                            .transition(.popIn)
-                    case .pause, .resume, .start:
-                        FTOngoingSessionFloatingView(model: ongoingModel)
-                            .transition(.popIn)
-                    }
+        
+        // MARK: FTSessionInfoFooterView
+        
+        struct FTSessionInfoFooterView: View {
+            let viewType: ViewType
+            @Bindable var coordinator: FocusSessionCoordinator
+            let presentAppBlock: (Callback?) -> Void
+            let presentAction: (FocusTimerType) -> Void
+            
+            // NOTE: Must stay a computed property so every `coordinator` read below happens
+            // during `body` evaluation — that is what keeps SwiftUI observation alive for
+            // appShieldIsOn / isAlarmOn / currentSessionIndex.
+            private var ongoingModel: FTOngoingSessionFloatingView.Model {
+                let sessionType: FocusSessionType
+                switch coordinator.selectedTimerType {
+                case .classic:
+                    sessionType = .classic
+                case .pomodoro:
+                    sessionType = .pomodoro(currentIndex: coordinator.currentSessionIndex,
+                                            total: coordinator.pomodoroSessionCount)
                 }
-                .padding(.bottom, 8)
-                .padding(.horizontal, 20)
-                .fixedSize(horizontal: false, vertical: true)
-            case .activeSession:
-                VStack(alignment: .center, spacing: 8) {
+
+                return .init(
+                    name: coordinator.sessionAttributes?.name,
+                    icon: coordinator.sessionAttributes?.icon,
+                    sessionType: sessionType,
+                    appShieldIsOn: coordinator.appShieldIsOn,
+                    isAlarmOn: coordinator.isAlarmOn,
+                    enableAppShield: {
+                        presentAppBlock {
+                            coordinator.applyAppShieldForOngoingSession()
+                        }
+                    },
+                    disableAppShield: { coordinator.removeAppShield() },
+                    enableAlarm: { coordinator.setupAlarmForOngoingSesion() },
+                    disableAlarm: { coordinator.cancelScheduledAlarm() }
+                )
+            }
+
+            // NOTE: computed, for the same observation reason as `ongoingModel` above.
+            private var launchControlModel: FTLaunchControlView.Model {
+                .init(
+                    selectedTimerType: coordinator.selectedTimerType,
+                    timerDuration: coordinator.timerDuration,
+                    timerDurationString: coordinator.timerDurationAsString,
+                    sliderProgress: coordinator.startingDurationForSlider,
+                    pomodoroDescription: coordinator.pomodoroSessionDescription,
+                    appShieldIsOn: coordinator.appShieldIsOn,
+                    isAlarmOn: coordinator.isAlarmOn,
+                    canShowAlarm: coordinator.canShowAlarm,
+                    selectTimerType: { coordinator.selectedTimerType = $0 },
+                    increment: coordinator.increment,
+                    decrement: coordinator.decrement,
+                    updateDurationFromSlider: { coordinator.sliderFractionToTimeDuration(fraction: $0) },
+                    presentBlockAppsSheet: { presentAppBlock(nil) },
+                    presentPomodoroSetupSheet: {
+                        // Present Sheet
+                        presentAction(coordinator.selectedTimerType)
+                    },
+                    toggleAlarm: { coordinator.toggleAlarm() },
+                    turnOffAlarm: { coordinator.isAlarmOn = false },
+                    setAlarmEndOfSession: { coordinator.updateAlarmAt(.endOfSession) },
+                    setAlarmBetweenSessions: { coordinator.updateAlarmAt(.betweenPomodoroSessions) },
+                    checkIfCanSetAlarm: { await coordinator.checkIfCanSetAlarm() }
+                )
+            }
+            
+            var body: some View {
+                switch viewType {
+                case .quickStart:
+                    ZStack(alignment: .center) {
+                        switch coordinator.state {
+                        case .idle, .reset:
+                            FTLaunchControlView(model: launchControlModel)
+                                .transition(.popIn)
+                        case .pause, .resume, .start:
+                            FTOngoingSessionFloatingView(model: ongoingModel)
+                                .transition(.popIn)
+                        }
+                    }
+                    .animation(.easeInOut, value: coordinator.state)
+                    .fixedSize(horizontal: false, vertical: true)
+                case .activeSession:
                     FTOngoingSessionFloatingView(model: ongoingModel)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        
+        // FTSessionControlFooterView
+        
+        struct FTSessionControlFooterView: View {
+            @Environment(\.theme) var theme
+            @Environment(\.dismiss) var dismiss
+
+            let viewType: ViewType
+            @Bindable var coordinator: FocusSessionCoordinator
+            
+            // NOTE: computed, so every `coordinator` read happens during `body` evaluation —
+            // that is what keeps SwiftUI observation alive for `state` / `informationString`.
+            private var ongoingSessionControlModel: FTOngoingSessionControl.Model {
+                .init(
+                    informationString: coordinator.informationString,
+                    isRunning: coordinator.state == .start || coordinator.state == .resume,
+                    togglePlayPause: {
+                        if coordinator.state == .resume || coordinator.state == .start {
+                            coordinator.pauseTimer()
+                        } else if coordinator.state == .pause {
+                            coordinator.resumeTimer()
+                        }
+                    },
+                    stop: {
+                        coordinator.cancelAndReset()
+                        if viewType == .activeSession {
+                            dismiss()
+                        }
+                    },
+                    onTap: { coordinator.presentTaskSheet() }
+                )
+            }
+            
+            var body: some View {
+                switch viewType {
+                case .quickStart:
+                    ZStack(alignment: .center) {
+                        switch coordinator.state {
+                        case .idle, .reset:
+                            FTStartTimerButton(model: .init(viewMode: .bottomFloatingView, action: coordinator.startTimer))
+                                .transition(.popIn.combined(with: .opacity))
+                        case .pause, .resume, .start:
+                            FTOngoingSessionControl(model: ongoingSessionControlModel)
+                                .padding(.init(top: 8, leading: 0, bottom: 8, trailing: 0))
+                                .glassEffect(.regular, in: .capsule)
+                                .transition(.popIn.combined(with: .opacity))
+                        }
+                    }
+                    .animation(.easeInOut, value: coordinator.state)
+                    .fixedSize(horizontal: false, vertical: true)
+                case .activeSession:
                     FTOngoingSessionControl(model: ongoingSessionControlModel)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.init(top: 8, leading: 0, bottom: 8, trailing: 0))
                         .glassEffect(.regular, in: .capsule)
                 }
-                .padding(.horizontal, 16)
             }
         }
+        
+        
     }
+    
+    
+    
+    // MARK: - Actions
     
     func presentAppBlock(_ completion: Callback?) {
         Task { @MainActor in

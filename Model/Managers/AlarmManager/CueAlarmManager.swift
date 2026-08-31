@@ -198,6 +198,7 @@ public class CueAlarmManager {
     public func cancelAlarms(_ ids: [UUID]) {
         for id in ids {
             try? alarmManager.cancel(id: id)
+            print("(DEBUG) Cancelled Alarm: \(id) ❌")
             Task { @MainActor in
                 self.alarmsMap.removeValue(forKey: id)
             }

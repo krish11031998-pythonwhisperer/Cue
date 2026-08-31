@@ -17,12 +17,14 @@ struct FocusTabBottomAccessoryView: View {
         self.coordinator = coordinator
     }
     
-    var theme: LCHColor {
-        Color.proSky
-    }
-    
     private var transition: AnyTransition {
         .asymmetric(insertion: .scale(scale: 0.95, anchor: .center).combined(with: .opacity), removal: .scale(scale: 1.1).combined(with: .opacity))
+    }
+
+    // The two call sites below differ only in their action, so this takes it as a
+    // parameter. Called from `body`, so the `sessionAttributes` read stays observed.
+    private func startTimerButtonModel(action: @escaping () -> Void) -> FTStartTimerButton.Model {
+        .init(viewMode: .bottomTabAccessory, action: action)
     }
 
     // NOTE: computed, so every `coordinator` read happens during `body` evaluation —
@@ -47,44 +49,20 @@ struct FocusTabBottomAccessoryView: View {
         ZStack {
             switch coordinator.state {
             case .idle, .reset:
-                StartTimerButton(sessionAttributes: coordinator.sessionAttributes, action: coordinator.startTimer)
+                #if NEW_COUNTDOWN_TIMER
+                FTStartTimerButton(model: startTimerButtonModel {
+                    NotificationCenter.default.post(name: .presentQuickStart, object: nil)
+                })
+                #else
+                FTStartTimerButton(model: startTimerButtonModel(action: coordinator.startTimer))
                     .transition(transition)
+                #endif
             case .start, .resume, .pause:
                 FTOngoingSessionControl(model: ongoingSessionControlModel)
                     .transition(transition)
             }
         }
         .animation(.snappy, value: coordinator.state)
-    }
-    
-    
-    // MARK: - Start Timer Button
-    
-    struct StartTimerButton: View {
-        
-        let sessionAttributes: FocusSessionAttributes?
-        let action: () -> Void
-        
-        var theme: LCHColor {
-            if let color = sessionAttributes?.color {
-                return color
-            } else {
-                return Color.proSky
-            }
-        }
-        
-        var body: some View {
-            Text("Start Timer")
-                .font(.headline)
-                .foregroundStyle(theme.foregroundPrimary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                .background(alignment: .center) {
-                    LinearGradient(colors: [theme.surfaceTertiary, theme.surfacePrimary], startPoint: .top, endPoint: .bottom)
-                        .aspectRatio(contentMode: .fill)
-                }
-                .contentShape(Capsule())
-                .onTapGesture(perform: action)
-        }
     }
 }
 

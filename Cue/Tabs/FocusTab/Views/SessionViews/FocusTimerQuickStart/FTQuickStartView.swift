@@ -28,6 +28,7 @@ struct FocusCountdownTopGradient: Shape {
 
 struct FTQuickStartView: View {
 
+    @Environment(\.dismiss) var dismiss
     @Bindable private var coordinator: FocusSessionCoordinator
     @State private var viewModel: FTQuickStartViewModel = .init()
     let reminders: [ReminderModel]
@@ -129,6 +130,21 @@ struct FTQuickStartView: View {
             viewModel.updateWithReminders(newValue)
         }
         .environment(\.theme, viewModel.selectedTimerItem.theme)
+        #if NEW_COUNTDOWN_TIMER
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemSymbol: .chevronDown)
+                        .font(.headline)
+                        .frame(width: 50, height: 50, alignment: .center)
+                        .glassEffect(.regular.interactive(true), in: .circle)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        #endif
     }
     
     private func dragGestureHandler(_ point: CGPoint) {

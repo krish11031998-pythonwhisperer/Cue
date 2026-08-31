@@ -8,6 +8,7 @@
 import VanorUI
 import Model
 import SwiftUI
+import Combine
 
 
 struct FocusRootView: View {
@@ -56,13 +57,15 @@ struct FocusRootView: View {
                 FTActiveSessionView(coordinator: coordinator, focusSessionModel: focusSessionModel)
             case .ongoingSession:
                 EmptyView()
+            case .quickStart:
+                FTQuickStartView(coordinator: coordinator, reminders: viewModel.calendarDay?.reminders ?? [])
             }
         })
         .task {
             if viewModel.store == nil {
                 viewModel.store = store
             }
-            viewModel.fetchFocusSession()
+            viewModel.fetchSessionsAndRoutines()
         }
     }
 }
@@ -85,6 +88,7 @@ class FocusRootViewModel {
     
     enum FullScreenPresentation: Identifiable {
         case startFocusSession(FocusSessionModel)
+        case quickStart
         case ongoingSession
         
         var id: String {
@@ -93,15 +97,39 @@ class FocusRootViewModel {
                 return "startFocusSession_\(focusSessionModel.id)"
             case .ongoingSession:
                 return "ongoingSession"
+            case .quickStart:
+                return "quickStart"
             }
         }
     }
     
+    var calendarDay: CalendarDay? = nil
     var presentation: Presentation? = nil
     var fullScreenPresentation: FullScreenPresentation? = nil
     var sections: [DiffableCollectionSection] = []
+    var cancellables: Set<AnyCancellable> = .init()
     @ObservationIgnored
     var store: Store?
+    
+    init() {
+        observeNotification()
+    }
+    
+    func fetchSessionsAndRoutines() {
+        Task { @MainActor [weak self] in
+            await withDiscardingTaskGroup { [weak self] group in
+                group.addTask {
+                    await self?.fetchRemindersForToday()
+                }
+                
+                group.addTask {
+                    await self?.fetchFocusSession()
+                }
+            }
+        }
+    }
+    
+    // MARK: - Fetch Focus Session
     
     func fetchFocusSession() {
         #if DEBUG
@@ -113,6 +141,21 @@ class FocusRootViewModel {
         let customFocusSection = setupCustomFocusSessionSection(focusSession)
         
         self.sections = [focusedRoutineSection, customFocusSection].compactMap { $0 }
+    }
+    
+    
+    // MARK: - Fetch Routines
+    
+    @concurrent
+    func fetchRemindersForToday() async {
+        do {
+            let calendarDay = try await CalendarManager.shared.setupCalendarDay(for: .now)
+            await MainActor.run {
+                self.calendarDay = calendarDay
+            }
+        } catch {
+            print("(ERROR) error: ", error.localizedDescription)
+        }
     }
     
     
@@ -232,6 +275,19 @@ class FocusRootViewModel {
 
         return section
     }
+    
+    
+    // MARK: - Observations
+    
+    private func observeNotification() {
+        NotificationCenter.default.publisher(for: .presentQuickStart)
+            .receive(on: DispatchQueue.main)
+            .sinkReceive { [weak self] _ in
+                self?.fullScreenPresentation = .quickStart
+            }
+            .store(in: &cancellables)
+    }
+    
     
 }
 

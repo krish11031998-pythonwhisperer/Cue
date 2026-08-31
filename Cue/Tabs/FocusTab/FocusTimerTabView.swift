@@ -10,6 +10,10 @@ import SwiftUI
 import VanorUI
 import Model
 
+extension Notification.Name {
+    static let presentQuickStart = Notification.Name("presentQuickStart")
+}
+
 struct FocusTimerTabView: View {
     
     @Bindable private var coordinator: FocusSessionCoordinator
