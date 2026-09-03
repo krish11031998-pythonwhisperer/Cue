@@ -308,7 +308,10 @@ struct OngoingSessionOverviewSheet: View {
 
         var body: some View {
             VStack(alignment: .leading, spacing: 14) {
-                SessionOverviewBottomEdgeView(name: name, viewType: .sheetOverview(timeIntervalRange), sessionType: sessionType, icon: icon)
+                SessionOverviewBottomEdgeView(model: .init(name: name,
+                                                           viewType: .sheetOverview(timeIntervalRange),
+                                                           sessionType: sessionType,
+                                                           icon: icon))
                 HStack(alignment: .center, spacing: 4) {
                     SessionOverviewBottomEdgeAccesoryView(viewInfo: .alarm(timeIntervalRange.lowerBound), isActive: isAlarmOn)
                     SessionOverviewBottomEdgeAccesoryView(viewInfo: .appSheild(shieldActivities), isActive: isAppSheildOn)

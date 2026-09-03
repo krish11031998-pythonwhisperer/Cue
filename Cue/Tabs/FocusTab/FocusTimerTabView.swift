@@ -12,6 +12,7 @@ import Model
 
 extension Notification.Name {
     static let presentQuickStart = Notification.Name("presentQuickStart")
+    static let currentFTSession = Notification.Name("currentFTSession")
 }
 
 struct FocusTimerTabView: View {

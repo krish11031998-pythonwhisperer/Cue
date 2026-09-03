@@ -27,6 +27,17 @@ struct FocusTabBottomAccessoryView: View {
         .init(viewMode: .bottomTabAccessory, action: action)
     }
 
+    // Mirrors how every other call site derives the session type.
+    private var sessionType: FocusSessionType {
+        switch coordinator.selectedTimerType {
+        case .classic:
+            return .classic
+        case .pomodoro:
+            return .pomodoro(currentIndex: coordinator.currentSessionIndex,
+                             total: coordinator.pomodoroSessionCount)
+        }
+    }
+
     // NOTE: computed, so every `coordinator` read happens during `body` evaluation —
     // that is what keeps SwiftUI observation alive for `state` / `informationString`.
     private var ongoingSessionControlModel: FTOngoingSessionControl.Model {
@@ -53,13 +64,26 @@ struct FocusTabBottomAccessoryView: View {
                 FTStartTimerButton(model: startTimerButtonModel {
                     NotificationCenter.default.post(name: .presentQuickStart, object: nil)
                 })
+                .transition(transition)
                 #else
                 FTStartTimerButton(model: startTimerButtonModel(action: coordinator.startTimer))
                     .transition(transition)
                 #endif
             case .start, .resume, .pause:
-                FTOngoingSessionControl(model: ongoingSessionControlModel)
-                    .transition(transition)
+                if let sessionAttributes = coordinator.sessionAttributes, let startTime = coordinator.startTime, let endTime = coordinator.endTime {
+                    SessionOverviewBottomEdgeView(model: .init(name: sessionAttributes.name,
+                                                               viewType: .bottomAccessoryView(startTime...endTime),
+                                                               sessionType: sessionType,
+                                                               icon: sessionAttributes.icon))
+                    .padding(.init(top: 6, leading: 6, bottom: 6, trailing: 10))
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        NotificationCenter.default.post(name: .currentFTSession, object: nil)
+                    }
+                } else {
+                    FTOngoingSessionControl(model: ongoingSessionControlModel)
+                        .transition(transition)
+                }
             }
         }
         .animation(.snappy, value: coordinator.state)

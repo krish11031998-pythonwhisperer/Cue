@@ -12,16 +12,22 @@ import Model
 
 struct FTActiveSessionView: View {
     
+    enum Mode: Hashable {
+        case startSession(FocusSessionModel)
+        case ongoing
+    }
+    
     @Environment(\.dismiss) var dismiss
-    @Bindable private var coordinator: FocusSessionCoordinator
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.theme) var theme
+
     @State private var frame: CGRect = .zero
-    let focusSessionModel: FocusSessionModel
+    @Bindable private var coordinator: FocusSessionCoordinator
+    let mode: Mode
     
-    init(coordinator: FocusSessionCoordinator, focusSessionModel: FocusSessionModel) {
+    init(coordinator: FocusSessionCoordinator, mode: Mode) {
         self.coordinator = coordinator
-        self.focusSessionModel = focusSessionModel
+        self.mode = mode
     }
     
     #warning("should use injected `FocusSessionModel` icon")
@@ -55,9 +61,12 @@ struct FTActiveSessionView: View {
                 }
             }
         }
-        .task(id: focusSessionModel) {
+        .task(id: mode, {
+            guard case .startSession(let focusSessionModel) = mode else {
+                return
+            }
             coordinator.startWithFocusSessionModel(focusSessionModel)
-        }
+        })
     }
     
     

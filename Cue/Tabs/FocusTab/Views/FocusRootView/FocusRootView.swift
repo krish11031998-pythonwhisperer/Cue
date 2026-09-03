@@ -54,9 +54,9 @@ struct FocusRootView: View {
         .fullScreenCover(item: $viewModel.fullScreenPresentation, content: { fullScreenPresentation in
             switch fullScreenPresentation {
             case .startFocusSession(let focusSessionModel):
-                FTActiveSessionView(coordinator: coordinator, focusSessionModel: focusSessionModel)
+                FTActiveSessionView(coordinator: coordinator, mode: .startSession(focusSessionModel))
             case .ongoingSession:
-                EmptyView()
+                FTActiveSessionView(coordinator: coordinator, mode: .ongoing)
             case .quickStart:
                 FTQuickStartView(coordinator: coordinator, reminders: viewModel.calendarDay?.reminders ?? [])
             }
@@ -280,15 +280,21 @@ class FocusRootViewModel {
     // MARK: - Observations
     
     private func observeNotification() {
-        NotificationCenter.default.publisher(for: .presentQuickStart)
+        let quickStart: AnyPublisher<FullScreenPresentation, Never> = NotificationCenter.default.publisher(for: .presentQuickStart)
+            .map { _ in FullScreenPresentation.quickStart }
+            .eraseToAnyPublisher()
+        
+        let ongoingSession: AnyPublisher<FullScreenPresentation, Never> = NotificationCenter.default.publisher(for: .currentFTSession)
+            .map { _ in FullScreenPresentation.ongoingSession }
+            .eraseToAnyPublisher()
+        
+        Publishers.Merge(quickStart, ongoingSession)
             .receive(on: DispatchQueue.main)
-            .sinkReceive { [weak self] _ in
-                self?.fullScreenPresentation = .quickStart
+            .sinkReceive { [weak self] in
+                self?.fullScreenPresentation = $0
             }
             .store(in: &cancellables)
     }
-    
-    
 }
 
 #warning("Move this to VanorUI")
