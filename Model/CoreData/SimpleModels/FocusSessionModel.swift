@@ -10,7 +10,7 @@ import CoreData
 import FamilyControls
 
 public struct FocusSessionModel: Hashable, @unchecked Sendable {
-    public let objectId: NSManagedObjectID!
+    public var objectId: NSManagedObjectID!
     public let name: String
     public let sessionType: FocusSessionKind
     public let timerDuration: TimeInterval
@@ -19,8 +19,9 @@ public struct FocusSessionModel: Hashable, @unchecked Sendable {
     public let alarm: FocusSessionAlarmOption
     public let sessionCount: Int?
     public let reminder: ReminderModel?
+    public let imageFileName: String?
 
-    public init(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, sessionCount: Int?, reminder: ReminderModel?) {
+    public init(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, sessionCount: Int?, reminder: ReminderModel?, imageFileName: String? = nil) {
         self.name = name
         self.sessionType = sessionType
         self.timerDuration = timerDuration
@@ -29,6 +30,7 @@ public struct FocusSessionModel: Hashable, @unchecked Sendable {
         self.alarm = alarm
         self.sessionCount = sessionCount
         self.reminder = reminder
+        self.imageFileName = imageFileName
         self.objectId = nil
     }
 
@@ -41,6 +43,7 @@ public struct FocusSessionModel: Hashable, @unchecked Sendable {
         self.alarm = session.alarm
         self.sessionCount = session.sessionCount
         self.reminder = session.reminder.map { ReminderModel(from: $0) }
+        self.imageFileName = session.imageFileName
         self.objectId = session.objectID
     }
 
@@ -52,7 +55,8 @@ public struct FocusSessionModel: Hashable, @unchecked Sendable {
         lhs.blockedApps == rhs.blockedApps &&
         lhs.alarm == rhs.alarm &&
         lhs.sessionCount == rhs.sessionCount &&
-        lhs.reminder == rhs.reminder
+        lhs.reminder == rhs.reminder &&
+        lhs.imageFileName == rhs.imageFileName
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -63,6 +67,7 @@ public struct FocusSessionModel: Hashable, @unchecked Sendable {
         hasher.combine(alarm)
         hasher.combine(sessionCount)
         hasher.combine(reminder)
+        hasher.combine(imageFileName)
     }
 }
 

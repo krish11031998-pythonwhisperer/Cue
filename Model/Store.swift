@@ -65,14 +65,6 @@ import FamilyControls
             }
         }
         
-//        Task { @MainActor [weak self] in
-//            for await _ in reminderTasksChangeStream {
-//                if let context = self?.viewContext {
-//                    let _ = ReminderTask.fetchAll(context: context)
-//                }
-//            }
-//        }
-        
         Task { @MainActor [weak self] in
             for await _ in tagsChangeStream {
                 if let context = self?.viewContext {
@@ -128,7 +120,7 @@ import FamilyControls
     // MARK: - Reminders
     
     @discardableResult
-    public func createReminder(title: String, icon: CueIcon, date: Date, colorName: String, snoozeDuration: TimeInterval, scheduleBuilder: Reminder.ScheduleBuilder?, tasks: [ReminderTaskModel] = [], reminderNotification: ReminderNotification, tags tagModels: [TagModel]) -> Reminder {
+    public func createReminder(title: String, icon: CueIcon, date: Date, colorName: String, snoozeDuration: TimeInterval, scheduleBuilder: Reminder.ScheduleBuilder?, tasks: [ReminderTaskModel] = [], reminderNotification: ReminderNotification, tags tagModels: [TagModel], focusSession: FocusSession? = nil) -> Reminder {
         let reminder = Reminder.createReminder(context: viewContext, title: title, icon: icon, colorName: colorName, date: date, snoozeDuration: snoozeDuration, schedule: scheduleBuilder, reminderNotification: reminderNotification)
         
         tasks.forEach { task in
@@ -143,6 +135,8 @@ import FamilyControls
         }
         
         reminder.updateTags(tags)
+        
+        reminder.updateFocusSession(focusSession)
 
         viewContext.saveContext()
         NotificationCenter.default.post(.init(reminderEvent: .addedReminder, reminder: .init(from: reminder)))
@@ -186,6 +180,10 @@ import FamilyControls
         }
     }
    
+    
+    public func updateFocusSessionInReminder(reminder: Reminder, focusSession: FocusSession?) {
+        reminder.updateFocusSession(focusSession)
+    }
     
     // MARK: - ReminderLogs
     
@@ -287,8 +285,8 @@ import FamilyControls
     // MARK: - FocusSessions
 
     @discardableResult
-    public func createFocusSession(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, sessionCount: Int?, reminder: Reminder? = nil) -> FocusSession {
-        let focusSession = FocusSession.createFocusSession(context: viewContext, name: name, sessionType: sessionType, timerDuration: timerDuration, breakDuration: breakDuration, blockedApps: blockedApps, alarm: alarm, sessionCount: sessionCount)
+    public func createFocusSession(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, sessionCount: Int?, imageFileName: String? = nil, reminder: Reminder? = nil) -> FocusSession {
+        let focusSession = FocusSession.createFocusSession(context: viewContext, name: name, sessionType: sessionType, timerDuration: timerDuration, breakDuration: breakDuration, blockedApps: blockedApps, alarm: alarm, sessionCount: sessionCount, imageFileName: imageFileName)
         focusSession.setReminder(reminder)
         viewContext.saveContext()
         NotificationCenter.default.post(.init(focusSessionEvent: .addedFocusSession, focusSession: .init(from: focusSession)))
@@ -303,10 +301,12 @@ import FamilyControls
         FocusSession.fetchAll(context: viewContext)
     }
 
-    public func updateFocusSession(for id: NSManagedObjectID, transform: (FocusSession) -> Void) {
+    @discardableResult
+    public func updateFocusSession(for id: NSManagedObjectID, transform: (FocusSession) -> Void) -> FocusSession {
         let focusSession = FocusSession.fetch(context: viewContext, for: id)
         focusSession.update(context: viewContext, transform: transform)
         NotificationCenter.default.post(.init(focusSessionEvent: .updatedFocusSession, focusSession: .init(from: focusSession)))
+        return focusSession
     }
 
     public func setReminder(_ reminder: Reminder?, forFocusSession id: NSManagedObjectID) {

@@ -13,6 +13,7 @@
         <attribute name="alarmRawValue" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="blockedAppsBox" optional="YES" attributeType="Transformable" valueTransformerName="FamilyActivitySelectionTransformer" customClassName="FamilyActivitySelectionBox"/>
         <attribute name="breakDurationRawValue" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="imageFilePath" optional="YES" attributeType="String"/>
         <attribute name="name" attributeType="String"/>
         <attribute name="sessionCountRawValue" optional="YES" attributeType="Integer 32" usesScalarValueType="NO"/>
         <attribute name="sessionType" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>

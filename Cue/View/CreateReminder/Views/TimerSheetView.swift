@@ -8,36 +8,43 @@
 import SwiftUI
 import VanorUI
 
-struct TimerSheetView: View {
+struct TimerSheetView<Element: Comparable & Strideable & Numeric & Hashable>: View {
     
     enum ControlType {
         case snoozeDuration
         case remindMe
+        case focusTimerDuration
+        case focusTimerBreakDuration
+        case focusTimerBreakCount
         
-        var range: Range<TimeInterval> {
+        var range: Range<Element> {
             switch self {
-            case .snoozeDuration:
+            case .snoozeDuration, .focusTimerBreakDuration:
                 return (5 * 60)..<(61 * 60)
-            case .remindMe:
+            case .remindMe, .focusTimerDuration:
                 return (5 * 60)..<(24 * 60 * 60 + 60)
+            case .focusTimerBreakCount:
+                return 1..<11
             }
         }
         
-        var stride: TimeInterval {
+        var stride: Element.Stride {
             switch self {
-            case .snoozeDuration:
+            case .snoozeDuration, .remindMe:
                 return 1 * 60
-            case .remindMe:
-                return 1 * 60
+            case .focusTimerDuration, .focusTimerBreakDuration:
+                return 5 * 60
+            case .focusTimerBreakCount:
+                return 1
             }
         }
         
         var type: SegmentedSliderViewType {
             switch self {
-            case .snoozeDuration:
+            case .snoozeDuration, .remindMe, .focusTimerDuration, .focusTimerBreakDuration:
                 return .uneven(step: 5)
-            case .remindMe:
-                return .uneven(step: 5)
+            case .focusTimerBreakCount:
+                return .even
             }
         }
         
@@ -47,6 +54,12 @@ struct TimerSheetView: View {
                 return "Snooze Duration"
             case .remindMe:
                 return "Remind Me Before"
+            case .focusTimerDuration:
+                return "Session Duration"
+            case .focusTimerBreakDuration:
+                return "Break Session Duration"
+            case .focusTimerBreakCount:
+                return "Sessions"
             }
         }
         
@@ -56,14 +69,20 @@ struct TimerSheetView: View {
                 return .zzz
             case .remindMe:
                 return .clockArrowTriangleheadCounterclockwiseRotate90
+            case .focusTimerDuration:
+                return .timer
+            case .focusTimerBreakDuration:
+                return .clockArrowTriangleheadClockwiseRotate90PathDotted
+            case .focusTimerBreakCount:
+                return .number
             }
         }
     }
     
-    @Binding var timeDuration: TimeInterval
+    @Binding var timeDuration: Element
     let controlType: ControlType
     
-    init(timeDuration: Binding<TimeInterval>, controlType: ControlType) {
+    init(timeDuration: Binding<Element>, controlType: ControlType) {
         self._timeDuration = timeDuration
         self.controlType = controlType
     }
@@ -75,12 +94,23 @@ struct TimerSheetView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
             
-            Text(String.formattedTimelineInterval(timeDuration))
-                .font(.title)
-                .fontWeight(.semibold)
-                .contentTransition(.numericText(value: timeDuration))
-                .animation(.easeInOut, value: timeDuration)
-                .padding(.bottom, 24)
+            Group{
+                switch timeDuration {
+                case let interval as TimeInterval:
+                    Text(String.formattedTimelineInterval(interval))
+                        .contentTransition(.numericText(value: Double(interval)))
+                        .animation(.easeInOut, value: timeDuration)
+                case let count as Int:
+                    Text("\(count)")
+                        .contentTransition(.numericText(value: Double(count)))
+                        .animation(.easeInOut, value: count)
+                default:
+                    Text("\(timeDuration)")
+                }
+            }
+            .font(.title)
+            .fontWeight(.semibold)
+            .padding(.bottom, 24)
 
             TimerSliderView(range: controlType.range, stride: controlType.stride, value: $timeDuration, type: controlType.type)
         }

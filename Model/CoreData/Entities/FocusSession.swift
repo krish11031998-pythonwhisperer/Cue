@@ -19,6 +19,7 @@ public final class FocusSession: NSManagedObject, CoreDataEntity, Identifiable {
     @NSManaged public private(set) var alarmRawValue: NSNumber!
     @NSManaged public private(set) var reminder: Reminder?
     @NSManaged public private(set) var sessionCountRawValue: NSNumber?
+    @NSManaged public private(set) var imageFilePath: String?
 
     public var blockedApps: FamilyActivitySelection? {
         get {
@@ -81,9 +82,22 @@ public final class FocusSession: NSManagedObject, CoreDataEntity, Identifiable {
     }
 
 
+    // MARK: - Image
+
+    /// Name of the image file inside the app's images directory.
+    /// Stored relative — an absolute container path does not survive a reinstall.
+    public var imageFileName: String? {
+        imageFilePath
+    }
+
+    public func setImageFileName(_ imageFileName: String?) {
+        self.imageFilePath = imageFileName
+    }
+
+
     // MARK: - Create
 
-    static func createFocusSession(context: NSManagedObjectContext, name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, sessionCount: Int?) -> FocusSession {
+    static func createFocusSession(context: NSManagedObjectContext, name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, sessionCount: Int?, imageFileName: String? = nil) -> FocusSession {
         let session = create(context: context)
         session.name = name
         session.focusSessionType = sessionType
@@ -92,10 +106,11 @@ public final class FocusSession: NSManagedObject, CoreDataEntity, Identifiable {
         session.blockedApps = blockedApps
         session.alarm = alarm
         session.sessionCount = sessionCount
+        session.imageFilePath = imageFileName
         return session
     }
 
-    public func updateProperties(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, sessionCount: Int?) {
+    public func updateProperties(name: String, sessionType: FocusSessionKind, timerDuration: TimeInterval, breakDuration: TimeInterval, blockedApps: FamilyActivitySelection?, alarm: FocusSessionAlarmOption, sessionCount: Int?, imageFileName: String? = nil) {
         self.name = name
         self.focusSessionType = sessionType
         self.timerDuration = timerDuration
@@ -103,6 +118,7 @@ public final class FocusSession: NSManagedObject, CoreDataEntity, Identifiable {
         self.blockedApps = blockedApps
         self.alarm = alarm
         self.sessionCount = sessionCount
+        self.imageFilePath = imageFileName
     }
 
 

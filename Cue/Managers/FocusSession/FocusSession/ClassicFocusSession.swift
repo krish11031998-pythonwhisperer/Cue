@@ -24,8 +24,7 @@ class ClassicFocusSession: FocusSession, @MainActor Hashable {
     var timerDuration: TimeInterval = 0.0
     var breakDuration: TimeInterval = 0.0
     
-    @ObservationIgnored
-    private var pausedAtTime: Date?
+    private(set) var pausedAt: Date?
     @ObservationIgnored
     var alarmID: UUID?
     @ObservationIgnored
@@ -67,16 +66,16 @@ class ClassicFocusSession: FocusSession, @MainActor Hashable {
     
     func pauseTimer() {
         self.state = .pause
-        self.pausedAtTime = Date()
+        self.pausedAt = Date()
         self.timer?.invalidate()
         self.timer = nil
     }
     
     func resumeTimer() {
         self.state = .resume
-        if let pausedAtTime {
-            self.accumalatedRestTime += Date.now.timeIntervalSince(pausedAtTime)
-            self.pausedAtTime = nil
+        if let pausedAt {
+            self.accumalatedRestTime += Date.now.timeIntervalSince(pausedAt)
+            self.pausedAt = nil
         }
         self.fireTimer()
     }

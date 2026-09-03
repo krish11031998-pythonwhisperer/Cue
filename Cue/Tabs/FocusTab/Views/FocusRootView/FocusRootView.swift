@@ -28,6 +28,8 @@ struct FocusRootView: View {
     var body: some View {
         NavigationView {
             ZStack(alignment: .center) {
+                Color.cueItBackground
+                    .ignoresSafeArea(edges: .all)
                 if viewModel.sections.isEmpty {
                     ContentUnavailableView("No Focus Sessions", systemImage: "timer", description: Text("Create a focus session to get started."))
                 } else {
@@ -49,6 +51,8 @@ struct FocusRootView: View {
             switch presentation {
             case .presentCreateFocusSession:
                 CreateFocusSessionSheet(mode: .create)
+            case .editFocusSession(let focusSessionModel):
+                CreateFocusSessionSheet(mode: .edit(focusSessionModel))
             }
         })
         .fullScreenCover(item: $viewModel.fullScreenPresentation, content: { fullScreenPresentation in
@@ -65,7 +69,10 @@ struct FocusRootView: View {
             if viewModel.store == nil {
                 viewModel.store = store
             }
-            viewModel.fetchSessionsAndRoutines()
+            await viewModel.observeFocusSessions(store: store)
+        }
+        .task {
+            await viewModel.fetchRemindersForToday()
         }
     }
 }
@@ -77,11 +84,14 @@ class FocusRootViewModel {
     
     enum Presentation: Identifiable {
         case presentCreateFocusSession
+        case editFocusSession(FocusSessionModel)
         
         var id: String {
             switch self {
             case .presentCreateFocusSession:
                 return "presentCreateFocusSession"
+            case .editFocusSession(let focusSessionModel):
+                return "editFocusSession_\(focusSessionModel.id)"
             }
         }
     }
@@ -108,39 +118,17 @@ class FocusRootViewModel {
     var fullScreenPresentation: FullScreenPresentation? = nil
     var sections: [DiffableCollectionSection] = []
     var cancellables: Set<AnyCancellable> = .init()
-    @ObservationIgnored
     var store: Store?
     
     init() {
         observeNotification()
     }
     
-    func fetchSessionsAndRoutines() {
-        Task { @MainActor [weak self] in
-            await withDiscardingTaskGroup { [weak self] group in
-                group.addTask {
-                    await self?.fetchRemindersForToday()
-                }
-                
-                group.addTask {
-                    await self?.fetchFocusSession()
-                }
-            }
-        }
-    }
-    
     // MARK: - Fetch Focus Session
     
     func fetchFocusSession() {
-        #if DEBUG
-        let focusSession: [FocusSessionModel] = FocusSessionModel.allExamples
-        #else
-        let focusSession = store?.fetchAllFocusSessions().map(FocusSessionModel.init(from:)) ?? []
-        #endif
-        let focusedRoutineSection = setupFocusedSessionSection(focusSession)
-        let customFocusSection = setupCustomFocusSessionSection(focusSession)
-        
-        self.sections = [focusedRoutineSection, customFocusSection].compactMap { $0 }
+        let focusSessions = (store?.fetchAllFocusSessions() ?? []).map { FocusSessionModel(from: $0) }
+        setupSections(focusSessions)
     }
     
     
@@ -158,6 +146,27 @@ class FocusRootViewModel {
         }
     }
     
+    
+    // MARK: - Setup Collection Sections
+    
+    private func setupSections(_ focusSessions: [FocusSessionModel]) {
+        print("(DEBUG) \(Self.self).\(#function) count: ", focusSessions.count)
+        let models: [FocusSessionModel]
+        #if DEBUG
+        let savedFocusSession = focusSessions
+        if savedFocusSession.isEmpty {
+            models = FocusSessionModel.allExamples
+        } else {
+            models = savedFocusSession + FocusSessionModel.allExamples.filter { $0.reminder != nil }
+        }
+        #else
+        models = focusSessions.map { FocusSessionModel(from: $0) }
+        #endif
+        let focusedRoutineSection = setupFocusedSessionSection(models)
+        let customFocusSection = setupCustomFocusSessionSection(models)
+        
+        self.sections = [focusedRoutineSection, customFocusSection].compactMap { $0 }
+    }
     
     // MARK: - Focused Routines
     
@@ -223,6 +232,18 @@ class FocusRootViewModel {
             }
         }
         
+        let deleteAction: (FocusSessionModel) -> Callback = { [weak self] focusSession in
+            { [weak self] in
+                self?.store?.deleteFocusSession(focusSessionID: focusSession.objectId)
+            }
+        }
+        
+        let editAction: (FocusSessionModel) -> Callback = { [weak self] focusSession in
+            { [weak self] in
+                self?.presentation = .editFocusSession(focusSession)
+            }
+        }
+        
         let cells = customFocusSessions.map {
             let sessionType: FocusSessionType
             switch $0.sessionType {
@@ -233,41 +254,25 @@ class FocusRootViewModel {
             @unknown default:
                 sessionType = .classic
             }
-            let cardModel: CustomFocusSessionCard.Model = .init(sessionType: sessionType, name: $0.name, timerDuration: $0.timerDuration, action: action($0))
+            
+            let imageModel: CustomFocusSessionCard.ImageModel = .init(url: $0.imageFileName.map { ImageFileManager.url(for: $0) }) { url in
+                try? ImageFileManager.retrieveImage(for: url)
+            }
+            
+            let cardModel: CustomFocusSessionCard.Model = .init(sessionType: sessionType,
+                                                                image: imageModel,
+                                                                name: $0.name,
+                                                                timerDuration: $0.timerDuration,
+                                                                deleteAction: deleteAction($0),
+                                                                editAction: editAction($0),
+                                                                action: action($0))
             return DiffableCollectionItem<CustomFocusSessionCard>(cardModel)
         }
         
-        let layout: NSCollectionLayoutSection = {
-            let group = NSCollectionLayoutGroup.custom(layoutSize: .init(widthDimension: .fractionalWidth(0.92), heightDimension: .fractionalWidth(1.08))) { env in
-                let spacing: CGFloat = 8
-                let containerWidth = (env.container.effectiveContentSize.width - spacing).half
-                let contentHeight = (env.container.effectiveContentSize.height - spacing).half
-                let size = CGSize(width: containerWidth, height: contentHeight)
-                
-                var maxY: CGFloat = .zero
-                var maxX: CGFloat = .zero
-                var frames: [NSCollectionLayoutGroupCustomItem] = []
-                
-                for i in 0..<4 {
-                    frames.append(.init(frame: .init(origin: .init(x: maxX, y: maxY), size: size)))
-                    if i%2 == 0 {
-                        maxX += containerWidth + spacing
-                    } else {
-                        maxX = 0
-                        maxY += contentHeight + spacing
-                    }
-                }
-                
-                return frames
-            }
-            
-            let section = NSCollectionLayoutSection(group: group)
-            section.interGroupSpacing = 8
-            section.contentInsets = .init(vertical: 10, horizontal: 16)
-            section.orthogonalScrollingBehavior = .groupPaging
-
-            return section
-        }().addHeader()
+        let layout: NSCollectionLayoutSection = .orthogonalGrid(gridWidth: .fractionalWidth(0.92),
+                                                                gridHeight: .fractionalWidth(1.08),
+                                                                spacing: 8,
+                                                                contentInsets: .init(vertical: 10, horizontal: 16)).addHeader()
 
         let header = CollectionSupplementaryView<FocusSectionHeaderView>(.init(title: "Focus Sessions"))
 
@@ -294,6 +299,14 @@ class FocusRootViewModel {
                 self?.fullScreenPresentation = $0
             }
             .store(in: &cancellables)
+    }
+    
+    func observeFocusSessions(store: Store) async {
+        let focusSessionStream = Observations { store.focusSessions.map { FocusSessionModel(from: $0) } }
+        for await focusSession in focusSessionStream {
+            print("(DEBUG) \(Self.self).\(#function) count: ", focusSession.count)
+            setupSections(focusSession)
+        }
     }
 }
 

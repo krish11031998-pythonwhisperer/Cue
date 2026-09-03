@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krish11031998-pythonwhisperer/KKit-Swift-Package",
       "state" : {
-        "revision" : "0803cdb368d31246ffb2af682bd653f8c505eb5f",
-        "version" : "2.4.3"
+        "revision" : "23a328cb7317af240d9f68f1f485fc7c9f696dc4",
+        "version" : "2.4.7"
       }
     },
     {

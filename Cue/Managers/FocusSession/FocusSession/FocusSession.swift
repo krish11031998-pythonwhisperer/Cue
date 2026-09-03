@@ -17,6 +17,7 @@ protocol FocusSessionControl: AnyObject {
 protocol FocusSession: AnyObject, Observable {
     var startTime: Date? { get }
     var endTime: Date? { get }
+    var pausedAt: Date? { get }
     var alarmID: UUID? { get set }
     var liveActivityID: UUID? { get set }
     var currentSessionIndex: Int { get }
@@ -37,6 +38,10 @@ protocol FocusSession: AnyObject, Observable {
 extension FocusSession {
     
     var endTime: Date? {
+        nil
+    }
+    
+    var pausedAt: Date? {
         nil
     }
     

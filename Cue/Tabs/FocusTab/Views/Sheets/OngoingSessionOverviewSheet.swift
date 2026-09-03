@@ -220,7 +220,8 @@ struct OngoingSessionOverviewSheet: View {
                                    shieldActivities: coordinator.shieldActivities,
                                    phaseFactor: viewModel.phaseFactor,
                                    isAlarmOn: coordinator.isAlarmOn,
-                                   isAppSheildOn: coordinator.appShieldIsOn)
+                                   isAppSheildOn: coordinator.appShieldIsOn,
+                                   pauseTime: coordinator.pausedAt)
             }
             .sheet(item: $viewModel.presentation, onDismiss: nil) { presentation in
                 switch presentation {
@@ -305,13 +306,15 @@ struct OngoingSessionOverviewSheet: View {
         let phaseFactor: CGFloat
         let isAlarmOn: Bool
         let isAppSheildOn: Bool
+        let pauseTime: Date?
 
         var body: some View {
             VStack(alignment: .leading, spacing: 14) {
                 SessionOverviewBottomEdgeView(model: .init(name: name,
                                                            viewType: .sheetOverview(timeIntervalRange),
                                                            sessionType: sessionType,
-                                                           icon: icon))
+                                                           icon: icon,
+                                                           pauseTime: pauseTime))
                 HStack(alignment: .center, spacing: 4) {
                     SessionOverviewBottomEdgeAccesoryView(viewInfo: .alarm(timeIntervalRange.lowerBound), isActive: isAlarmOn)
                     SessionOverviewBottomEdgeAccesoryView(viewInfo: .appSheild(shieldActivities), isActive: isAppSheildOn)

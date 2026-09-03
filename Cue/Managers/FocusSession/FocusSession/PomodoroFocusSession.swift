@@ -59,8 +59,7 @@ public class PomodoroFocusSession: FocusSession, FocusSessionControl {
         sessions.last?.endTime
     }
     
-    @ObservationIgnored
-    private var pausedAtTime: Date?
+    private(set) var pausedAt: Date?
     @ObservationIgnored
     private var accumalatedRestTime: TimeInterval = 0
     @ObservationIgnored
@@ -108,17 +107,17 @@ public class PomodoroFocusSession: FocusSession, FocusSessionControl {
     }
     
     func resumeTimer() {
-        if let pausedAtTime {
-            self.accumalatedRestTime += Date.now.timeIntervalSince(pausedAtTime)
+        if let pausedAt {
+            self.accumalatedRestTime += Date.now.timeIntervalSince(pausedAt)
             updateStartDatesForOtherSession()
-            self.pausedAtTime = nil
+            self.pausedAt = nil
         }
         // Resume Timer
         currentSession.resumeTimer()
     }
     
     func pauseTimer() {
-        self.pausedAtTime = Date()
+        self.pausedAt = Date()
         // Pause Timer
         currentSession.pauseTimer()
     }

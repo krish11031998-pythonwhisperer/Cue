@@ -74,7 +74,8 @@ struct FocusTabBottomAccessoryView: View {
                     SessionOverviewBottomEdgeView(model: .init(name: sessionAttributes.name,
                                                                viewType: .bottomAccessoryView(startTime...endTime),
                                                                sessionType: sessionType,
-                                                               icon: sessionAttributes.icon))
+                                                               icon: sessionAttributes.icon,
+                                                               pauseTime: coordinator.pausedAt))
                     .padding(.init(top: 6, leading: 6, bottom: 6, trailing: 10))
                     .contentShape(Rectangle())
                     .onTapGesture {

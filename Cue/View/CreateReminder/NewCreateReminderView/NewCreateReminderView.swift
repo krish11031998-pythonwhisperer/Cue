@@ -86,6 +86,29 @@ struct NewCreateReminderView: View {
                 }
                 
                 Section {
+                    FocusSessionView(icon: viewModel.icon,
+                                     tasksCount: viewModel.tasks.count,
+                                     focusSessionModel: viewModel.focusSessionModel) { focusSessionModel in
+                        // Present the create Focus Session View.
+                        if let focusSessionModel {
+                            viewModel.presentation = .editFocusSession(focusSessionModel, { [weak viewModel] focusSessionModel in
+                                viewModel?.focusSessionModel = focusSessionModel
+                            })
+                        } else {
+                            viewModel.presentation = .createFocusSession(viewModel.reminderTitle, { [weak viewModel] focusSessionModel in
+                                viewModel?.focusSessionModel = focusSessionModel
+                            })
+                        }
+                    }
+                } header: {
+                    Text("Focus Session")
+                        .font(.headline)
+                        .fontWeight(.medium)
+                        .padding(.top, 14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                
+                Section {
                     ReminderTagView(tags: viewModel.tags) {
                         viewModel.presentation = .tag
                     }
@@ -148,6 +171,10 @@ struct NewCreateReminderView: View {
                     viewModel?.tags = $0
                 }
                 .presentationDetents([.large])
+            case .createFocusSession(let title, let action):
+                CreateFocusSessionSheet(mode: .createFromRoutine(title, action))
+            case .editFocusSession(let focusSessionModel, let action):
+                CreateFocusSessionSheet(mode: .editFromRoutine(focusSessionModel, action))
             }
         })
         .background(alignment: .center) {
@@ -293,6 +320,71 @@ extension NewCreateReminderView {
             .animation(.easeInOut, value: viewModel.alarmIsOn)
         }
         
+    }
+}
+
+// MARK: - Focus Session View
+
+extension NewCreateReminderView {
+    
+    struct FocusSessionView: View {
+        
+        @Environment(\.theme) var theme
+        let icon: Icon
+        let tasksCount: Int
+        let focusSessionModel: FocusSessionModel?
+        let createFocusSession: (FocusSessionModel?) -> Void
+        
+        var alarmIsOn: Bool {
+            guard let focusSessionModel else { return false }
+            return focusSessionModel.alarm != .off
+        }
+        
+        var appShieldIsOn: Bool {
+            guard let focusSessionModel else { return false }
+            return !(focusSessionModel.blockedApps?.isEmpty ?? true)
+        }
+        
+        func focusTimerType(_ type: FocusSessionKind) -> FocusTimerType {
+            switch type {
+                case .pomodoro: return .pomodoro
+                case .classic: return .classic
+                @unknown default: return .classic
+            }
+        }
+        
+        var body: some View {
+            if let focusSessionModel {
+                Button {
+                    createFocusSession(focusSessionModel)
+                } label: {
+                    RoutineFocusBuilderSessionCard(model: .init(name: focusSessionModel.name,
+                                                                icon: icon,
+                                                                focusTimerType: focusTimerType(focusSessionModel.sessionType),
+                                                                taskCount: tasksCount,
+                                                                alarmIsOn: alarmIsOn,
+                                                                appShieldIsOn: appShieldIsOn,
+                                                                timeDuration: focusSessionModel.timerDuration))
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
+                .buttonStyle(.plain)
+            } else {
+                Button{
+                    createFocusSession(nil)
+                } label: {
+                    Label("create a focusSession", systemSymbol: .plus)
+                        .font(.bitcountRegular(style: .body))
+                        .labelStyle(IconAndTitleLabelStyle())
+                        .frame(minHeight: 28, alignment: .center)
+                }
+                .tint(theme.baseColor)
+                .buttonStyle(.glassProminent)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.all, 15)
+                .modifier(RowBackground())
+                .clipShape(.roundedRect(cornerRadius: 26))
+            }
+        }
     }
     
 }

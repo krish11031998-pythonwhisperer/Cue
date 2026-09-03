@@ -41,6 +41,8 @@ class NewCreateReminderViewModel: CreateReminderManager {
         case remindMeDuration
         case timeSheet
         case tag
+        case createFocusSession(String, (FocusSessionModel?) -> Void)
+        case editFocusSession(FocusSessionModel, (FocusSessionModel?) -> Void)
         
         var id: String {
             switch self {
@@ -58,6 +60,10 @@ class NewCreateReminderViewModel: CreateReminderManager {
                 return "timeSheet"
             case .tag:
                 return "tag"
+            case .createFocusSession(let title, _):
+                return "createFocusSession_\(title)"
+            case .editFocusSession(let focusSessionModel, _):
+                return "createFocusSession_\(focusSessionModel.id)"
             }
         }
     }
@@ -96,8 +102,9 @@ class NewCreateReminderViewModel: CreateReminderManager {
     var colorModel: ColorModel = .init(color: .sky, colorName: "sky")
     var remindMeBefore: TimeInterval = 10 * 60
     var isLoadingSuggestions: Bool = false
+    var focusSessionModel: FocusSessionModel? = nil
     
-    private init(store: Store, mode: Mode, suggestionTask: Task<Void, Never>? = nil, edittingMode: Bool, reminderID: NSManagedObjectID? = nil, reminderTitle: String, snoozeDuration: Double, reminderNotification: ReminderNotification, date: Date, timeDate: Date, tasks: [CreateReminderTask], tags: [TagModel], scheduleBuilder: Reminder.ScheduleBuilder, icon: Icon, colorModel: ColorModel) {
+    private init(store: Store, mode: Mode, suggestionTask: Task<Void, Never>? = nil, edittingMode: Bool, reminderID: NSManagedObjectID? = nil, reminderTitle: String, snoozeDuration: Double, reminderNotification: ReminderNotification, date: Date, timeDate: Date, tasks: [CreateReminderTask], tags: [TagModel], scheduleBuilder: Reminder.ScheduleBuilder, icon: Icon, colorModel: ColorModel, focusSessionModel: FocusSessionModel? = nil) {
         self.mode = mode
         self.store = store
         self.suggestionTask = suggestionTask
@@ -113,6 +120,7 @@ class NewCreateReminderViewModel: CreateReminderManager {
         self.scheduleBuilder = scheduleBuilder
         self.icon = icon
         self.colorModel = colorModel
+        self.focusSessionModel = focusSessionModel
     }
     
     convenience init(store: Store, mode: Mode) {
@@ -137,7 +145,21 @@ class NewCreateReminderViewModel: CreateReminderManager {
             }
             let tags = reminderModel.tags
             let colorModel = ColorModel(color: reminderModel.color, colorName: reminderModel.colorName)
-            self.init(store: store, mode: mode, edittingMode: true, reminderID: reminderModel.objectId, reminderTitle: reminderModel.title, snoozeDuration: reminderModel.snoozeDuration, reminderNotification: reminderModel.notificationType, date: reminderModel.date, timeDate: timeDate, tasks: reminderTasks, tags: tags, scheduleBuilder: scheduleBuilder, icon: icon, colorModel: colorModel)
+            
+            var focusSessionModel: FocusSessionModel?
+            if let focusSession = reminderModel.focusSession {
+                focusSessionModel = .init(name: focusSession.name,
+                                          sessionType: focusSession.sessionType,
+                                          timerDuration: focusSession.timerDuration,
+                                          breakDuration: focusSession.breakDuration,
+                                          blockedApps: focusSession.blockedApps,
+                                          alarm: focusSession.alarm,
+                                          sessionCount: focusSession.sessionCount,
+                                          reminder: reminderModel)
+                focusSessionModel?.objectId = focusSession.objectId
+            }
+            
+            self.init(store: store, mode: mode, edittingMode: true, reminderID: reminderModel.objectId, reminderTitle: reminderModel.title, snoozeDuration: reminderModel.snoozeDuration, reminderNotification: reminderModel.notificationType, date: reminderModel.date, timeDate: timeDate, tasks: reminderTasks, tags: tags, scheduleBuilder: scheduleBuilder, icon: icon, colorModel: colorModel, focusSessionModel: focusSessionModel)
         }
     }
     
@@ -146,15 +168,28 @@ class NewCreateReminderViewModel: CreateReminderManager {
         let tasks: [ReminderTaskModel] = tasks.map { .init(title: $0.title, icon: .from($0.icon)) }
         let schedule: ReminderSchedule = .init(hour: timeDate.hours, minute: timeDate.minutes, intervalWeeks: scheduleBuilder.intervalWeek, weekdays: scheduleBuilder.weekdays, calendarDates: scheduleBuilder.weekdays)
         
-            return .init(notificationType: .notification,
-                         title: reminderTitle,
-                         icon: icon,
-                         date: date,
-                         snoozeDuration: snoozeDuration,
-                         tasks: tasks,
-                         tags: tags,
-                         schedule: schedule,
-                         colorName: colorModel.colorName)
+        var focusSession: ReminderModel.FocusSession?
+        if let focusSessionModel = focusSessionModel {
+            focusSession = .init(name: focusSessionModel.name,
+                                 sessionType: focusSessionModel.sessionType,
+                                 timerDuration: focusSessionModel.timerDuration,
+                                 breakDuration: focusSessionModel.breakDuration,
+                                 blockedApps: focusSessionModel.blockedApps,
+                                 alarm: focusSessionModel.alarm,
+                                 sessionCount: focusSessionModel.sessionCount)
+            focusSession?.objectId = focusSessionModel.objectId
+        }
+        
+        return .init(notificationType: .notification,
+                     title: reminderTitle,
+                     icon: icon,
+                     date: date,
+                     snoozeDuration: snoozeDuration,
+                     tasks: tasks,
+                     tags: tags,
+                     schedule: schedule,
+                     colorName: colorModel.colorName,
+                     focusSession: focusSession)
     }
     
     var theme: LCHColor {

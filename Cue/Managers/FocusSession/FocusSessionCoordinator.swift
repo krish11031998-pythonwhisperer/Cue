@@ -59,6 +59,10 @@ class FocusSessionCoordinator: FocusSessionControl {
         session?.endTime
     }
     
+    var pausedAt: Date? {
+        session?.pausedAt
+    }
+    
     var currentSessionIndex: Int {
         session?.currentClassicSessionIndex ?? 0
     }

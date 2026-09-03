@@ -41,7 +41,7 @@ struct FTActiveSessionView: View {
                 let safeInsets = proxy.safeAreaInsets
                 let globalFrame = proxy.frame(in: .global)
                 let circleSize: CGSize = .init(width: globalFrame.width - 16, height: globalFrame.width - 16)
-                let center: CGPoint = .init(x: globalFrame.midX, y: globalFrame.midY - safeInsets.top.half - circleSize.height.half.half)
+                let center: CGPoint = .init(x: globalFrame.midX, y: globalFrame.midY - circleSize.height.half)
                 
                 ZStack(alignment: .center) {
                     Color.cueItBackground

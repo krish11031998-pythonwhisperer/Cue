@@ -151,7 +151,7 @@ class CueAIViewModel: Sendable {
         
         let date = timeSchedule?.scheduleForToday ?? .now
         
-        let reminder = ReminderModel(notificationType: .notification, title: generatedReminder.title, icon: .init(symbol: nil , emoji: generatedReminder.icon), date: date, snoozeDuration: 15 * 60, tasks: [], tags: [], schedule: timeSchedule, colorName: "sky")
+        let reminder = ReminderModel(notificationType: .notification, title: generatedReminder.title, icon: .init(symbol: nil , emoji: generatedReminder.icon), date: date, snoozeDuration: 15 * 60, tasks: [], tags: [], schedule: timeSchedule, colorName: "sky", focusSession: nil)
         
         try Task.checkCancellation()
         await MainActor.run {

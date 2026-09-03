@@ -185,6 +185,13 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     }
     
     
+    // MARK: - Focus Session
+    
+    func updateFocusSession(_ focusSession: FocusSession?) {
+        self.focusSession = focusSession
+    }
+    
+    
     // MARK: - Identifiable
     
     public var id: Int {

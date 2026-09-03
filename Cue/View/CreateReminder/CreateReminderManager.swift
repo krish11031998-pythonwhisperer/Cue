@@ -57,6 +57,7 @@ protocol CreateReminderManager: AnyObject {
     var suggestionTask: Task<Void, Never>? { get set }
     var isLoadingSuggestions: Bool { get set }
     var appBlockSelection: FamilyActivitySelection? { get set }
+    var focusSessionModel: FocusSessionModel? { get set }
     
     var canCreateReminder: Bool { get }
     var canLoadSuggestions: Bool { get }
@@ -70,6 +71,11 @@ protocol CreateReminderManager: AnyObject {
 extension CreateReminderManager {
     
     var appBlockSelection: FamilyActivitySelection? {
+        get { nil }
+        set { }
+    }
+    
+    var focusSessionModel: FocusSessionModel? {
         get { nil }
         set { }
     }
@@ -225,6 +231,29 @@ extension CreateReminderManager {
                 }
             }
             
+            var focusSession: Model.FocusSession?
+            if let focusSessionModel {
+                if focusSessionModel.objectId == nil {
+                    focusSession = store.createFocusSession(name: focusSessionModel.name,
+                                                            sessionType: focusSessionModel.sessionType,
+                                                            timerDuration: focusSessionModel.timerDuration,
+                                                            breakDuration: focusSessionModel.breakDuration,
+                                                            blockedApps: focusSessionModel.blockedApps,
+                                                            alarm: focusSessionModel.alarm,
+                                                            sessionCount: focusSessionModel.sessionCount)
+                } else {
+                    focusSession = store.updateFocusSession(for: focusSessionModel.objectId) { focusSession in
+                        focusSession.name = focusSessionModel.name
+                        focusSession.timerDuration = focusSessionModel.timerDuration
+                        focusSession.focusSessionType = focusSessionModel.sessionType
+                        focusSession.alarm = focusSessionModel.alarm
+                        focusSession.blockedApps = focusSessionModel.blockedApps
+                        focusSession.breakDuration = focusSessionModel.breakDuration
+                        focusSession.sessionCount = focusSessionModel.sessionCount
+                    }
+                }
+            }
+            
             #warning("Update this when adding tags")
             store.updateReminder(for: reminderID) { reminder in
                 reminder.updateProperties(title: reminderTitle,
@@ -234,6 +263,9 @@ extension CreateReminderManager {
                                           snoozeDuration: snoozeDuration,
                                           scheduleBuilder: scheduleBuilder,
                                           reminderNotification: reminderNotification)
+                
+                store.updateFocusSessionInReminder(reminder: reminder, focusSession: focusSession)
+                
                 if reminder.tasks.count != reminderTaskModels.count {
                     store.updateTasksInReminder(reminder: reminder, reminderTasks: reminderTaskModels, save: false)
                 }
@@ -245,6 +277,18 @@ extension CreateReminderManager {
                 return ReminderTaskModel(from: task)
             }
             
+            var focusSession: Model.FocusSession?
+            // Create Focus Session Model
+            if let focusSessionModel {
+                focusSession = store.createFocusSession(name: focusSessionModel.name,
+                                         sessionType: focusSessionModel.sessionType,
+                                         timerDuration: focusSessionModel.timerDuration,
+                                         breakDuration: focusSessionModel.breakDuration,
+                                         blockedApps: focusSessionModel.blockedApps,
+                                         alarm: focusSessionModel.alarm,
+                                         sessionCount: focusSessionModel.sessionCount)
+            }
+            
             #warning("Update this when adding tags")
             store.createReminder(title: reminderTitle,
                                  icon: .from(icon),
@@ -254,7 +298,8 @@ extension CreateReminderManager {
                                  scheduleBuilder: scheduleBuilder,
                                  tasks: reminderTasks,
                                  reminderNotification: reminderNotification,
-                                 tags: tags)
+                                 tags: tags,
+                                 focusSession: focusSession)
         }
     }
     
