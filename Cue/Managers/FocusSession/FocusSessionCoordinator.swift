@@ -516,6 +516,9 @@ class FocusSessionCoordinator: FocusSessionControl {
         
         setupLiveActivityAttributes(for: focusSessionModel)
         setupAppShieldConfiguration(for: focusSessionModel)
+        if let reminderModel = focusSessionModel.reminder {
+            self.reminderModel = reminderModel
+        }
         startTimer()
     }
     

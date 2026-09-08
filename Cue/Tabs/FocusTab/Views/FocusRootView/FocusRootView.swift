@@ -65,14 +65,15 @@ struct FocusRootView: View {
                 FTQuickStartView(coordinator: coordinator, reminders: viewModel.calendarDay?.reminders ?? [])
             }
         })
+        .alert(item: $viewModel.alert, content: { alert in
+            Alert(title: Text(alert.title).font(.headline),
+                  message: Text(alert.description).font(.subheadline), primaryButton: .default(Text("OK")), secondaryButton: .cancel())
+        })
         .task {
             if viewModel.store == nil {
                 viewModel.store = store
             }
-            await viewModel.observeFocusSessions(store: store)
-        }
-        .task {
-            await viewModel.fetchRemindersForToday()
+            await viewModel.setup(store: store, coordinator: coordinator)
         }
     }
 }
@@ -113,11 +114,37 @@ class FocusRootViewModel {
         }
     }
     
+    enum Alert: Identifiable {
+        case ongoingSession
+        
+        var title: String {
+            switch self {
+            case .ongoingSession:
+                return "Start another FocusSession ?"
+            }
+        }
+        
+        var description: String {
+            switch self {
+            case .ongoingSession:
+                return "You have an ongoing FocusSession. You need to stop it before starting a new one."
+            }
+        }
+        
+        var id: String {
+            title + description
+        }
+    }
+    
     var calendarDay: CalendarDay? = nil
     var presentation: Presentation? = nil
     var fullScreenPresentation: FullScreenPresentation? = nil
     var sections: [DiffableCollectionSection] = []
     var cancellables: Set<AnyCancellable> = .init()
+    var alert: Alert? = nil
+    @ObservationIgnored
+    private var sessionState: FocusSessionState = .idle
+    @ObservationIgnored
     var store: Store?
     
     init() {
@@ -133,6 +160,25 @@ class FocusRootViewModel {
     
     
     // MARK: - Fetch Routines
+    
+    func setup(store: Store, coordinator: FocusSessionCoordinator) async {
+        await withDiscardingTaskGroup { group in
+            group.addTask {
+                await self.fetchRemindersForToday()
+                print("(DEBUG) Done Fetching Reminder for Today")
+            }
+            
+            group.addTask {
+                await self.observeFocusSessions(store: store)
+                print("(DEBUG) Done Observing Focus Sessions")
+            }
+            
+            group.addTask {
+                await self.observeOngoingSession(focusCoordinator: coordinator)
+                print("(DEBUG) Done Observing Ongoing Sessions")
+            }
+        }
+    }
     
     @concurrent
     func fetchRemindersForToday() async {
@@ -177,7 +223,12 @@ class FocusRootViewModel {
         let action: (FocusSessionModel) -> Callback = { [weak self] focusSessionModel in
             { [weak self] in
                 // do something here
-                self?.fullScreenPresentation = .startFocusSession(focusSessionModel)
+                let ongoingSession = self?.sessionState ?? .idle
+                if ongoingSession == .idle {
+                    self?.fullScreenPresentation = .startFocusSession(focusSessionModel)
+                } else {
+                    self?.alert = .ongoingSession
+                }
             }
         }
         
@@ -228,7 +279,13 @@ class FocusRootViewModel {
         let action: (FocusSessionModel) -> Callback = { [weak self] focusSessionModel in
             { [weak self] in
                 // do something here
-                self?.fullScreenPresentation = .startFocusSession(focusSessionModel)
+                
+                let ongoingSession = self?.sessionState ?? .idle
+                if ongoingSession == .idle {
+                    self?.fullScreenPresentation = .startFocusSession(focusSessionModel)
+                } else {
+                    self?.alert = .ongoingSession
+                }
             }
         }
         
@@ -301,11 +358,30 @@ class FocusRootViewModel {
             .store(in: &cancellables)
     }
     
+    func observe(store: Store, focusSessionCoordinator: FocusSessionCoordinator) async {
+       await withDiscardingTaskGroup(returning: Void.self) { group  in
+            group.addTask {
+                await self.observeFocusSessions(store: store)
+            }
+            
+            group.addTask {
+                await self.observeOngoingSession(focusCoordinator: focusSessionCoordinator)
+            }
+        }
+    }
+    
     func observeFocusSessions(store: Store) async {
         let focusSessionStream = Observations { store.focusSessions.map { FocusSessionModel(from: $0) } }
         for await focusSession in focusSessionStream {
             print("(DEBUG) \(Self.self).\(#function) count: ", focusSession.count)
             setupSections(focusSession)
+        }
+    }
+    
+    func observeOngoingSession(focusCoordinator: FocusSessionCoordinator) async {
+        let ongoingSession = Observations { focusCoordinator.state }
+        for await state in ongoingSession {
+            sessionState = state
         }
     }
 }

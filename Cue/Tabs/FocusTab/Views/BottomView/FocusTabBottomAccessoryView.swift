@@ -55,6 +55,27 @@ struct FocusTabBottomAccessoryView: View {
             onTap: { coordinator.presentTaskSheet() }
         )
     }
+    
+    var timeRange: ClosedRange<Date>? {
+        guard let session = coordinator.session else { return nil }
+        switch session {
+        case let classic as ClassicFocusSession:
+            if let startTime = coordinator.startTime, let endTime = coordinator.endTime {
+                return .init(startTime...endTime)
+            } else {
+                return nil
+            }
+        case let pomodoro as PomodoroFocusSession:
+            let currentSession = pomodoro.currentSession
+            if let startTime = currentSession.startTime, let endTime = currentSession.endTime {
+                return .init(startTime...endTime)
+            } else {
+                return nil
+            }
+        default:
+            return nil
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -70,12 +91,13 @@ struct FocusTabBottomAccessoryView: View {
                     .transition(transition)
                 #endif
             case .start, .resume, .pause:
-                if let sessionAttributes = coordinator.sessionAttributes, let startTime = coordinator.startTime, let endTime = coordinator.endTime {
+                if let sessionAttributes = coordinator.sessionAttributes, let timeRange = timeRange {
                     SessionOverviewBottomEdgeView(model: .init(name: sessionAttributes.name,
-                                                               viewType: .bottomAccessoryView(startTime...endTime),
+                                                               viewType: .bottomAccessoryView(timeRange),
                                                                sessionType: sessionType,
                                                                icon: sessionAttributes.icon,
                                                                pauseTime: coordinator.pausedAt))
+                    .environment(\.theme, sessionAttributes.color)
                     .padding(.init(top: 6, leading: 6, bottom: 6, trailing: 10))
                     .contentShape(Rectangle())
                     .onTapGesture {

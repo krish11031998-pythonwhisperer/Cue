@@ -19,7 +19,6 @@ struct FTActiveSessionView: View {
     
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
-    @Environment(\.theme) var theme
 
     @State private var frame: CGRect = .zero
     @Bindable private var coordinator: FocusSessionCoordinator
@@ -33,6 +32,11 @@ struct FTActiveSessionView: View {
     #warning("should use injected `FocusSessionModel` icon")
     private var icon: Icon? {
         return .symbol(.timer)
+    }
+    
+    var theme: LCHColor {
+        guard let sessionAttributes = coordinator.sessionAttributes else { return Color.proSky }
+        return sessionAttributes.color
     }
     
     var body: some View {
@@ -53,6 +57,8 @@ struct FTActiveSessionView: View {
                         InnerContent(icon: icon)
                     }
                     .environment(coordinator)
+                    .environment(\.focusTimerStateFromCoordinator, coordinator.state.uiState)
+                    .environment(\.focusTimerProgressFromCoordinator, coordinator.progress)
                     .padding(.horizontal, 8)
                     .position(center)
                 }
@@ -67,6 +73,7 @@ struct FTActiveSessionView: View {
             }
             coordinator.startWithFocusSessionModel(focusSessionModel)
         })
+        .environment(\.theme, theme)
     }
     
     
