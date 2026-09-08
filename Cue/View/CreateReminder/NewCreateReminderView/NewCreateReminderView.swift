@@ -130,7 +130,6 @@ struct NewCreateReminderView: View {
                 self.viewModel.presentation = nil
             }
         })
-        #if NEW_CREATE_REMINDER
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("", systemSymbol: .xmark) {
@@ -138,7 +137,6 @@ struct NewCreateReminderView: View {
                 }
             }
         }
-        #endif
         .sheet(item: $viewModel.presentation, content: { presentation in
             switch presentation {
             case .emojiAndColorPicker:

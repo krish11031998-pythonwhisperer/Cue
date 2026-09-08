@@ -37,7 +37,6 @@ struct CreateReminderSectionHeaderView: View {
             
             Spacer()
             
-            #if NEW_CREATE_REMINDER
             Button(action: action) {
                 Group {
                     if isLoadingSuggestions {
@@ -46,13 +45,8 @@ struct CreateReminderSectionHeaderView: View {
                             .controlSize(.small)
                             .tint(Color.proSky.foregroundPrimary)
                     } else {
-                        #if NEW_CREATE_REMINDER
                         Text("suggest")
                             .font(.bitcountRegular(style: .subheadline))
-                        #else
-                        Text("suggest")
-                            .font(.bitcountRegular(style: .footnote))
-                        #endif
                     }
                 }
                 .transition(.opacity)
@@ -62,28 +56,6 @@ struct CreateReminderSectionHeaderView: View {
             }
             .buttonStyle(.glass)
             .disabled(!canLoadSuggestions)
-            #else
-            Button(action: action) {
-                Group {
-                    if isLoadingSuggestions {
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                            .tint(Color.proSky.foregroundPrimary)
-                    } else {
-                        Label("Suggest Tasks", systemSymbol: .sparkles)
-                            .font(.caption2)
-                            .labelStyle(.iconAndTitle)
-                    }
-                }
-                .transition(.opacity)
-                .animation(.default, value: isLoadingSuggestions)
-                .padding(.init(top: 2, leading: 4, bottom: 2, trailing: 4))
-                .clipped()
-            }
-            .tint(Color.proSky.baseColor)
-            .buttonStyle(.glassProminent)
-            .disabled(!canLoadSuggestions)
-            #endif
         }
     }
 }

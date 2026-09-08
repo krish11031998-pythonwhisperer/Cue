@@ -16,12 +16,8 @@ struct CreateReminderRootView: View {
     }
     
     @Environment(\.dismiss) var dismiss
-    @Environment(SubscriptionManager.self) var subscriptionManager  
-    #if AI_TAB
-    @State private var mode: Mode? = nil
-    #else
+    @Environment(SubscriptionManager.self) var subscriptionManager
     @State private var mode: Mode = .ai
-    #endif
     let store: Store
     
     init(store: Store) {
@@ -29,42 +25,14 @@ struct CreateReminderRootView: View {
     }
     
     var body: some View {
-        #if AI_TAB
-        NavigationView {
-            CreateReminderWithCueAI(store: store)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("", systemSymbol: .pencilTip) {
-                            withAnimation(.easeInOut) {
-                                mode = .manual
-                            }
-                        }
-                    }
-                }
-        }
-        .sheet(isPresented: .init(get: { mode == .manual }, set: { _ in mode = nil }), onDismiss: nil) {
-            NavigationView {
-                CreateReminderView(mode: .create, store: store)
-            }
-            .presentationDetents([.large])
-            .interactiveDismissDisabled(true)
-        }
-        #else
         NavigationView {
             ZStack(alignment: .center) {
                 switch mode {
                 case .manual:
-                    #if NEW_CREATE_REMINDER
                     NewCreateReminderView(mode: .create, store: store) {
                         dismiss()
                     }
-                        .transition(.blurReplace)
-                    #else
-                    CreateReminderView(mode: .create, store: store) {
-                        dismiss()
-                    }
                     .transition(.blurReplace)
-                    #endif
                 case .ai:
                     CueAIView(store: store)
                         .transition(.blurReplace)
@@ -86,6 +54,5 @@ struct CreateReminderRootView: View {
                 }
             }
         }
-        #endif
     }
 }

@@ -68,7 +68,7 @@ struct OrangizeTabView: View {
                 }
                 .fittedPresentationDetent()
             case .reminder(let reminderModel):
-                CreateReminderView(mode: .edit(reminderModel), store: store)
+                NewCreateReminderView(mode: .edit(reminderModel), store: store)
             }
         }
     }

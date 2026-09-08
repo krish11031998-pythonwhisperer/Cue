@@ -17,7 +17,6 @@ struct CreateReminderTasksView: View {
     let generateTasks: () -> Void
     
     var body: some View {
-        #if NEW_CREATE_REMINDER
         Section {
             ForEach(taskViewModels) { taskViewModel in
                 ReminderTaskView(model: taskViewModel)
@@ -34,32 +33,6 @@ struct CreateReminderTasksView: View {
             .padding(.top, taskViewModels.isEmpty ? 0 : 6)
         }
         .environment(\.createReminderStyle, .list)
-        #else
-        VStack(alignment: .center, spacing: 0) {
-            Section {
-                if !taskViewModels.isEmpty {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(taskViewModels) { taskViewModel in
-                            ReminderTaskView(model: taskViewModel)
-                                .transition(.scale(scale: 1, anchor: .center))
-                        }
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                    .padding(.top, 16)
-                }
-            } header: {
-                CreateReminderSectionHeaderView(canLoadSuggestions: canLoadSuggestions, isLoadingSuggestions: isLoadingSuggestions) {
-                    generateTasks()
-                }
-            } footer: {
-                CreateReminderSectionFooterView { taskName in
-                    addTask(taskName)
-                }
-                .padding(.top, 12)
-            }
-        }
-        .environment(\.createReminderStyle, .compact)
-        #endif
     }
     
 }

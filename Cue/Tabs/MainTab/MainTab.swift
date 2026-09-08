@@ -37,27 +37,16 @@ struct MainTab: View {
     }
     
     var bottomTabAccessories: Set<MainTabViewModel.Tabs> {
-        #if AI_TAB || NEW_CREATE_REMINDER
         return [.focus]
-        #else
-        return [.home, .focus]
-        #endif
     }
     
     var body: some View {
         TabView(selection: $viewModel.selectedTab) {
             Tab(value: Tabs.home) {
-                #if NEW_CREATE_REMINDER
                 TodayTabView {
                     self.viewModel.presentCreateReminder = true
                 }
                 .ignoresSafeArea(edges: .bottom)
-                #else
-                TodayTabView(scrollToTodayPublisher: todayPublisher.eraseToAnyPublisher()) {
-                    self.presentCreateReminder = true
-                }
-                .ignoresSafeArea(edges: .bottom)
-                #endif
             } label: {
                 Image(systemSymbol: .checkmarkCircleFill)
                     .font(.body)
@@ -93,13 +82,7 @@ struct MainTab: View {
             }
             
             Tab(value: .create, role: createTabRole) {
-                #if AI_TAB
-                CreateReminderRootView(store: store)
-                    .presentationDetents([.fraction(1)])
-                    .interactiveDismissDisabled(true)
-                #else
                 Color.clear
-                #endif
             } label: {
                 Image(systemSymbol: .plus)
                     .font(.body)
@@ -120,28 +103,20 @@ struct MainTab: View {
         })
         .tabBarMinimizeBehavior(.onScrollDown)
         .ignoresSafeArea(edges: .bottom)
-        #if !AI_TAB
         .onChange(of: viewModel.selectedTab) { oldValue, newValue in
             print("(DEBUG) Change in selectedTab: ", viewModel.selectedTab)
             if newValue == .create {
                 withAnimation(nil) {
-                    #if NEW_CREATE_REMINDER
                     self.viewModel.presentFloatingMenu = true
-                    #else
-                    self.presentCreateReminder = true
-                    #endif
                     self.viewModel.selectedTab = oldValue
                 }
             }
         }
-        #endif
-        #if NEW_CREATE_REMINDER
         .overlay(alignment: .bottom) {
             if viewModel.presentFloatingMenu {
                 CreationFloatingView(presentation: $viewModel.presentation, presentFloatingMenu: $viewModel.presentFloatingMenu)
             }
         }
-        #endif
         .cuePresentation(presentation: $viewModel.presentation, dismiss: viewModel.onDismiss(_:), contentBuilder: { presentation in
             switch presentation {
             case .createReminder:

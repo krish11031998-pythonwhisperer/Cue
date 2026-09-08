@@ -35,15 +35,9 @@ public struct TagCellView: View {
             selectTag(tag)
         } label: {
             HStack(alignment: .center, spacing: 8) {
-                #if NEW_CREATE_REMINDER
                 Image(systemSymbol: .tagFill)
                     .foregroundStyle(tag.color)
                     .font(.headline)
-                #else
-                Circle()
-                    .fill(tag.color)
-                    .frame(width: 24, height: 24, alignment: .center)
-                #endif
                 
                 Text(tag.name)
                     .font(.headline)
