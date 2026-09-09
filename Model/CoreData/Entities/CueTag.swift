@@ -41,4 +41,19 @@ public final class CueTag: NSManagedObject, CoreDataEntity {
     }
     
     
+    // MARK: - Fetch
+    
+    public static func fetchAllTags(inBackground: Bool = true) async -> [CueTag] {
+        if inBackground {
+            let context = CoreDataManager.shared.retrieveBackgroundContext()
+            return await context.perform {
+                return Self.fetchAll(context: context)
+            }
+        } else {
+            let context = CoreDataManager.shared.persistentContainer.viewContext
+            let tags = Self.fetchAll(context: context)
+            return tags
+        }
+    }
+    
 }

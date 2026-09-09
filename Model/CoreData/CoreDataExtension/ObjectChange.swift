@@ -214,6 +214,9 @@ extension NSManagedObjectContext {
                     continuation.yield(())
                 }
             }
+            continuation.onTermination = { termination in
+                print("changesStream has terminated: ", termination)
+            }
         }
     }
 }
