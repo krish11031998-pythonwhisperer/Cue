@@ -47,11 +47,19 @@ class TodayCalendarViewModel {
             
         }
     }
+    @ObservationIgnored
+    var unfilteredCalendarMonths: [CalendarMonth] = []
+    @ObservationIgnored
+    var selectedTags: Set<TagModel> = .init() {
+        didSet {
+            showFilteredRoutines(selectedTags)
+        }
+    }
+    
     var path: [Path] = [.day(.now)]
     var calendarMonths: [CalendarMonth] = []
     var tags: [TagModel] = []
-    var selectedTags: Set<TagModel> = .init()
-    var currentMonth: CalendarMonth? = nil
+    var currentMonth: CalendarMonth.ID? = nil
     var fullScreenPresentation: FullScreenPresentation? = nil
     
     init() {
@@ -88,9 +96,10 @@ class TodayCalendarViewModel {
                 }
                 
                 await MainActor.run { [weak self] in
+                    self?.unfilteredCalendarMonths = calendarMonths
                     self?.calendarMonths = calendarMonths
                     print("(DEBUG) calendarMonths.days: ", calendarMonths.flatMap(\.days).count)
-                    self?.currentMonth = calendarMonths.first(where: { $0.month == Date.now.month })
+                    self?.currentMonth = calendarMonths.first(where: { $0.month == Date.now.month })?.id
                 }
             }
             
@@ -99,6 +108,44 @@ class TodayCalendarViewModel {
                 await MainActor.run {
                     self.tags = tags
                 }
+            }
+        }
+    }
+    
+    private func showFilteredRoutines(_ tags: Set<TagModel>) {
+        let unfilteredCalendarMonths: [CalendarMonth] = self.unfilteredCalendarMonths
+        if tags.isEmpty {
+            self.calendarMonths = unfilteredCalendarMonths
+            return
+        }
+        
+        Task.detached { [weak self] in
+           let filteredCalendarMonths = unfilteredCalendarMonths.map { month in
+               let days: [CalendarDay] = month.days.map { day in
+                   let reminders = day.reminders.filter { reminder in
+                       let reminderContainsTag = reminder.tags.contains { tag in
+                           tags.contains(tag)
+                       }
+                       
+                       return reminderContainsTag
+                   }
+                   
+                   let loggedReminders = day.loggedReminders.filter { loggedReminder in
+                       let loggedReminderContainsTag = loggedReminder.reminder.tags.contains { tag in
+                           tags.contains(tag)
+                       }
+                       
+                       return loggedReminderContainsTag
+                   }
+                   
+                   return .init(date: day.date, reminders: reminders, loggedReminders: loggedReminders, loggedReminderTasks: day.loggedReminderTasks)
+               }
+               
+               return CalendarMonth(month: month.month, days: days)
+            }
+            
+            await MainActor.run { [weak self] in
+                self?.calendarMonths = filteredCalendarMonths
             }
         }
     }

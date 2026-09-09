@@ -26,7 +26,7 @@ struct TodayCalendarView: View {
                 if !viewModel.calendarMonths.isEmpty {
                     TabView(selection: $viewModel.currentMonth) {
                         ForEach(viewModel.calendarMonths) { calendarMonth in
-                            Tab(value: calendarMonth) {
+                            Tab(value: calendarMonth.id) {
                                 CalendarMonthView(month: calendarMonth) { day in
                                     let id = Path.day(day.date).id
                                     return (id, namespace)
@@ -41,22 +41,13 @@ struct TodayCalendarView: View {
                         Color.cueItBackground                                  
                             .ignoresSafeArea(.all)
                     }
-//                    .overlay(alignment: .top) {
-//                        CalendarTagsView(tags: viewModel.tags) { tag in
-//                            // Do something
-//                        }
-//                        .padding(.bottom, 8)
-//                        .padding(.horizontal, 16)
-//                        .padding(.top, calendarGridFrame.maxY)
-//                        .animation(.easeInOut, value: calendarGridFrame.maxY)
-//                        .frame(maxWidth: .infinity, alignment: .leading)
-//                    }
-//                    .onPreferenceChange(CalendarMonthGridSizePreferenceKey.self) { frame in
-//                        self.calendarGridFrame = frame
-//                    }
                     .safeAreaInset(edge: .bottom) {
                         CalendarTagsView(tags: viewModel.tags) { tag in
-                            //
+                            if viewModel.selectedTags.contains(tag) {
+                                viewModel.selectedTags.remove(tag)
+                            } else {
+                                viewModel.selectedTags.insert(tag)
+                            }
                         }
                         .padding(.bottom, 8)
                         .padding(.horizontal, 16)

@@ -34,27 +34,25 @@ struct CalendarMonthView: View {
                 .font(.bitcountMedium(style: .title1))
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.bottom, 32)
-            if month.days.isEmpty {
-                EmptyView()
-            } else {
-                LazyVGrid(columns: [.init(.adaptive(minimum: max(44, size.width / 7).rounded(.down)),
-                                          spacing: 0,
-                                          alignment: .center)],
-                          alignment: .center,
-                          spacing: 0) {
-                    sectionBuilder()
-                }
-                .onGeometryChange(for: CGRect.self, of: {
-                    let frame = $0.frame(in: .named("content"))
-                    let safeAreaInset = $0.safeAreaInsets
-                    
-                    return .init(x: frame.minX, y: frame.minY - safeAreaInset.top, width: frame.width, height: frame.height)
-                }) { newValue in
-                    self.frame = newValue
-                }
-                .padding(.horizontal, 16)
-                .frame(maxWidth: .infinity, alignment: .center)
+            
+            LazyVGrid(columns: [.init(.adaptive(minimum: max(44, size.width / 7).rounded(.down)),
+                                      spacing: 0,
+                                      alignment: .center)],
+                      alignment: .center,
+                      spacing: 0) {
+                sectionBuilder()
             }
+                      .onGeometryChange(for: CGRect.self, of: {
+                          let frame = $0.frame(in: .named("content"))
+                          let safeAreaInset = $0.safeAreaInsets
+                          
+                          return .init(x: frame.minX, y: frame.minY - safeAreaInset.top, width: frame.width, height: frame.height)
+                      }) { newValue in
+                          self.frame = newValue
+                      }
+                      .padding(.horizontal, 16)
+                      .frame(maxWidth: .infinity, alignment: .center)
+            
         }
         .frame(maxHeight: .infinity, alignment: .top)
         .coordinateSpace(.named("content"))
