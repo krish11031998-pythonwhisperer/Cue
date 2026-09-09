@@ -56,11 +56,11 @@ struct CalendarView: View {
                     sectionBuilder(section: section)
                 }
             }
-                      .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
-                          self.size = newValue
-                      }
-                      .padding(.horizontal, 20)
-                      .frame(maxWidth: .infinity, alignment: .center)
+            .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
+                self.size = newValue
+            }
+            .padding(.horizontal, 20)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .task {
             viewModel.fetchCalendarSection()

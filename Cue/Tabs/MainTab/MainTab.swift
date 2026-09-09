@@ -43,10 +43,14 @@ struct MainTab: View {
     var body: some View {
         TabView(selection: $viewModel.selectedTab) {
             Tab(value: Tabs.home) {
+                #if NEW_CALENDAR
+                TodayCalendarView()
+                #else
                 TodayTabView {
                     self.viewModel.presentCreateReminder = true
                 }
                 .ignoresSafeArea(edges: .bottom)
+                #endif
             } label: {
                 Image(systemSymbol: .checkmarkCircleFill)
                     .font(.body)
