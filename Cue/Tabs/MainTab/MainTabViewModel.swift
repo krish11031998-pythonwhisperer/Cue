@@ -17,7 +17,9 @@ class MainTabViewModel {
     enum Tabs: Hashable {
         case home
         case organize
+        #if !NEW_CALENDAR
         case calendar
+        #endif
         case focus
         case create
     }

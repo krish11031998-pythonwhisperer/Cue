@@ -19,6 +19,15 @@ public struct CalendaryDetailSheetView: View {
         self.presentCreateReminder = presentCreateReminder
     }
     
+    private var isInFuture: Bool {
+        let day = calendarDay.date.startOfDay
+        let twoWeeksAfter = Calendar.current.date(byAdding: .day, value: 14, to: Date.now.startOfDay)?.startOfDay
+        
+        guard let twoWeeksAfter else { return false }
+        
+        return day > twoWeeksAfter
+    }
+    
     public var body: some View {
         VStack(alignment: .center, spacing: 16) {
             DateView(todayModel: .init(date: calendarDay.date, mode: .noArc))
@@ -53,7 +62,7 @@ public struct CalendaryDetailSheetView: View {
                                                   lightColor: loggedReminder.reminder.color.resolved(for: .light),
                                                   darkColor: loggedReminder.reminder.color.resolved(for: .dark),
                                                   time: loggedReminder.reminder.date,
-                                                  state: .calendarDetailView(true),
+                                                  state: .calendarDetailView(true, isInFuture),
                                                   tags: loggedReminder.reminder.tags.map { .init(name: $0.name, color: $0.color) }, logReminder: nil,
                                                   deleteReminder: nil))
                         .padding(.bottom, 4)
@@ -76,7 +85,7 @@ public struct CalendaryDetailSheetView: View {
                                                   lightColor: reminder.color.resolved(for: .light),
                                                   darkColor: reminder.color.resolved(for: .dark),
                                                   time: reminder.date,
-                                                  state: .calendarDetailView(false),
+                                                  state: .calendarDetailView(false, isInFuture),
                                                   tags: reminder.tags.map { .init(name: $0.name, color: $0.color) },
                                                   logReminder: nil,
                                                   deleteReminder: nil))

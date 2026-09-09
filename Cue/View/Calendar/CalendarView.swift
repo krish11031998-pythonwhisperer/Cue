@@ -96,7 +96,8 @@ struct CalendarView: View {
                             if let bubble = viewModel.buildBubbleConfig(for: day) {
                                 ReminderBubbleView(element: bubble, withGlass: false)
                             } else {
-                                CalendarChipUnloggedContent(count: day.reminders.count)
+//                                CalendarChipUnloggedContent(count: day.reminders.count)
+                                EmptyView()
                             }
                         }
                         .aspectRatio(1, contentMode: .fit)

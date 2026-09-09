@@ -57,6 +57,7 @@ struct MainTab: View {
                     .tint(Color.proSky.baseColor)
             }
             
+            #if !NEW_CALENDAR
             Tab(value: .calendar) {
                 CalendarView {
                     self.viewModel.presentCreateReminder = true
@@ -66,6 +67,7 @@ struct MainTab: View {
                     .font(.body)
                     .tint(Color.proSky.baseColor)
             }
+            #endif
             
             Tab(value: .focus) {
                 FocusTimerTabView(coordinator: viewModel.focusTimerCoordinator)

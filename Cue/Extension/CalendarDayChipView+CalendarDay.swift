@@ -12,15 +12,16 @@ import Model
 
 extension CalendarDayChipView.Model {
     
-    init(day: CalendarDay) {
-        self.init(date: day.date,
-                  reminderCount: day.reminders.count,
-                  loggedElements: day.loggedReminders
-            .prefix(3)
+    init(day: CalendarMonth.Day) {
+        let loggedElements: [ReminderBubbleView.Element] = day.loggedReminders
             .compactMap { logged in
                 guard let icon = Icon(logged.reminder.icon) else { return nil }
-                return .init(icon: icon, color: Color.proSky.baseColor)
-            })
+                return .init(icon: icon, color: logged.reminder.color)
+            }
+        
+        self.init(date: day.date,
+                  remainderColors: day.reminders.map(\.color),
+                  loggedElements: loggedElements)
     }
     
 }

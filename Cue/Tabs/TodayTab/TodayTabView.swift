@@ -23,13 +23,23 @@ struct TodayTabView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(Store.self) var store
     @Environment(SubscriptionManager.self) var subscriptionManager
+    #if !NEW_CALENDAR
     private var presentCreateReminder: () -> Void
+    #else
+    let startDate: Date?
+    #endif
     @State private var viewModel: TodayViewModel = .init()
     @State private var topPadding: CGFloat = .zero
     
+    #if !NEW_CALENDAR
     init(presentCreateReminder: @escaping () -> Void) {
         self.presentCreateReminder = presentCreateReminder
     }
+    #else
+    init(startDate: Date? = nil) {
+        self.startDate = startDate
+    }
+    #endif
     
     var id: Int {
         var hasher = Hasher()
@@ -111,9 +121,14 @@ struct TodayTabView: View {
                     }
                 }
             }
+            .task(id: startDate) { @MainActor in
+                if let startDate {
+                    self.viewModel.today = startDate.startOfDay
+                }
+            }
             #endif
         }
-        .preference(key: IsTodayPreferenceKey.self, value: viewModel.todayCalendar?.date.startOfDay == viewModel.today.startOfDay)
+        .preference(key: IsTodayPreferenceKey.self, value: viewModel.todayInCalendar?.date.startOfDay == viewModel.today.startOfDay)
         .onChange(of: viewModel.today, { _, _ in
             if store.user?.hapticsEnabled == true {
                 SensoryFeedbackManager.shared.playSelection()                
@@ -127,7 +142,6 @@ struct TodayTabView: View {
                 viewModel.setupCalendarForOneMonth(reminders: store.reminders)
             }
         }
-        .sheet(item: $viewModel.presentation, content: presentationContent(_:))
         .fullScreenCover(item: $viewModel.fullPresentation, content: fullScreenPresentationContent(_:))
     }
     
@@ -135,37 +149,8 @@ struct TodayTabView: View {
     // MARK: - Presentation
     
     @ViewBuilder
-    private func presentationContent(_ presentation: TodayViewModel.Presentation) -> some View {
-        switch presentation {
-        case .timer:
-            TimerSheet(reminderModels: viewModel.reminderWithTimer) { selectedReminder, timeDuration in
-                withAnimation {
-                    self.viewModel.presentation = nil
-                } completion: {
-                    self.viewModel.fullPresentation = .focusTimer(selectedReminder, viewModel.reminderForTimerWithTasks(selectedReminder), timeDuration)
-                }
-            }
-            .fittedPresentationDetent()
-        }
-    }
-    
-    @ViewBuilder
     private func fullScreenPresentationContent(_ presentation: TodayViewModel.FullScreenPresentation) -> some View {
         switch presentation {
-        case .calendar:
-            NavigationView {
-                CalendarView {
-                    self.dismiss()
-                    self.presentCreateReminder()
-                }
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("", systemSymbol: .xmark) {
-                            dismiss()
-                        }
-                    }
-                }
-            }
         case .focusTimer(let reminderModel, let loggedReminderTasks, let duration):
             TimerView(reminder: reminderModel, loggedTasks: loggedReminderTasks, duration: duration)
         case .settings:
@@ -199,7 +184,7 @@ struct TodayTabView: View {
                 .disabled(true)
         })
         .safeAreaInset(edge: .bottom, content: {
-            if viewModel.todayCalendar?.date.startOfDay != viewModel.today.startOfDay {
+            if viewModel.todayInCalendar?.date.startOfDay != viewModel.today.startOfDay {
                 Button {
                     withAnimation(.easeInOut) {
                         self.viewModel.today = Date.now.startOfDay

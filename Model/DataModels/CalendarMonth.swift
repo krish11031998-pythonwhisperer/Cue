@@ -9,8 +9,22 @@ import Foundation
 
 public struct CalendarMonth: Hashable, Sendable, Identifiable {
     
+    public class Day: CalendarDay, @unchecked Sendable {
+        
+        override public func hash(into hasher: inout Hasher) {
+            hasher.combine(date)
+            hasher.combine(reminders)
+            hasher.combine(loggedReminders)
+            hasher.combine(loggedReminderTasks)
+        }
+        
+        public static func == (lhs: Day, rhs: Day) -> Bool {
+            return lhs.date == rhs.date && lhs.reminders == rhs.reminders && lhs.loggedReminders == rhs.loggedReminders && lhs.loggedReminderTasks == rhs.loggedReminderTasks
+        }
+    }
+    
     public nonisolated let month: Int
-    public var days: [CalendarDay]
+    public var days: [Day]
     
     public var firstDayInMonth: Int {
         guard let firstDay = days.first else {
@@ -20,7 +34,7 @@ public struct CalendarMonth: Hashable, Sendable, Identifiable {
         return firstDay.date.weekDayValue
     }
     
-    public init(month: Int, days: [CalendarDay]) {
+    public init(month: Int, days: [CalendarMonth.Day]) {
         self.month = month
         self.days = days
     }
@@ -28,7 +42,7 @@ public struct CalendarMonth: Hashable, Sendable, Identifiable {
     @concurrent
     public static func fetch(month: Int) async -> CalendarMonth {
         let calendarDays = await CalendarManager.shared.setupCalendayDaysInCurrentYear(month: month)
-        return .init(month: month, days: calendarDays)
+        return .init(month: month, days: calendarDays.map { Day(date: $0.date, reminders: $0.reminders, loggedReminders: $0.loggedReminders, loggedReminderTasks: $0.loggedReminderTasks) })
     }
     
     

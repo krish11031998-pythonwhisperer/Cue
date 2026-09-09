@@ -12,10 +12,11 @@ import Model
 
 struct TodayCalendarView: View {
     
+    @Environment(Store.self) var store
     @Namespace var namespace
     @Environment(\.colorScheme) var colorScheme
     @State private var viewModel: TodayCalendarViewModel = .init()
-    @State private var size: CGSize = .zero
+    @State private var calendarGridFrame: CGRect = .zero
     
     typealias Path = TodayCalendarViewModel.Path
     
@@ -25,32 +26,41 @@ struct TodayCalendarView: View {
                 if !viewModel.calendarMonths.isEmpty {
                     TabView(selection: $viewModel.currentMonth) {
                         ForEach(viewModel.calendarMonths) { calendarMonth in
-                            Tab(value: calendarMonth) {
+                            Tab(value: calendarMonth.id) {
                                 CalendarMonthView(month: calendarMonth) { day in
                                     let id = Path.day(day.date).id
                                     return (id, namespace)
                                 } navigationAction: { day in
-                                    self.viewModel.path.append(Path.day(day.date))
+                                    self.viewModel.presentDay(day: day)
                                 }
                             }
                         }
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
+                    .background {
+                        Color.cueItBackground                                  
+                            .ignoresSafeArea(.all)
+                    }
+                    .safeAreaInset(edge: .bottom) {
+                        CalendarTagsView(tags: viewModel.tags) { tag in
+                            if viewModel.selectedTags.contains(tag) {
+                                viewModel.selectedTags.remove(tag)
+                            } else {
+                                viewModel.selectedTags.insert(tag)
+                            }
+                        }
+                        .padding(.bottom, 8)
+                    }
                 } else {
                     ContentUnavailableView("Loading..", systemSymbol: .calendar, description: nil)
-                        .task {
-                            viewModel.fetchCalendarSection()
-                        }
                 }
             }
             .navigationDestination(for: Path.self) { path in
                 switch path {
-                case .day:
-                    TodayTabView {
-                        
-                    }
-                    .navigationTransition(.zoom(sourceID: path.id, in: namespace))
-                    .navigationBarBackButtonHidden()
+                case .day(let date):
+                    TodayTabView(startDate: date)
+                        .navigationTransition(.zoom(sourceID: path.id, in: namespace))
+                        .navigationBarBackButtonHidden()
                 }
             }
             .toolbar {
@@ -71,6 +81,21 @@ struct TodayCalendarView: View {
             case .settings:
                 SettingView()
             }
+        }
+        .sheet(item: $viewModel.presentation, content: { presentation in
+            switch presentation {
+            case .calendarDetail(let day):
+                CalendaryDetailSheetView(calendarDay: day) {
+                    // Do nothing for now
+                }
+                .fittedPresentationDetent()
+                .presentationBackground {
+                    Color.clear
+                }
+            }
+        })
+        .task {
+            self.viewModel.store = store
         }
     }
 }
