@@ -22,27 +22,20 @@ struct TodayCalendarView: View {
     var body: some View {
         NavigationStack(path: $viewModel.path) {
             Group {
-                if let currentMonth = viewModel.currentMonth {
-                    VStack(alignment: .center, spacing: 0) {
-                        Text(Calendar.current.monthSymbols[currentMonth.month - 1])
-                            .font(.bitcountRegular(style: .title1))
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.bottom, 32)
-                        LazyVGrid(columns: [.init(.adaptive(minimum: max(44, size.width / 7).rounded(.down)),
-                                                  spacing: 0,
-                                                  alignment: .center)],
-                                  alignment: .center,
-                                  spacing: 0) {
-                            sectionBuilder(section: currentMonth)
+                if !viewModel.calendarMonths.isEmpty {
+                    TabView(selection: $viewModel.currentMonth) {
+                        ForEach(viewModel.calendarMonths) { calendarMonth in
+                            Tab(value: calendarMonth) {
+                                CalendarMonthView(month: calendarMonth) { day in
+                                    let id = Path.day(day.date).id
+                                    return (id, namespace)
+                                } navigationAction: { day in
+                                    self.viewModel.path.append(Path.day(day.date))
+                                }
+                            }
                         }
-                        .onGeometryChange(for: CGSize.self, of: { $0.size }) { newValue in
-                            self.size = newValue
-                        }
-                        .padding(.horizontal, 16)
-                        .frame(maxWidth: .infinity, alignment: .center)
                     }
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    
+                    .tabViewStyle(.page(indexDisplayMode: .never))
                 } else {
                     ContentUnavailableView("Loading..", systemSymbol: .calendar, description: nil)
                         .task {
@@ -80,33 +73,6 @@ struct TodayCalendarView: View {
             }
         }
     }
-    
-    // MARK: - SectionBuilder
-    
-    @ViewBuilder
-    func sectionBuilder(section: TodayCalendarViewModel.Section) -> some View {
-        Section {
-            if section.firstDayInMonth < 7 {
-                ForEach(0..<section.firstDayInMonth - 1, id: \.self) { id in
-                    EmptyCalendarDayView()
-                        .id("\(section)-\(id)")
-                }
-            }
-            ForEach(section.days) { day in
-                Button {
-                    self.viewModel.path.append(Path.day(day.date))
-                } label: {
-                    CalendarDayChipView(model: .init(day: day))
-                }
-                .buttonStyle(.plain)
-                .matchedTransitionSource(id: TodayCalendarViewModel.Path.day(day.date).id, in: namespace)
-            }
-        } header: {
-            CalendarWeekdayView()
-        }
-        .padding(.bottom, 12)
-    }
-
 }
 
 #Preview {
