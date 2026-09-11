@@ -15,20 +15,26 @@ struct FocusSessionLiveActivity: Widget {
     
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: FocusSessionLiveActivityAttributes.self) { context in
-            FocusSessionLockScreenLiveActivityView(attributes: context.attributes)
+            FocusSessionLockScreenLiveActivityView(attributes: context.attributes,
+                                                   state: context.state,
+                                                   toggleIntent: ToggleFocusSessionIntent())
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.bottom) {
-                    FocusDynamicExpandedView(attributes: context.attributes)
+                    FocusDynamicExpandedView(attributes: context.attributes,
+                                             state: context.state,
+                                             toggleIntent: ToggleFocusSessionIntent())
                 }
             } compactLeading: {
-                Text(timerInterval: context.attributes.startDate...context.state.endDate, countsDown: true)
+                Text.focusCountdown(interval: context.attributes.startDate...context.state.endDate,
+                                    pausedAt: context.state.pausedAt,
+                                    showsHours: true)
                     .font(.caption2)
                     .frame(idealWidth: 40, maxWidth: 75, alignment: .center)
             } compactTrailing: {
-                FocusLiveActivitySessionIcon(context.attributes, viewType: .iconWithProgressMinimal)
+                FocusLiveActivitySessionIcon(context.attributes, state: context.state, viewType: .iconWithProgressMinimal)
             } minimal: {
-                FocusLiveActivitySessionIcon(context.attributes, viewType: .iconWithProgressMinimal)
+                FocusLiveActivitySessionIcon(context.attributes, state: context.state, viewType: .iconWithProgressMinimal)
             }
         }.supplementalActivityFamilies([.small])
     }
@@ -44,6 +50,16 @@ struct FocusSessionLiveActivity: Widget {
                                                     endDate: Date.now.addingTimeInterval(100 * 60),
                                                     progress: 0.5,
                                                     completedTasks: 2,
-                                                    isPaused: false)
+                                                    pausedAt: nil,
+                                                    pomodoroSessionState: nil)
+    FocusSessionLiveActivityAttributes.ContentState(restTime: 0,
+                                                    endDate: Date.now.addingTimeInterval(100 * 60),
+                                                    progress: 0.5,
+                                                    completedTasks: 2,
+                                                    pausedAt: .now,
+                                                    pomodoroSessionState: .init(currentSession: 1,
+                                                                                totalSessions: 5,
+                                                                                currentSessionStartDate: Date.now,
+                                                                                currentSessionEndDate: Date.now.addingTimeInterval(25 * 60)))
     
 }

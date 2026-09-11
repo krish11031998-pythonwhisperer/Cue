@@ -232,7 +232,7 @@ class FocusSessionCoordinator: FocusSessionControl {
     private func setupLiveActivity() {
         guard var sessionAttributes,
               let startTime,
-              let totalDuration = session?.totalDuration else { return }
+              let content = currentContentState() else { return }
         
         sessionAttributes.sessionType = {
             switch selectedTimerType {
@@ -243,30 +243,57 @@ class FocusSessionCoordinator: FocusSessionControl {
             }
         }()
         
-        let endDate = startTime.addingTimeInterval(totalDuration)
         let activityID = UUID()
         session?.liveActivityID = activityID
         
-        liveActivityCoordindator?.setupLiveActivity(for: activityID, sessionAttributes: sessionAttributes, startDate: startTime, endDate: endDate)
-//        updateLiveActivityWithProgress()
+        liveActivityCoordindator?.setupLiveActivity(for: activityID,
+                                                    sessionAttributes: sessionAttributes,
+                                                    startDate: startTime,
+                                                    content: content)
+    }
+    
+    /// Snapshot of everything that changes while the session runs. Built in one place so
+    /// that the state seeded at setup and every later update agree.
+    private func currentContentState() -> FocusSessionLiveActivityAttributes.ContentState? {
+        guard let session, let endTime = session.endTime else { return nil }
+        
+        let pausedAt: Date?
+        switch session.state {
+        case .pause:
+            pausedAt = session.pausedAt
+        case .idle, .start, .resume:
+            // A session that has just rolled over to the next Pomodoro session is `.idle`
+            // until `startTimer()` runs, and `.start` immediately after. Both still need
+            // to reach the Live Activity - they simply aren't paused.
+            pausedAt = nil
+        case .reset:
+            return nil
+        }
+        
+        var pomodoroSessionState: FocusSessionLiveActivityAttributes.PomodoroSessionState?
+        if case .pomodoro = selectedTimerType,
+           let currentSessionStartDate = session.currentSessionStartTime,
+           let currentSessionEndDate = session.currentSessionEndTime {
+            // `currentClassicSessionIndex` is 0-based; the Live Activity displays it as
+            // "n of total".
+            pomodoroSessionState = .init(currentSession: session.currentClassicSessionIndex + 1,
+                                         totalSessions: pomodoroSessionCount,
+                                         currentSessionStartDate: currentSessionStartDate,
+                                         currentSessionEndDate: currentSessionEndDate)
+        }
+        
+        return .init(restTime: 0,
+                     endDate: endTime,
+                     progress: session.timerProgress,
+                     completedTasks: completedReminderTasks.count,
+                     pausedAt: pausedAt,
+                     pomodoroSessionState: pomodoroSessionState)
     }
     
     private func updateStateOfLiveActivity() {
-        guard let session, let activityID = session.liveActivityID else { return }
-        let isPaused: Bool
-        switch session.state {
-        case .resume:
-            isPaused = false
-        case .pause:
-            isPaused = true
-        case .idle, .start, .reset:
-            return
-        }
-        
-        guard let endTime = session.endTime else { return }
-        let activityState = FocusSessionLiveActivityAttributes.ContentState(restTime: 0, endDate: endTime, progress: session.timerProgress, completedTasks: 0, isPaused: isPaused)
-        print("(DEBUG) state: ", state)
-        liveActivityCoordindator?.updateLiveAcitivity(for: activityID, content: activityState)
+        guard let activityID = session?.liveActivityID,
+              let content = currentContentState() else { return }
+        liveActivityCoordindator?.updateLiveAcitivity(for: activityID, content: content)
     }
     
     private func endLiveActivity() {
@@ -476,6 +503,26 @@ class FocusSessionCoordinator: FocusSessionControl {
         self.reset()
     }
     
+    func updateForNextSession() {
+        self.updateStateOfLiveActivity()
+    }
+    
+    
+    // MARK: - FocusSessionIntentHandler
+    
+    /// Tapped from the Live Activity. Mirrors the in-app play/pause control in
+    /// `FTSessionView` / `FocusTabBottomAccessoryView`.
+    func toggleTimerFromLiveActivity() {
+        switch state {
+        case .start, .resume:
+            pauseTimer()
+        case .pause:
+            resumeTimer()
+        case .idle, .reset:
+            break
+        }
+    }
+    
     
     // MARK: - FocusSessionModel
     
@@ -577,6 +624,8 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
 }
 
+
+extension FocusSessionCoordinator: FocusSessionIntentHandler {}
 
 extension FocusSessionCoordinator {
     static let previawableSessionCoordinator = FocusSessionCoordinator(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil, storeCoordinator: nil)

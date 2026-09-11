@@ -11,12 +11,17 @@ import Foundation
 @MainActor
 protocol FocusSessionControl: AnyObject {
     func onCompletion()
+    func updateForNextSession()
 }
 
 @MainActor
 protocol FocusSession: AnyObject, Observable {
     var startTime: Date? { get }
     var endTime: Date? { get }
+    /// Start / end of the session currently running. A Classic session is a single
+    /// session, so these span the whole run; a Pomodoro's are its work and break sessions.
+    var currentSessionStartTime: Date? { get }
+    var currentSessionEndTime: Date? { get }
     var pausedAt: Date? { get }
     var alarmID: UUID? { get set }
     var liveActivityID: UUID? { get set }
@@ -39,6 +44,14 @@ extension FocusSession {
     
     var endTime: Date? {
         nil
+    }
+    
+    var currentSessionStartTime: Date? {
+        startTime
+    }
+    
+    var currentSessionEndTime: Date? {
+        endTime
     }
     
     var pausedAt: Date? {
