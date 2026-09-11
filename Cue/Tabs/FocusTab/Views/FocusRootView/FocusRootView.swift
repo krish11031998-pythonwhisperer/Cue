@@ -258,7 +258,7 @@ class FocusRootViewModel {
             return DiffableCollectionItem<RoutineFocusSessionCard>(model)
         }
         let layout = NSCollectionLayoutSection.singleRowLayout(width: .absolute(175), height: .absolute(225),
-                                                               insets: .section(.init(vertical: 10, horizontal: 16)),
+                                                               insets: .section(.init(top: 16, leading: 16, bottom: 32, trailing: 16)),
                                                                spacing: 8).addHeader()
         layout.orthogonalScrollingBehavior = .groupPaging
 
@@ -329,7 +329,7 @@ class FocusRootViewModel {
         let layout: NSCollectionLayoutSection = .orthogonalGrid(gridWidth: .fractionalWidth(0.92),
                                                                 gridHeight: .fractionalWidth(1.08),
                                                                 spacing: 8,
-                                                                contentInsets: .init(vertical: 10, horizontal: 16)).addHeader()
+                                                                contentInsets: .init(top: 16, leading: 16, bottom: 16, trailing: 16)).addHeader()
 
         let header = CollectionSupplementaryView<FocusSectionHeaderView>(.init(title: "Focus Sessions"))
 
