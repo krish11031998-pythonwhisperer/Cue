@@ -163,6 +163,11 @@
 			path = Model;
 			sourceTree = "<group>";
 		};
+		EFAA11110000000000000001 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		EFDFA59C302A84EE00A5094A /* CueSheildConfiguration */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -243,6 +248,7 @@
 				EF079D742F1BE5EC00986EF8 /* Cue */,
 				EF079D8B2F1BFFC600986EF8 /* Model */,
 				A0B5EBE1344F4A75A1BF3132 /* CueWidgets */,
+				EFAA11110000000000000001 /* Shared */,
 				EFDFA59C302A84EE00A5094A /* CueSheildConfiguration */,
 				EFDFA5AF302A864000A5094A /* CueSheildAction */,
 				EF32251F2F1EF02B0054901C /* Frameworks */,
@@ -302,6 +308,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A0B5EBE1344F4A75A1BF3132 /* CueWidgets */,
+				EFAA11110000000000000001 /* Shared */,
 			);
 			name = CueWidgets;
 			productName = CueWidgets;
@@ -328,6 +335,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				EF079D742F1BE5EC00986EF8 /* Cue */,
+				EFAA11110000000000000001 /* Shared */,
 			);
 			name = Kyu;
 			packageProductDependencies = (

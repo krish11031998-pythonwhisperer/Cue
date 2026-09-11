@@ -74,6 +74,10 @@ class MainTabViewModel {
         self.focusAlarmManager = alarmManager
         self.storeManager = focusStoreManager
         
+        // Live Activity button taps arrive via `ToggleFocusSessionIntent`, which runs in this
+        // process and forwards through the router.
+        FocusSessionIntentRouter.shared.handler = self.focusTimerCoordinator
+        
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
         presentPayWallAfterFirstOnboarding = !hasShowOnboarding
         if !hasShowOnboarding {

@@ -253,19 +253,22 @@ class FocusSessionCoordinator: FocusSessionControl {
     
     private func updateStateOfLiveActivity() {
         guard let session, let activityID = session.liveActivityID else { return }
-        let isPaused: Bool
+        let pausedAt: Date?
         switch session.state {
         case .resume:
-            isPaused = false
+            pausedAt = nil
         case .pause:
-            isPaused = true
+            pausedAt = session.pausedAt
         case .idle, .start, .reset:
             return
         }
         
         guard let endTime = session.endTime else { return }
-        let activityState = FocusSessionLiveActivityAttributes.ContentState(restTime: 0, endDate: endTime, progress: session.timerProgress, completedTasks: 0, isPaused: isPaused)
-        print("(DEBUG) state: ", state)
+        let activityState = FocusSessionLiveActivityAttributes.ContentState(restTime: 0,
+                                                                           endDate: endTime,
+                                                                           progress: session.timerProgress,
+                                                                           completedTasks: completedReminderTasks.count,
+                                                                           pausedAt: pausedAt)
         liveActivityCoordindator?.updateLiveAcitivity(for: activityID, content: activityState)
     }
     
@@ -477,6 +480,22 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
     
     
+    // MARK: - FocusSessionIntentHandler
+    
+    /// Tapped from the Live Activity. Mirrors the in-app play/pause control in
+    /// `FTSessionView` / `FocusTabBottomAccessoryView`.
+    func toggleTimerFromLiveActivity() {
+        switch state {
+        case .start, .resume:
+            pauseTimer()
+        case .pause:
+            resumeTimer()
+        case .idle, .reset:
+            break
+        }
+    }
+    
+    
     // MARK: - FocusSessionModel
     
     func startWithFocusSessionModel(_ focusSessionModel: FocusSessionModel) {
@@ -577,6 +596,8 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
 }
 
+
+extension FocusSessionCoordinator: FocusSessionIntentHandler {}
 
 extension FocusSessionCoordinator {
     static let previawableSessionCoordinator = FocusSessionCoordinator(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil, storeCoordinator: nil)

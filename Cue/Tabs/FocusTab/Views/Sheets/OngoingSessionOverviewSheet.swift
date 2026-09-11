@@ -208,6 +208,7 @@ struct OngoingSessionOverviewSheet: View {
                                 icon: icon,
                                 timeIntervalRange: timeIntervalRange,
                                 timeProgress: coordinator.progress,
+                                pauseTime: coordinator.pausedAt,
                                 actions: sessionActions,
                                 phaseFactor: viewModel.phaseFactor,
                                 headerSize: $viewModel.headerSize)
@@ -263,6 +264,7 @@ struct OngoingSessionOverviewSheet: View {
         let icon: Icon?
         let timeIntervalRange: ClosedRange<Date>
         let timeProgress: CGFloat
+        let pauseTime: Date?
         let actions: [SessionOverviewHeaderView.AccessoryAction]
         let phaseFactor: CGFloat
         @Binding var headerSize: CGSize
@@ -273,6 +275,7 @@ struct OngoingSessionOverviewSheet: View {
                                       icon: icon,
                                       timeIntervalRange: timeIntervalRange,
                                       timeProgress: timeProgress,
+                                      pauseTime: pauseTime,
                                       actions: actions)
                 .popIn(percent: 1 - phaseFactor)
                 .padding(.vertical, 12)
