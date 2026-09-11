@@ -50,11 +50,16 @@ struct FocusSessionLiveActivity: Widget {
                                                     endDate: Date.now.addingTimeInterval(100 * 60),
                                                     progress: 0.5,
                                                     completedTasks: 2,
-                                                    pausedAt: nil)
+                                                    pausedAt: nil,
+                                                    pomodoroSessionState: nil)
     FocusSessionLiveActivityAttributes.ContentState(restTime: 0,
                                                     endDate: Date.now.addingTimeInterval(100 * 60),
                                                     progress: 0.5,
                                                     completedTasks: 2,
-                                                    pausedAt: .now)
+                                                    pausedAt: .now,
+                                                    pomodoroSessionState: .init(currentSession: 1,
+                                                                                totalSessions: 5,
+                                                                                currentSessionStartDate: Date.now,
+                                                                                currentSessionEndDate: Date.now.addingTimeInterval(25 * 60)))
     
 }

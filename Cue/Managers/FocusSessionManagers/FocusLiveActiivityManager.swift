@@ -15,7 +15,7 @@ class FocusLiveActivityManager: FocusTimerLiveActivityCoordinator {
     
     private var liveActivities: [UUID: FocusActivity] = [:]
     
-    func setupLiveActivity(for activityID: UUID, sessionAttributes: FocusSessionAttributes, startDate: Date, endDate: Date) {
+    func setupLiveActivity(for activityID: UUID, sessionAttributes: FocusSessionAttributes, startDate: Date, content: FocusSessionLiveActivityAttributes.ContentState) {
         
         let icon: FocusSessionLiveActivityAttributes.Icon
         
@@ -28,16 +28,14 @@ class FocusLiveActivityManager: FocusTimerLiveActivityCoordinator {
         
         let colorHex = sessionAttributes.color.baseColor.getHexString()
         
-        let state = FocusSessionLiveActivityAttributes.ContentState(restTime: 0, endDate: endDate, progress: 0, completedTasks: 0, pausedAt: nil)
-        
         guard let sessionType = sessionAttributes.sessionType else { fatalError("sessionType cannot be nil") }
         
         let attributes = FocusSessionLiveActivityAttributes(startDate: startDate, icon: icon, sessionName: sessionAttributes.name, colorHex: colorHex, sessionType: sessionType, numnberOfTasks: sessionAttributes.numberOfTasks)
         
-        let content = ActivityContent(state: state, staleDate: nil)
+        let activityContent = ActivityContent(state: content, staleDate: nil)
         
         do {
-            let activity = try Activity.request(attributes: attributes, content: content)
+            let activity = try Activity.request(attributes: attributes, content: activityContent)
             liveActivities[activityID] = activity
         } catch {
             print(error.localizedDescription)

@@ -21,7 +21,7 @@ protocol FocusTimerAlarmCoordinator {
 
 @MainActor
 protocol FocusTimerLiveActivityCoordinator {
-    func setupLiveActivity(for activityID: UUID, sessionAttributes: FocusSessionAttributes, startDate: Date, endDate: Date)
+    func setupLiveActivity(for activityID: UUID, sessionAttributes: FocusSessionAttributes, startDate: Date, content: FocusSessionLiveActivityAttributes.ContentState)
     func endLiveActivity(for activityID: UUID)
     func updateLiveAcitivity(for activityID: UUID, content: FocusSessionLiveActivityAttributes.ContentState)
 }

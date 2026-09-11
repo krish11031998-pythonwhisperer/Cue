@@ -59,6 +59,14 @@ public class PomodoroFocusSession: FocusSession, FocusSessionControl {
         sessions.last?.endTime
     }
     
+    var currentSessionStartTime: Date? {
+        currentSession.startTime
+    }
+    
+    var currentSessionEndTime: Date? {
+        currentSession.endTime
+    }
+    
     private(set) var pausedAt: Date?
     @ObservationIgnored
     private var accumalatedRestTime: TimeInterval = 0
@@ -146,12 +154,20 @@ public class PomodoroFocusSession: FocusSession, FocusSessionControl {
             self.control?.onCompletion()
             return
         }
+        currentSessionIndex += 1
+        accumalatedRestTime = 0
+        // Count the block we are *entering*, not the one that just finished - otherwise
+        // the counter advances at the start of a break rather than at the start of the
+        // next work block.
         if !(currentSession is BreakFocusSession) {
             currentClassicSessionIndex += 1
         }
-        currentSessionIndex += 1
-        accumalatedRestTime = 0
+        // `startTimer()` stamps `startTime` and recomputes the later blocks' start dates,
+        // so the Live Activity has to be told after it, not before.
         currentSession.startTimer()
+        control?.updateForNextSession()
     }
     
+    func updateForNextSession() {
+    }
 }
