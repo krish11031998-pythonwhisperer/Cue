@@ -144,3 +144,14 @@ extension ReminderModel {
     }
     
 }
+
+
+// MARK: - Occurrence
+
+public extension ReminderModel {
+
+    /// Whether this reminder is scheduled to occur today.
+    var occursToday: Bool {
+        schedule?.containsToday(startingFrom: date) ?? false
+    }
+}

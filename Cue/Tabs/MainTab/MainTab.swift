@@ -94,6 +94,14 @@ struct MainTab: View {
                     .font(.body)
             }
         }
+        #if NEW_QUICK_START
+        .optionalBottomAccessoryView(enabled: viewModel.focusTimerCoordinator.session != nil) {
+            FocusTabBottomAccessoryView(coordinator: viewModel.focusTimerCoordinator) {
+                viewModel.presentation = .ongoingSession
+            }
+            .matchedTransitionSource(id: "bottomAccessory", in: focusTimerTabNamespace)
+        }
+        #else
         .optionalBottomAccessoryView(selectedTab: viewModel.selectedTab, enabledTabs: bottomTabAccessories) { selectedTab in
             switch selectedTab {
             case .home:
@@ -104,6 +112,7 @@ struct MainTab: View {
                 EmptyView()
             }
         }
+        #endif
         .onPreferenceChange(IsTodayPreferenceKey.self, perform: {
             self.viewModel.isToday = $0
         })
@@ -139,6 +148,11 @@ struct MainTab: View {
                 OnboardingMainView(store: store)
             case .paywall:
                 CuePaywallView()
+            #if NEW_QUICK_START
+            case .ongoingSession:
+                FTActiveSessionView(coordinator: viewModel.focusTimerCoordinator, mode: .ongoing)
+                    .navigationTransition(.zoom(sourceID: "bottomAccessory", in: focusTimerTabNamespace))
+            #endif
             }
         })
         .task {

@@ -10,6 +10,7 @@ import SwiftUI
 import VanorUI
 import FamilyControls
 import ImagePlayground
+import CoreData
 
 extension FocusTimerType {
     static func sessionType(_ timerType: FocusSessionKind) -> Self {
@@ -231,6 +232,10 @@ class CreateFocusSessionViewModel: TimerAdjustmentManager, PlaygroundImageGenera
         }
     }
     
+    func deleteFocusSession(for objectId: NSManagedObjectID) {
+        store?.deleteFocusSession(focusSessionID: objectId)
+    }
+    
     /// Copies the generated image into the app's images directory and returns the file
     /// name to persist. Returns `nil` if it could not be saved — the Image Playground URL
     /// points at a temporary file the system may already have reaped.
@@ -303,6 +308,15 @@ struct CreateFocusSessionSheet: View {
                 return false
             case .createFromRoutine, .editFromRoutine:
                 return true
+            }
+        }
+        
+        var deleteCreateFocusSession: NSManagedObjectID? {
+            switch self {
+            case .create, .createFromRoutine:
+                return nil
+            case .edit(let focusSessionModel), .editFromRoutine(let focusSessionModel, _):
+                return focusSessionModel.objectId
             }
         }
     }
@@ -394,15 +408,19 @@ struct CreateFocusSessionSheet: View {
             }
             .safeAreaInset(edge: .bottom, alignment: .trailing, spacing: 8, content: {
                 HStack(alignment: .center, spacing: 8) {
-                    Button {
-                       // Delete Focus Session
-                    } label: {
-                        Image(systemSymbol: .xmark)
-                            .font(.title2.weight(.semibold))
-                            .tint(theme.foregroundSecondary)
-                            .frame(width: 44, height: 44, alignment: .center)
-                            .glassEffect(.regular.interactive(true).tint(theme.backgroundSecondary), in: .circle)
-                            .contentShape(Circle())
+                    
+                    if let focusSessionID = mode.deleteCreateFocusSession {
+                        Button {
+                            // Delete Focus Session
+                            viewModel.deleteFocusSession(for: focusSessionID)
+                        } label: {
+                            Image(systemSymbol: .xmark)
+                                .font(.title2.weight(.semibold))
+                                .tint(theme.foregroundSecondary)
+                                .frame(width: 44, height: 44, alignment: .center)
+                                .glassEffect(.regular.interactive(true).tint(theme.backgroundSecondary), in: .circle)
+                                .contentShape(Circle())
+                        }
                     }
                     
                     Spacer()
@@ -530,27 +548,6 @@ struct CreateFocusSessionSheet: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: 18))
             .frame(width: 120, height: 120, alignment: .center)
-        }
-    }
-    
-    
-    // MARK: - Timer Increment View
-    
-    struct TimerIncrementView: View {
-        let timerDuration: TimeInterval
-        let increment: () -> Void
-        let decrement: () -> Void
-        let onTap: () -> Void
-        
-        var body: some View {
-            HStack(alignment: .center, spacing: 8) {
-                LaunchControlButton(symbol: .same(.minus), isSelected: false, size: .regular, action: decrement)
-                Text(timerDuration.longTimerDurationString)
-                    .largeTextPill(value: timerDuration)
-                    .animation(.easeInOut, value: timerDuration)
-                    .onTapGesture(perform: onTap)
-                LaunchControlButton(symbol: .same(.plus), isSelected: false, size: .regular, action: increment)
-            }
         }
     }
     

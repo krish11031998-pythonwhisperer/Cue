@@ -12,10 +12,20 @@ struct FocusTabBottomAccessoryView: View {
     
     @Bindable var coordinator: FocusSessionCoordinator
     @Environment(\.tabViewBottomAccessoryPlacement) var tabBarPlacement
+    #if NEW_QUICK_START
+    private let onTap: Callback
+    #endif
     
+    #if NEW_QUICK_START
+    init(coordinator: FocusSessionCoordinator, onTap: @escaping Callback) {
+        self.coordinator = coordinator
+        self.onTap = onTap
+    }
+    #else
     init(coordinator: FocusSessionCoordinator) {
         self.coordinator = coordinator
     }
+    #endif
     
     private var transition: AnyTransition {
         .asymmetric(insertion: .scale(scale: 0.95, anchor: .center).combined(with: .opacity), removal: .scale(scale: 1.1).combined(with: .opacity))
@@ -101,7 +111,11 @@ struct FocusTabBottomAccessoryView: View {
                     .padding(.init(top: 6, leading: 6, bottom: 6, trailing: 10))
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        #if NEW_QUICK_START
+                        onTap()
+                        #else
                         NotificationCenter.default.post(name: .currentFTSession, object: nil)
+                        #endif
                     }
                 } else {
                     FTOngoingSessionControl(model: ongoingSessionControlModel)
@@ -116,7 +130,13 @@ struct FocusTabBottomAccessoryView: View {
 
 #Preview {
     @Previewable @State var control = FocusSessionCoordinator.previawableSessionCoordinator
-    FocusTabBottomAccessoryView(coordinator: control)
+    Group {
+#if NEW_QUICK_START
+        FocusTabBottomAccessoryView(coordinator: control) { }
+#else
+        FocusTabBottomAccessoryView(coordinator: control)
+#endif        
+    }
         .environment(control)
         .clipShape(Capsule())
         .glassEffect(.regular, in: .capsule)
