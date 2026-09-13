@@ -409,7 +409,7 @@ class FocusRootViewModel {
     }
     
     private func observeReminder(store: Store) async {
-        let reminderStream = Observations { store.reminders.map { ReminderModel(from: $0) } }
+        let reminderStream = Observations { store.reminderModels }
         for await reminders in reminderStream.dropFirst(1) {
             print("(DEBUG) Updating Reminders....")
             let remindersScheduledForToday = reminders.filter(\.occursToday)
@@ -419,7 +419,7 @@ class FocusRootViewModel {
     }
     
     private func observeFocusSessions(store: Store) async {
-        let focusSessionStream = Observations { store.focusSessions.map { FocusSessionModel(from: $0) } }
+        let focusSessionStream = Observations { store.focusSessionModels }
         for await focusSession in focusSessionStream.dropFirst(1) {
             print("(DEBUG) \(Self.self).\(#function) count: ", focusSession.count)
             self.updateFocusSessionSections(focusSession)

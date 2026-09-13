@@ -49,7 +49,7 @@ class TodayViewModel {
             })
     }
     
-    func setupCalendarForOneMonth(reminders: [Reminder]) {
+    func setupCalendarForOneMonth(reminders: [ReminderModel]) {
         print(#function)
         guard !reminders.isEmpty else { return }
         calendarParsingTask?.cancel()
