@@ -25,7 +25,11 @@ import FamilyControls
     @ObservationIgnored
     public private(set) var alarmManager: CueAlarmManager
     
+    @ObservationIgnored
     public var user: User? = nil
+    /// Content-equatable mirror of `user`. `User` is an `NSManagedObject`, so an
+    /// in-place attribute edit never reaches `@Observable` — the UI reads this.
+    public private(set) var userModel: UserModel? = nil
     private var focusSessions: [FocusSession] = []
     public var presentCreateReminder: Bool = false
     public var reminderModels: [ReminderModel] = []
@@ -128,6 +132,11 @@ import FamilyControls
             viewContext.saveContext()
             self.user = user
         }
+        refreshUserModel()
+    }
+    
+    private func refreshUserModel() {
+        self.userModel = user.map(UserModel.from)
     }
     
     // MARK: - Reminders
@@ -341,6 +350,7 @@ import FamilyControls
     
     public func updateUser(transform: @escaping (User) -> Void) {
         user?.update(context: viewContext, transform: transform)
+        refreshUserModel()
     }
     
     

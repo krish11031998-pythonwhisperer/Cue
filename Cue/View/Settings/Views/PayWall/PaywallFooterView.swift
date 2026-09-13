@@ -36,15 +36,16 @@ struct PaywallFooterView: View {
                 .disabled(restoringPurchase)
                 
                 Button("Terms") {
-                    UIApplication.shared.open(URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+                    UIApplication.shared.open(AppLink.termsOfUse)
                 }
                 
                 Button("Privacy") {
-                    UIApplication.shared.open(.init(string: "https://sparkling-tablecloth-441.notion.site/cue-it-Privacy-Policy-45224c4d70314ccf893c25e919ae836a")!)
+                    UIApplication.shared.open(AppLink.privacyPolicy)
                 }
             }
             .font(.caption2)
             .foregroundStyle(.secondary)
         }
+        .padding(.top, 16)
     }
 }
