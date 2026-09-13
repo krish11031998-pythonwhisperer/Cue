@@ -77,6 +77,7 @@ struct MainTab: View {
                     .tint(Color.proSky.baseColor)
             }
             
+            #if !NEW_QUICK_START
             if subscriptionManager.userIsPro {
                 Tab(value: .organize) {
                     OrangizeTabView()
@@ -86,6 +87,7 @@ struct MainTab: View {
                         .tint(Color.proSky.baseColor)
                 }
             }
+            #endif
             
             Tab(value: .create, role: createTabRole) {
                 Color.clear
@@ -155,6 +157,7 @@ struct MainTab: View {
             #endif
             }
         })
+        .paywallPresentation()
         .task {
             self.viewModel.focusAlarmManager.alarmManager = store.alarmManager
             self.viewModel.storeManager.store = store

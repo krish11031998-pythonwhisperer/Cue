@@ -12,6 +12,7 @@ struct CreationFloatingView: View {
     
     typealias Presentation = MainTabViewModel.Presentation
     
+    @Environment(SubscriptionManager.self) var subscriptionManager
     @Binding var presentation: Presentation?
     @Binding var presentFloatingMenu: Bool
     
@@ -19,7 +20,9 @@ struct CreationFloatingView: View {
         GeometryReader { proxy in
             VStack(alignment: .center, spacing: 8) {
                 Button {
-                    self.presentation = .createReminderWithAI
+                    subscriptionManager.proUserAction {
+                        self.presentation = .createReminderWithAI
+                    }
                 } label: {
                     Image(systemSymbol: .wandAndRays)
                 }

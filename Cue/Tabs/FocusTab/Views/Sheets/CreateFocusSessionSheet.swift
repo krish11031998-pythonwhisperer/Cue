@@ -263,6 +263,7 @@ struct CreateFocusSessionSheet: View {
     @Environment(\.supportsImagePlayground) var supportsImagePlayground
     @Environment(\.dismiss) var dismiss
     @Environment(Store.self) var store
+    @Environment(SubscriptionManager.self) var subscriptionManager
     @State private var viewModel: CreateFocusSessionViewModel = .init()
     let mode: Mode
     
@@ -401,7 +402,9 @@ struct CreateFocusSessionSheet: View {
                 if supportsImagePlayground && !mode.modeIsCreateFromRoutine {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("", systemSymbol: .appleImagePlayground) {
-                            viewModel.presentImagePlaygroundEditor = true
+                            subscriptionManager.proUserAction {
+                                viewModel.presentImagePlaygroundEditor = true
+                            }
                         }
                     }
                 }
@@ -446,6 +449,7 @@ struct CreateFocusSessionSheet: View {
                 self.viewModel.playgroundConcept = newValue
             })
             .sessionPlaygroundImageGeneration(imageGenerationModel: viewModel)
+            .paywallPresentation()
             .background {
                 Color.cueItBackground
                     .ignoresSafeArea(edges: .all)
@@ -491,6 +495,7 @@ struct CreateFocusSessionSheet: View {
     struct FocusSessionTypeSelector: View {
         
         @Environment(\.theme) var theme
+        @Environment(SubscriptionManager.self) var subscriptionManager
         @Binding var timerType: FocusTimerType
         
         var body: some View {
@@ -498,8 +503,10 @@ struct CreateFocusSessionSheet: View {
                 Menu {
                     ForEach(FocusTimerType.allCases.reversed()) { focusTimerType in
                         Button {
-                            // button Action
-                            timerType = focusTimerType
+                            // Classic stays free, so a lapsed user can always switch back to it.
+                            subscriptionManager.proUserAction(isProFeature: focusTimerType == .pomodoro) {
+                                timerType = focusTimerType
+                            }
                         } label: {
                             Text(focusTimerType.title)
                             Text(focusTimerType.description)
@@ -853,15 +860,18 @@ fileprivate struct TestView: View {
 #Preview("Create") {
     TestView(mode: .create)
         .environment(Store())
+        .environment(SubscriptionManager())
 }
 
 #Preview("Edit (Classic)") {
     TestView(mode: .edit(.init(name: "Deep Focus", sessionType: .classic, timerDuration: 3 * 60 * 60, breakDuration: 15 * 60, blockedApps: nil, alarm: .endOfSession, sessionCount: nil, reminder: nil)))
         .environment(Store())
+        .environment(SubscriptionManager())
 }
 
 
 #Preview("Edit (Pomodoro)") {
     TestView(mode: .edit(.init(name: "Let's do this!", sessionType: .pomodoro, timerDuration: 45 * 60, breakDuration: 15 * 60, blockedApps: nil, alarm: .endOfSession, sessionCount: 4, reminder: nil)))
         .environment(Store())
+        .environment(SubscriptionManager())
 }

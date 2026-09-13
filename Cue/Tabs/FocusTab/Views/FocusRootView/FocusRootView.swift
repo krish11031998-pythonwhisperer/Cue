@@ -12,6 +12,7 @@ import Combine
 
 struct FocusRootView: View {
     
+    @Environment(SubscriptionManager.self) var subscriptionManager
     @Bindable var coordinator: FocusSessionCoordinator
     @Environment(Store.self) var store
     @State private var viewModel: FocusRootViewModel = .init()
@@ -39,7 +40,9 @@ struct FocusRootView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("", systemSymbol: .plus) {
-                        self.viewModel.presentation = .presentCreateFocusSession
+                        subscriptionManager.proUserAction {
+                            self.viewModel.presentation = .presentCreateFocusSession
+                        }
                     }
                 }
             }
@@ -71,10 +74,7 @@ struct FocusRootView: View {
                   message: Text(alert.description).font(.subheadline), primaryButton: .default(Text("OK")), secondaryButton: .cancel())
         })
         .task {
-            if viewModel.store == nil {
-                viewModel.store = store
-                viewModel.setupObservation(store: store, coordinator: coordinator)
-            }
+            self.viewModel.setup(store: store, subscriptionManager: subscriptionManager, coordinator: coordinator)
         }
     }
 }

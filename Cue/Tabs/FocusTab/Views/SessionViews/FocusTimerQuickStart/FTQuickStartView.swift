@@ -167,4 +167,5 @@ struct FTQuickStartView: View {
     // footer (FloatingFocusTimerFooterView), so the previous `.safeAreaBar` overlay
     // here was a duplicate and has been removed.
     FTQuickStartView(coordinator: coordinator, reminders: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()])
+        .environment(SubscriptionManager())
 }

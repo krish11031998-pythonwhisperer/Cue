@@ -131,4 +131,14 @@ import Foundation
             return false
         }
     }
+    
+    /// Runs `action` for a pro user, otherwise asks the nearest `paywallPresentation()` to show
+    /// the paywall.
+    ///
+    /// `isProFeature` lets a call site gate only some of its cases — a timer-type picker gates
+    /// pomodoro but must still let the user pick classic, for example.
+    func proUserAction(isProFeature: Bool = true, _ action: @escaping () -> Void) {
+        guard isProFeature, !userIsPro else { return action() }
+        NotificationCenter.default.post(name: .presentPaywall, object: nil)
+    }
 }

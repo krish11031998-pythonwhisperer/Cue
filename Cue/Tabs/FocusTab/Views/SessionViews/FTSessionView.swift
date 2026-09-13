@@ -30,6 +30,7 @@ struct FTSessionView<Content: View>: View {
         }
     }
     
+    @Environment(SubscriptionManager.self) var subscriptionManager
     @Environment(\.dismiss) var dismiss
     @State private var sheetPresentation: Presentation? = nil
     @Bindable var coordinator: FocusSessionCoordinator
@@ -53,7 +54,9 @@ struct FTSessionView<Content: View>: View {
         }
         .safeAreaBar(edge: .bottom, alignment: .center, spacing: 8) {
             FloatingFocusTimerFooterView(coordinator: coordinator, viewType: viewType) { completion in
-                presentAppBlock(completion)
+                subscriptionManager.proUserAction {
+                    presentAppBlock(completion)
+                }
             } presentAction: { sessionType in
                 presentAction(sessionType: sessionType)
             }
@@ -79,7 +82,7 @@ struct FTSessionView<Content: View>: View {
                 .presentationDetents([.fraction(1)])
             }
         }
-    
+        .paywallPresentation()
     }
 
     // MARK: - Floating Focus Timer View
@@ -113,6 +116,8 @@ struct FTSessionView<Content: View>: View {
         // MARK: FTSessionInfoFooterView
         
         struct FTSessionInfoFooterView: View {
+            
+            @Environment(SubscriptionManager.self) var subscriptionManager
             let viewType: ViewType
             @Bindable var coordinator: FocusSessionCoordinator
             let presentAppBlock: (Callback?) -> Void
@@ -159,16 +164,29 @@ struct FTSessionView<Content: View>: View {
                     appShieldIsOn: coordinator.appShieldIsOn,
                     isAlarmOn: coordinator.isAlarmOn,
                     canShowAlarm: coordinator.canShowAlarm,
-                    selectTimerType: { coordinator.selectedTimerType = $0 },
+                    selectTimerType: { timerType in
+                        // Classic stays free, so a lapsed user can always switch back to it.
+                        subscriptionManager.proUserAction(isProFeature: timerType == .pomodoro) {
+                            coordinator.selectedTimerType = timerType
+                        }
+                    },
                     increment: coordinator.increment,
                     decrement: coordinator.decrement,
                     updateDurationFromSlider: { coordinator.sliderFractionToTimeDuration(fraction: $0) },
-                    presentBlockAppsSheet: { presentAppBlock(nil) },
+                    presentBlockAppsSheet: {
+                        subscriptionManager.proUserAction {
+                            presentAppBlock(nil)
+                        }
+                    },
                     presentPomodoroSetupSheet: {
                         // Present Sheet
                         presentAction(coordinator.selectedTimerType)
                     },
-                    toggleAlarm: { coordinator.toggleAlarm() },
+                    toggleAlarm: {
+                        subscriptionManager.proUserAction {
+                            coordinator.toggleAlarm()
+                        }
+                    },
                     turnOffAlarm: { coordinator.isAlarmOn = false },
                     setAlarmEndOfSession: { coordinator.updateAlarmAt(.endOfSession) },
                     setAlarmBetweenSessions: { coordinator.updateAlarmAt(.betweenPomodoroSessions) },

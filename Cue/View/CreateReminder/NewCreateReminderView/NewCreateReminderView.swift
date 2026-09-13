@@ -32,6 +32,7 @@ struct NewCreateReminderView: View {
     @State private var viewModel: NewCreateReminderViewModel
     @FocusState var textFieldIsFocused: Bool
     @Environment(\.dismiss) var dismiss
+    @Environment(SubscriptionManager.self) var subscriptionManager
     private var dismissActionFromParent: Callback?
     
     init(mode: Mode, store: Store, dismissActionFromParent: Callback? = nil) {
@@ -82,7 +83,9 @@ struct NewCreateReminderView: View {
                     }
                 } generateTasks: { [weak viewModel] in
                     textFieldIsFocused = false
-                    viewModel?.suggestionSubtasks()
+                    subscriptionManager.proUserAction {
+                        viewModel?.suggestionSubtasks()
+                    }
                 }
                 
                 Section {
@@ -90,14 +93,16 @@ struct NewCreateReminderView: View {
                                      tasksCount: viewModel.tasks.count,
                                      focusSessionModel: viewModel.focusSessionModel) { focusSessionModel in
                         // Present the create Focus Session View.
-                        if let focusSessionModel {
-                            viewModel.presentation = .editFocusSession(focusSessionModel, { [weak viewModel] focusSessionModel in
-                                viewModel?.focusSessionModel = focusSessionModel
-                            })
-                        } else {
-                            viewModel.presentation = .createFocusSession(viewModel.reminderTitle, { [weak viewModel] focusSessionModel in
-                                viewModel?.focusSessionModel = focusSessionModel
-                            })
+                        subscriptionManager.proUserAction {
+                            if let focusSessionModel {
+                                viewModel.presentation = .editFocusSession(focusSessionModel, { [weak viewModel] focusSessionModel in
+                                    viewModel?.focusSessionModel = focusSessionModel
+                                })
+                            } else {
+                                viewModel.presentation = .createFocusSession(viewModel.reminderTitle, { [weak viewModel] focusSessionModel in
+                                    viewModel?.focusSessionModel = focusSessionModel
+                                })
+                            }
                         }
                     }
                 } header: {
@@ -110,7 +115,9 @@ struct NewCreateReminderView: View {
                 
                 Section {
                     ReminderTagView(tags: viewModel.tags) {
-                        viewModel.presentation = .tag
+                        subscriptionManager.proUserAction {
+                            viewModel.presentation = .tag
+                        }
                     }
                     .padding(.bottom, 14)
                 } header: {
@@ -175,6 +182,7 @@ struct NewCreateReminderView: View {
                 CreateFocusSessionSheet(mode: .editFromRoutine(focusSessionModel, action))
             }
         })
+        .paywallPresentation()
         .background(alignment: .center) {
             Color.cueItBackground
                 .ignoresSafeArea(.all)
@@ -274,12 +282,30 @@ extension NewCreateReminderView {
     struct AlarmRowView: View {
         
         @Environment(\.theme) var theme
+        @Environment(SubscriptionManager.self) var subscriptionManager
         @Bindable var viewModel: NewCreateReminderViewModel
         let buttonSize: CGSize = .init(squared: 48)
         
+        /// Nudging with an alarm is pro-only. A free user tapping that segment gets the paywall
+        /// and the picker drops back to `.notification`.
+        private var nudgeSelection: Binding<ReminderNotification> {
+            .init {
+                viewModel.reminderNotification
+            } set: { newValue in
+                subscriptionManager.proUserAction(isProFeature: newValue == .alarm) {
+                    viewModel.reminderNotification = newValue
+                }
+                
+                guard newValue == .alarm, !subscriptionManager.userIsPro else { return }
+                // Assigning through the `@Observable` setter invalidates the picker even though
+                // the value is unchanged — that is what snaps the segment back.
+                viewModel.reminderNotification = .notification
+            }
+        }
+        
         var body: some View {
             ReminderOptionRow(title: "Nudge") {
-                Picker("", selection: $viewModel.reminderNotification) {
+                Picker("", selection: nudgeSelection) {
                     Image(systemSymbol: .alarm)
                         .animation(.easeInOut, body: { content in
                             content
@@ -389,4 +415,5 @@ extension NewCreateReminderView {
 
 #Preview {
     NewCreateReminderView(mode: .create, store: .init(), dismissActionFromParent: nil)
+        .environment(SubscriptionManager())
 }
