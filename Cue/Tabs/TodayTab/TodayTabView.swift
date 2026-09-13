@@ -43,7 +43,7 @@ struct TodayTabView: View {
     
     var id: Int {
         var hasher = Hasher()
-        store.reminders.forEach { hasher.combine($0.hashValue) }
+        store.reminderModels.forEach { hasher.combine($0.hashValue) }
         return hasher.finalize()
     }
     
@@ -93,7 +93,7 @@ struct TodayTabView: View {
             ZStack(alignment: .center) {
                 Color.cueItBackground
                     .ignoresSafeArea(.all)
-                if store.reminders.isEmpty {
+                if store.reminderModels.isEmpty {
                     ContentUnavailableView("No Reminders", systemImage: "bell.fill", description: descriptionText)
                         .font(.headline)
                 } else {
@@ -134,12 +134,12 @@ struct TodayTabView: View {
                 SensoryFeedbackManager.shared.playSelection()                
             }
         })
-        .task(id: store.reminders) {
-            viewModel.setupCalendarForOneMonth(reminders: store.reminders)
+        .task(id: store.reminderModels) {
+            viewModel.setupCalendarForOneMonth(reminders: store.reminderModels)
         }
         .task {
             for await _ in store.hasLoggedReminder {
-                viewModel.setupCalendarForOneMonth(reminders: store.reminders)
+                viewModel.setupCalendarForOneMonth(reminders: store.reminderModels)
             }
         }
         .fullScreenCover(item: $viewModel.fullPresentation, content: fullScreenPresentationContent(_:))

@@ -184,9 +184,9 @@ class TodayCalendarViewModel {
     
     private func observeChangesInStore(store: Store) {
         
-        let tagsObservation = Observations({ store.tags }).map({ _ in () }).dropFirst(1)
+        let tagsObservation = Observations({ store.tagModels }).map({ _ in () }).dropFirst(1)
         let reminderLogObsersvation = store.hasLoggedReminder.dropFirst(1)
-        let reminder = Observations({ store.reminders }).map({ _ in () }).dropFirst(1)
+        let reminder = Observations({ store.reminderModels }).map({ _ in () }).dropFirst(1)
         
         Task {
             for await _ in merge(tagsObservation, reminderLogObsersvation, reminder) {

@@ -8,6 +8,7 @@
 import SwiftUI
 import VanorUI
 import FamilyControls
+import TipKit
 
 struct FTSessionView<Content: View>: View {
     
@@ -83,6 +84,8 @@ struct FTSessionView<Content: View>: View {
             }
         }
         .paywallPresentation()
+        // Launch-control tips. Swap `foregroundSecondary` -> `foregroundTertiary` to compare.
+        .tipViewStyle(.next(tint: Color.proSky.foregroundSecondary))
     }
 
     // MARK: - Floating Focus Timer View
@@ -118,6 +121,13 @@ struct FTSessionView<Content: View>: View {
         struct FTSessionInfoFooterView: View {
             
             @Environment(SubscriptionManager.self) var subscriptionManager
+            /// Ordered so the launch-control tips appear one at a time instead of four popovers at once.
+            @State private var launchControlTips = TipGroup(.ordered) {
+                SessionDurationTip()
+                BlockAppsTip()
+                FocusTimerTypeTip()
+                SessionAlarmTip()
+            }
             let viewType: ViewType
             @Bindable var coordinator: FocusSessionCoordinator
             let presentAppBlock: (Callback?) -> Void
@@ -190,7 +200,12 @@ struct FTSessionView<Content: View>: View {
                     turnOffAlarm: { coordinator.isAlarmOn = false },
                     setAlarmEndOfSession: { coordinator.updateAlarmAt(.endOfSession) },
                     setAlarmBetweenSessions: { coordinator.updateAlarmAt(.betweenPomodoroSessions) },
-                    checkIfCanSetAlarm: { await coordinator.checkIfCanSetAlarm() }
+                    checkIfCanSetAlarm: { await coordinator.checkIfCanSetAlarm() },
+                    // `currentTip` is one of these at a time; the other three casts give nil.
+                    tips: .init(duration: launchControlTips.currentTip as? SessionDurationTip,
+                                appShield: launchControlTips.currentTip as? BlockAppsTip,
+                                timerType: launchControlTips.currentTip as? FocusTimerTypeTip,
+                                alarm: launchControlTips.currentTip as? SessionAlarmTip)
                 )
             }
             

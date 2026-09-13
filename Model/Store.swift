@@ -15,15 +15,22 @@ import FamilyControls
 @Observable
 @MainActor public class Store: NotificationManagerDelegate, AlarmManagerDelegate {
     
-    public var user: User? = nil
-    public var reminders: [Reminder] = []
-    public var tags: [CueTag] = []
-    public var focusSessions: [FocusSession] = []
-    public var presentCreateReminder: Bool = false
+    @ObservationIgnored
+    private var reminders: [Reminder] = []
+    @ObservationIgnored
+    private var tags: [CueTag] = []
+    @ObservationIgnored
     @ObservationIgnored
     public private(set) var notificationManager: NotificationManager
     @ObservationIgnored
     public private(set) var alarmManager: CueAlarmManager
+    
+    public var user: User? = nil
+    private var focusSessions: [FocusSession] = []
+    public var presentCreateReminder: Bool = false
+    public var reminderModels: [ReminderModel] = []
+    public var tagModels: [TagModel] = []
+    public var focusSessionModels: [FocusSessionModel] = []
     
     
     public private(set) var loggedTasksToday: Set<ReminderLog> = .init()
@@ -61,6 +68,8 @@ import FamilyControls
                     let reminders = Reminder.fetchAll(context: context)
 //                    self?.reminders = self?.deleteRemindersWithWrongDate(reminders) ?? reminders
                     self?.reminders = reminders
+                    let reminderModels = reminders.map { ReminderModel(from: $0) }
+                    self?.reminderModels = reminderModels
                 }
             }
         }
@@ -70,6 +79,8 @@ import FamilyControls
                 if let context = self?.viewContext {
                     let tags = CueTag.fetchAll(context: context)
                     self?.tags = tags
+                    let tagModels = tags.map { TagModel(id: $0.objectID, name: $0.name, color: $0.color) }
+                    self?.tagModels = tagModels
                 }
             }
         }
@@ -79,6 +90,8 @@ import FamilyControls
                 if let context = self?.viewContext {
                     let focusSessions = FocusSession.fetchAll(context: context)
                     self?.focusSessions = focusSessions
+                    let focusSessionModels = focusSessions.map { FocusSessionModel(from: $0) }
+                    self?.focusSessionModels = focusSessionModels
                 }
             }
         }

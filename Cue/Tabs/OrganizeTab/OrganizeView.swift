@@ -54,11 +54,11 @@ struct OrangizeTabView: View {
             guard viewModel.reminders.isEmpty == false else { return }
             await updateReminders()
         }
-        .task(id: store.reminders) {
+        .task(id: store.reminderModels) {
             await updateReminders()
         }
-        .task(id: store.tags) {
-            self.viewModel.tagModel(store.tags)
+        .task(id: store.tagModels) {
+            self.viewModel.tagModel(store.tagModels)
         }
         .sheet(item: $viewModel.selectedPresentation) { presentation in
             switch presentation {

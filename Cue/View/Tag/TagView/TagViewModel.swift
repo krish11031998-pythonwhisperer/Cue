@@ -29,16 +29,16 @@ class TagViewModel {
     
     var sectionedTags: [Section] = []
     
-    func segmentedTags(tags: [CueTag]) {
+    func segmentedTags(tags: [TagModel]) {
         var tagsDict: [String: Section] = [:]
         for tag in tags {
             let initial = String(tag.name.prefix(1))
             
             if var existingTagsForInitial = tagsDict[initial]?.tags {
-                existingTagsForInitial.append(.from(tag))
+                existingTagsForInitial.append(tag)
                 tagsDict[initial]?.tags = existingTagsForInitial
             } else {
-                tagsDict[initial] = .init(initial: initial, tags: [.from(tag)])
+                tagsDict[initial] = .init(initial: initial, tags: [tag])
             }
         }
         

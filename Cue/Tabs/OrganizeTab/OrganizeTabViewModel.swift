@@ -123,8 +123,8 @@ class OrganizeTabViewModel {
         return [allCell] + tagCells
     }
     
-    func tagModel(_ tags: [CueTag]) {
-        self.tags = tags.map { .from($0) }
+    func tagModel(_ tags: [TagModel]) {
+        self.tags = tags.map { $0 }
     }
     
 //    func presentReminder(for cellViewModel: ReminderView.Model) {

@@ -72,8 +72,8 @@ struct TagView: View {
                     }
                 }
             })
-            .task(id: store.tags) {
-                self.viewModel.segmentedTags(tags: store.tags)
+            .task(id: store.tagModels) {
+                self.viewModel.segmentedTags(tags: store.tagModels)
             }
         }
         .sheet(isPresented: $viewModel.presentAddTagSheet) {
