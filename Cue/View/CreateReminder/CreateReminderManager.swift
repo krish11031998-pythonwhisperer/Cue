@@ -110,11 +110,13 @@ extension CreateReminderManager {
         if let datesInMonths = scheduleBuilder.dates {
             let dates = datesInMonths.sorted().reduce("", { $0.isEmpty ? "\($1)." : "\($0), \($1)."})
             return "\(dates) every month"
-        } else if let weekdays = scheduleBuilder.weekdays {
-            let weekdaysString = weekdays.sorted().reduce("", {
-                let weekdaySymbol = Calendar.current.veryShortStandaloneWeekdaySymbols[$1 - 1]
-                return $0.isEmpty ? "\(weekdaySymbol)" : "\($0), \(weekdaySymbol)"
-            })
+        } else if let weekdays = scheduleBuilder.weekdays, !weekdays.isEmpty {
+            // `weekdays` holds Calendar weekday components (1 = Sunday), but older reminders may
+            // have been persisted with out-of-range values, so index defensively.
+            let symbols = Calendar.current.veryShortStandaloneWeekdaySymbols
+            let weekdaysString = weekdays.sorted()
+                .compactMap { symbols.indices.contains($0 - 1) ? symbols[$0 - 1] : nil }
+                .joined(separator: ", ")
             return "\(weekdaysString) every \(scheduleBuilder.intervalWeek == nil ? "week" : "\(scheduleBuilder.intervalWeek!) weeks")"
         } else {
             return "No Repeat"

@@ -166,7 +166,7 @@ class NewCreateReminderViewModel: CreateReminderManager {
     func reminderFromViewModel() -> ReminderModel {
         let icon: CueIcon = .from(icon)
         let tasks: [ReminderTaskModel] = tasks.map { .init(title: $0.title, icon: .from($0.icon)) }
-        let schedule: ReminderSchedule = .init(hour: timeDate.hours, minute: timeDate.minutes, intervalWeeks: scheduleBuilder.intervalWeek, weekdays: scheduleBuilder.weekdays, calendarDates: scheduleBuilder.weekdays)
+        let schedule: ReminderSchedule = .init(hour: timeDate.hours, minute: timeDate.minutes, intervalWeeks: scheduleBuilder.intervalWeek, weekdays: scheduleBuilder.weekdays, calendarDates: scheduleBuilder.dates)
         
         var focusSession: ReminderModel.FocusSession?
         if let focusSessionModel = focusSessionModel {

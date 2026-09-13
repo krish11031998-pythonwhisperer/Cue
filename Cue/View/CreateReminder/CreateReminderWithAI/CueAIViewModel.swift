@@ -146,8 +146,10 @@ class CueAIViewModel: Sendable {
         try Task.checkCancellation()
         
         guard let generatedReminder else { return }
-        let weekdays = generatedReminder.date.weekdays?.map(\.weekdayIntValue) ?? []
-        let timeSchedule: ReminderSchedule? = .init(hour: generatedReminder.date.hour, minute: generatedReminder.date.minute, intervalWeeks: generatedReminder.date.internvalWeek, weekdays: Set(weekdays), calendarDates: nil)
+        // The model is only *guided* towards 1...7 (Calendar weekday component), so drop
+        // anything out of range rather than persisting a weekday the rest of the app can't read.
+        let weekdays = Set(generatedReminder.date.weekdays?.map(\.weekdayIntValue).filter { (1...7).contains($0) } ?? [])
+        let timeSchedule: ReminderSchedule? = .init(hour: generatedReminder.date.hour, minute: generatedReminder.date.minute, intervalWeeks: generatedReminder.date.internvalWeek, weekdays: weekdays.isEmpty ? nil : weekdays, calendarDates: nil)
         
         let date = timeSchedule?.scheduleForToday ?? .now
         

@@ -12,8 +12,9 @@ import SwiftUI
 import Model
 
 fileprivate extension Calendar {
+    /// `Calendar.weekday` component values: 1 is Sunday ... 7 is Saturday.
     var weekdayIndices: ClosedRange<Int> {
-        0...(weekdaySymbols.count - 1)
+        1...weekdaySymbols.count
     }
 }
 
@@ -22,7 +23,7 @@ struct SuggestedReminderSchedule {
     
     @Generable
     struct Weekday {
-        @Guide(description: "Represents the weekday in the week, 0 is first day of the week and \(Calendar.current.weekdaySymbols.count - 1) is last day of the week. This is based on Calendar.current")
+        @Guide(description: "Represents the weekday in the week, 1 is Sunday and \(Calendar.current.weekdaySymbols.count) is Saturday. This matches the Calendar.current weekday component")
         @Guide(.range(Calendar.current.weekdayIndices))
         var weekdayIntValue: Int
     }
@@ -36,7 +37,7 @@ struct SuggestedReminderSchedule {
     @Guide(description: "0 for one-time reminders, otherwise the number of weeks between repetitions")
     var internvalWeek: Int
     
-    @Guide(description: "Weekday index based on Calendar.current")
+    @Guide(description: "Weekday component values based on Calendar.current, 1 is Sunday and 7 is Saturday")
     var weekdays: [Weekday]?
 }
 
@@ -74,7 +75,7 @@ struct SuggestedReminder {
         components.hour = 19
         components.minute = 0
         
-        return .init(title: "Workout in at Gym", icon: "🏋️", date: .init(hour: 19, minute: 0, internvalWeek: 1, weekdays: [1, 2, 3].map { SuggestedReminderSchedule.Weekday(weekdayIntValue: $0) }))
+        return .init(title: "Workout in at Gym", icon: "🏋️", date: .init(hour: 19, minute: 0, internvalWeek: 1, weekdays: [2, 3, 4].map { SuggestedReminderSchedule.Weekday(weekdayIntValue: $0) }))
     }
 }
 

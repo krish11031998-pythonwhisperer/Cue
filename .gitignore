@@ -31,3 +31,7 @@ Carthage/Build/
 fastlane/report.xml
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# ASO working files
+sim-screenshots/
+screenshots/
