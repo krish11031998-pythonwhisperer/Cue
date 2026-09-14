@@ -88,6 +88,10 @@ class FocusRootViewModel {
     private(set) var initialSetup: Bool = false
     @ObservationIgnored
     private(set) var reminders: [ReminderModel] = []
+    /// Every focus session on the device, fetched. Kept so that the creation gate can count
+    /// them - `store.focusSessionModels` stays empty until the store's change stream fires.
+    @ObservationIgnored
+    private(set) var focusSessions: [FocusSessionModel] = []
     @ObservationIgnored
     private var sessionState: FocusSessionState = .idle
     @ObservationIgnored
@@ -131,6 +135,7 @@ class FocusRootViewModel {
             let (reminders, focusSessions) = await (fetchReminders, fetchFocusSessions)
             
             self.reminders = reminders
+            self.focusSessions = focusSessions
             self.setupSections(reminders: reminders, focusSessions: focusSessions)
             self.performingInitialFetch = false
         }
@@ -211,6 +216,7 @@ class FocusRootViewModel {
     // MARK: - Focused Routines
     
     private func updateFocusSessionSections(_ focusSessions: [FocusSessionModel]) {
+        self.focusSessions = focusSessions
         var newSections = sections.filter { $0.id == Section.quickStart.id }
         
         let newFocusSessionSections = [setupFocusedSessionSection(focusSessions), setupCustomFocusSessionSection(focusSessions)].compactMap { $0 }
@@ -300,41 +306,38 @@ class FocusRootViewModel {
             }
         }
         
+        // A session the user is allowed to have is a session they are allowed to edit - the
+        // paywall sits on creating the next one, not on looking after the one they own.
         let editAction: (FocusSessionModel) -> Callback = { [weak self] focusSession in
             { [weak self] in
-                self?.proFeatureAction { [weak self] in
-                    self?.presentation = .editFocusSession(focusSession)
-                }
+                self?.presentation = .editFocusSession(focusSession)
             }
         }
         
-        var cells: [DiffableCollectionCellProvider] = []
-        
-        if isProUser {
-            cells = customFocusSessions.map {
-                let sessionType: FocusSessionType
-                switch $0.sessionType {
-                case .classic:
-                    sessionType = .classic
-                case .pomodoro:
-                    sessionType = .pomodoro(currentIndex: 0, total: 0)
-                @unknown default:
-                    sessionType = .classic
-                }
-                
-                let imageModel: CustomFocusSessionCard.ImageModel = .init(url: $0.imageFileName.map { ImageFileManager.url(for: $0) }) { url in
-                    try? ImageFileManager.retrieveImage(for: url)
-                }
-                
-                let cardModel: CustomFocusSessionCard.Model = .init(sessionType: sessionType,
-                                                                    image: imageModel,
-                                                                    name: $0.name,
-                                                                    timerDuration: $0.timerDuration,
-                                                                    deleteAction: deleteAction($0),
-                                                                    editAction: editAction($0),
-                                                                    action: action($0))
-                return DiffableCollectionItem<CustomFocusSessionCard>(cardModel)
+        // Without Pro this is the single trial session; with Pro it is every session.
+        var cells: [DiffableCollectionCellProvider] = allowedFocusSessions(customFocusSessions).map {
+            let sessionType: FocusSessionType
+            switch $0.sessionType {
+            case .classic:
+                sessionType = .classic
+            case .pomodoro:
+                sessionType = .pomodoro(currentIndex: 0, total: 0)
+            @unknown default:
+                sessionType = .classic
             }
+            
+            let imageModel: CustomFocusSessionCard.ImageModel = .init(url: $0.imageFileName.map { ImageFileManager.url(for: $0) }) { url in
+                try? ImageFileManager.retrieveImage(for: url)
+            }
+            
+            let cardModel: CustomFocusSessionCard.Model = .init(sessionType: sessionType,
+                                                                image: imageModel,
+                                                                name: $0.name,
+                                                                timerDuration: $0.timerDuration,
+                                                                deleteAction: deleteAction($0),
+                                                                editAction: editAction($0),
+                                                                action: action($0))
+            return DiffableCollectionItem<CustomFocusSessionCard>(cardModel)
         }
         
         let layout: NSCollectionLayoutSection = .orthogonalGrid(gridWidth: .fractionalWidth(0.92),
@@ -343,7 +346,7 @@ class FocusRootViewModel {
                                                                 contentInsets: .init(top: 16, leading: 16, bottom: 16, trailing: 16)).addHeader()
         
         let addNewSession = DiffableCollectionItem<AddCustomFocusSessionCard>(.init { [weak self] in
-            self?.proFeatureAction { [weak self] in
+            self?.createFocusSessionAction { [weak self] in
                 self?.presentation = .presentCreateFocusSession
             }
         })
@@ -448,5 +451,21 @@ class FocusRootViewModel {
             return NotificationCenter.default.post(name: .presentPaywall, object: nil)
         }
         subscriptionManager.proUserAction(action)
+    }
+    
+    /// Creating a focus session is metered rather than gated: it runs `action` while the
+    /// user has a slot left, and shows the paywall once the free allowance is used up.
+    func createFocusSessionAction(_ action: @escaping Callback) {
+        guard let subscriptionManager else {
+            return NotificationCenter.default.post(name: .presentPaywall, object: nil)
+        }
+        subscriptionManager.focusSessionCreationAction(existingSessions: focusSessions.count, action)
+    }
+    
+    /// The sessions this user may see and start - their allowance without Pro, all of them
+    /// with it.
+    private func allowedFocusSessions(_ focusSessions: [FocusSessionModel]) -> [FocusSessionModel] {
+        guard let subscriptionManager else { return [] }
+        return subscriptionManager.allowedFocusSessions(focusSessions)
     }
 }
