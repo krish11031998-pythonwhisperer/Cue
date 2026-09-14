@@ -93,7 +93,7 @@ struct NewCreateReminderView: View {
                                      tasksCount: viewModel.tasks.count,
                                      focusSessionModel: viewModel.focusSessionModel) { focusSessionModel in
                         // Present the create Focus Session View.
-                        subscriptionManager.proUserAction {
+                        subscriptionManager.focusSessionCreationAction(existingSessions: viewModel.store.focusSessionModels.count) {
                             if let focusSessionModel {
                                 viewModel.presentation = .editFocusSession(focusSessionModel, { [weak viewModel] focusSessionModel in
                                     viewModel?.focusSessionModel = focusSessionModel

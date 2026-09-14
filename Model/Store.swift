@@ -11,6 +11,7 @@ internal import UserNotifications
 import AlarmKit
 import UIKit
 import FamilyControls
+import AsyncAlgorithms
 
 @Observable
 @MainActor public class Store: NotificationManagerDelegate, AlarmManagerDelegate {
@@ -51,8 +52,11 @@ import FamilyControls
         self.alarmManager = .init(context: CoreDataManager.shared.persistentContainer.viewContext)
         self.retrieveUser()
         self.reminders = Reminder.fetchAll(context: self.viewContext)
+        self.reminderModels = reminders.map(ReminderModel.init)
         self.tags = CueTag.fetchAll(context: self.viewContext)
+        self.tagModels = tags.map(TagModel.from)
         self.focusSessions = FocusSession.fetchAll(context: self.viewContext)
+        self.focusSessionModels = focusSessions.map(FocusSessionModel.init)
         self.notificationManager.delegate = self
         observingTask()
     }

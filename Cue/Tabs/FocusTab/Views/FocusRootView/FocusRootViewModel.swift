@@ -88,8 +88,6 @@ class FocusRootViewModel {
     private(set) var initialSetup: Bool = false
     @ObservationIgnored
     private(set) var reminders: [ReminderModel] = []
-    /// Every focus session on the device, fetched. Kept so that the creation gate can count
-    /// them - `store.focusSessionModels` stays empty until the store's change stream fires.
     @ObservationIgnored
     private(set) var focusSessions: [FocusSessionModel] = []
     @ObservationIgnored
@@ -285,7 +283,6 @@ class FocusRootViewModel {
     
     private func setupCustomFocusSessionSection(_ focusSession: [FocusSessionModel]) -> DiffableCollectionSection? {
         let customFocusSessions = focusSession.filter { $0.reminder == nil }
-        guard !customFocusSessions.isEmpty else { return nil }
         
         let action: (FocusSessionModel) -> Callback = { [weak self] focusSessionModel in
             { [weak self] in
@@ -305,16 +302,13 @@ class FocusRootViewModel {
                 self?.store?.deleteFocusSession(focusSessionID: focusSession.objectId)
             }
         }
-        
-        // A session the user is allowed to have is a session they are allowed to edit - the
-        // paywall sits on creating the next one, not on looking after the one they own.
+
         let editAction: (FocusSessionModel) -> Callback = { [weak self] focusSession in
             { [weak self] in
                 self?.presentation = .editFocusSession(focusSession)
             }
         }
         
-        // Without Pro this is the single trial session; with Pro it is every session.
         var cells: [DiffableCollectionCellProvider] = allowedFocusSessions(customFocusSessions).map {
             let sessionType: FocusSessionType
             switch $0.sessionType {
@@ -346,9 +340,7 @@ class FocusRootViewModel {
                                                                 contentInsets: .init(top: 16, leading: 16, bottom: 16, trailing: 16)).addHeader()
         
         let addNewSession = DiffableCollectionItem<AddCustomFocusSessionCard>(.init { [weak self] in
-            self?.createFocusSessionAction { [weak self] in
-                self?.presentation = .presentCreateFocusSession
-            }
+            self?.createFocusSessionAction()
         })
         
         cells.append(addNewSession)
@@ -438,32 +430,21 @@ class FocusRootViewModel {
     
     private func observeProUserStatus(subscription: SubscriptionManager) async {
         let proUserStatus = Observations({ subscription.userIsPro })
-        for await isProUser in proUserStatus.dropFirst(1) {
+        for await _ in proUserStatus.dropFirst(1) {
             self.initialFetch()
         }
     }
     
     
     // MARK: - Pro Feature Action
-    
-    private func proFeatureAction(_ action: @escaping Callback) {
-        guard let subscriptionManager else {
-            return NotificationCenter.default.post(name: .presentPaywall, object: nil)
+
+    func createFocusSessionAction() {
+        guard let subscriptionManager else { return }
+        subscriptionManager.focusSessionCreationAction(existingSessions: focusSessions.count) { [weak self] in
+            self?.presentation = .presentCreateFocusSession
         }
-        subscriptionManager.proUserAction(action)
     }
     
-    /// Creating a focus session is metered rather than gated: it runs `action` while the
-    /// user has a slot left, and shows the paywall once the free allowance is used up.
-    func createFocusSessionAction(_ action: @escaping Callback) {
-        guard let subscriptionManager else {
-            return NotificationCenter.default.post(name: .presentPaywall, object: nil)
-        }
-        subscriptionManager.focusSessionCreationAction(existingSessions: focusSessions.count, action)
-    }
-    
-    /// The sessions this user may see and start - their allowance without Pro, all of them
-    /// with it.
     private func allowedFocusSessions(_ focusSessions: [FocusSessionModel]) -> [FocusSessionModel] {
         guard let subscriptionManager else { return [] }
         return subscriptionManager.allowedFocusSessions(focusSessions)

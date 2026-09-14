@@ -40,11 +40,7 @@ struct FocusRootView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("", systemSymbol: .plus) {
-                        // Metered, not gated: the first focus session is free, the next one
-                        // needs Pro.
-                        self.viewModel.createFocusSessionAction {
-                            self.viewModel.presentation = .presentCreateFocusSession
-                        }
+                        self.viewModel.createFocusSessionAction()
                     }
                 }
             }

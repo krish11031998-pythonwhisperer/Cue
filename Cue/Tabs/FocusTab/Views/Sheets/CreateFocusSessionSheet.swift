@@ -125,18 +125,6 @@ class CreateFocusSessionViewModel: TimerAdjustmentManager, PlaygroundImageGenera
     var familySelection: FamilyActivitySelection = .init()
     @ObservationIgnored
     var store: Store?
-    @ObservationIgnored
-    var subscriptionManager: SubscriptionManager?
-    
-    /// Whether this sheet is allowed to persist a new focus session.
-    ///
-    /// The count comes from a fresh fetch rather than `store.focusSessionModels`, which
-    /// stays empty until the store's change stream fires for the first time.
-    var canCreateFocusSession: Bool {
-        guard let subscriptionManager else { return false }
-        let existingSessions = store?.fetchAllFocusSessions().count ?? 0
-        return subscriptionManager.canCreateFocusSession(existingSessions: existingSessions)
-    }
     
     var step: TimeInterval {
         if timerDuration < Self.hourMark {
@@ -195,19 +183,7 @@ class CreateFocusSessionViewModel: TimerAdjustmentManager, PlaygroundImageGenera
         self.imageURL = focusSessionModel.imageFileName.map { ImageFileManager.url(for: $0) }
     }
     
-    /// Saves the session and reports whether the sheet may close.
-    ///
-    /// Returns `false` when the free allowance turned the save away - the sheet stays up so
-    /// its own `paywallPresentation()` has somewhere to show the paywall.
     func createOrUpdateFocusSession(for mode: CreateFocusSessionSheet.Mode) async -> Bool {
-        // Last line of defence for the free allowance. Both entry points meter this already,
-        // but creation is the one place a second session must not slip through. Checked
-        // before the image is saved, so a turned-away session leaves no orphaned file.
-        if case .create = mode, !canCreateFocusSession {
-            NotificationCenter.default.post(name: .presentPaywall, object: nil)
-            return false
-        }
-        
         let savedImageFileName = await saveGeneratedImage()
         switch mode {
         case .create:
@@ -262,9 +238,6 @@ class CreateFocusSessionViewModel: TimerAdjustmentManager, PlaygroundImageGenera
         store?.deleteFocusSession(focusSessionID: objectId)
     }
     
-    /// Copies the generated image into the app's images directory and returns the file
-    /// name to persist. Returns `nil` if it could not be saved — the Image Playground URL
-    /// points at a temporary file the system may already have reaped.
     private func saveGeneratedImage() async -> String? {
         guard needsToSaveImage, let imageURL else {
             return nil
@@ -502,10 +475,6 @@ struct CreateFocusSessionSheet: View {
         .task(id: mode) {
             if viewModel.store == nil {
                 viewModel.store = store
-            }
-            
-            if viewModel.subscriptionManager == nil {
-                viewModel.subscriptionManager = subscriptionManager
             }
             
             switch mode {
