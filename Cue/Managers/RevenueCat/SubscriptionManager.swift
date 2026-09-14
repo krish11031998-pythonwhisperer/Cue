@@ -101,10 +101,14 @@ import Foundation
         isFetchingOfferings = false
     }
     
+    /// `.success(true)` means an active entitlement was actually restored —
+    /// a non-throwing restore with nothing to restore returns `.success(false)`.
     func restorePurchase() async -> Result<Bool, Error> {
         do {
-            let _ = try await Purchases.shared.restorePurchases()
-            return .success(true)
+            let restoredInfo = try await Purchases.shared.restorePurchases()
+            self.customerInfo = restoredInfo
+            guard let entitlementIdentifier = Constants.entitlementIdentifier else { return .success(false) }
+            return .success(restoredInfo.entitlements[entitlementIdentifier]?.isActive == true)
         } catch {
             return .failure(error)
         }

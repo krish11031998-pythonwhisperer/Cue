@@ -108,10 +108,11 @@ class PaywallViewModel {
             guard !Task.isCancelled else { return }
             
             await MainActor.run {
+                restoringPurchase = false
                 switch result {
-                case .success:
+                case .success(true):
                     mustDismiss = true
-                case .failure:
+                case .success(false), .failure:
                     showError = true
                     errorToShow = .failedToRestore
                 }

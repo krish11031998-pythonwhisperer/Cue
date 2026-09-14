@@ -130,7 +130,7 @@ struct TodayTabView: View {
         }
         .preference(key: IsTodayPreferenceKey.self, value: viewModel.todayInCalendar?.date.startOfDay == viewModel.today.startOfDay)
         .onChange(of: viewModel.today, { _, _ in
-            if store.user?.hapticsEnabled == true {
+            if store.userModel?.hapticsEnabled == true {
                 SensoryFeedbackManager.shared.playSelection()                
             }
         })

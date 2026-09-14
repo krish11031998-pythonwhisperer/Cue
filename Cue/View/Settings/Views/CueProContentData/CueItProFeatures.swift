@@ -8,53 +8,75 @@
 import VanorUI
 import SwiftUI
 
+/// The pro features advertised on `CuePaywallView` and `ManageSubsriptionView`.
+///
+/// `allCases` order is the order both screens render, so the four core features lead and `tags`
+/// closes. Keep `message` to a single short line — these render as footnotes under the title.
 enum CueItProFeatures: Int, CaseIterable, Identifiable {
-    case focusTimer
+    case routines
+    case focusSession
+    case alarms
+    case ai
     case tags
-    case unlimitedReminders
     
     var symbol: SFSymbol {
         switch self {
-        case .focusTimer:
+        case .routines:
+            return .arrowTrianglehead2ClockwiseRotate90
+        case .focusSession:
             return .stopwatch
+        case .alarms:
+            return .alarmWavesLeftAndRight
+        case .ai:
+            return .sparkles
         case .tags:
-            return .tagFill
-        case .unlimitedReminders:
-            return .bellFill
+            return .tag
         }
     }
     
     var title: String {
         switch self {
-        case .focusTimer:
-            return "Focus Timer"
+        case .routines:
+            return "Routines"
+        case .focusSession:
+            return "Focus Sessions"
+        case .alarms:
+            return "Alarms"
+        case .ai:
+            return "cue:ai"
         case .tags:
             return "Tags"
-        case .unlimitedReminders:
-            return "Flexible Reminders"
         }
     }
     
     var message: String {
         switch self {
-        case .focusTimer:
-            return "Finish tasks without distractions"
+        case .routines:
+            return "Recurring plans, broken into subtasks."
+        case .focusSession:
+            return "Focus timers that lock out distracting apps."
+        case .alarms:
+            return "Reminders that go off, not ones you swipe away."
+        case .ai:
+            return "Speak it once and plan your day."
         case .tags:
-            return "Build routines and stay consistent"
-        case .unlimitedReminders:
-            return "Never miss a task again"
+            return "Group routines and filter your day by them."
         }
     }
     
     var theme: LCHColor {
         let theme: LCHColor
         switch self {
-        case .focusTimer:
+        case .routines:
+            theme = Color.proIndigo
+        case .focusSession:
             theme = Color.proRed
-        case .tags:
-            theme = Color.proBlue
-        case .unlimitedReminders:
+        case .alarms:
             theme = Color.proCyan
+        case .ai:
+            theme = Color.proBlue
+        case .tags:
+            theme = Color.proGreen
         }
         return theme
     }
