@@ -22,7 +22,6 @@ struct TodayTabView: View {
 
     @Environment(\.dismiss) var dismiss
     @Environment(Store.self) var store
-    @Environment(SubscriptionManager.self) var subscriptionManager
     #if !NEW_CALENDAR
     private var presentCreateReminder: () -> Void
     #else
@@ -74,7 +73,7 @@ struct TodayTabView: View {
                     }
                     
                     #if !KARINA_TESTING
-                    if subscriptionManager.userIsPro {
+                    if store.isProUser {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 print("(DEBUG) showTimer")

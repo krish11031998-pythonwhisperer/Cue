@@ -12,19 +12,22 @@ public struct UserModel: Hashable, Sendable, Identifiable {
     public let hapticsEnabled: Bool
     public let notificationEnabled: Bool
     public let alarmEnabled: Bool
+    public let proStatus: UserProStatus
     
-    public init(objectId: NSManagedObjectID, hapticsEnabled: Bool, notificationEnabled: Bool, alarmEnabled: Bool) {
+    public init(objectId: NSManagedObjectID, hapticsEnabled: Bool, notificationEnabled: Bool, alarmEnabled: Bool, proStatus: UserProStatus) {
         self.objectId = objectId
         self.hapticsEnabled = hapticsEnabled
         self.notificationEnabled = notificationEnabled
         self.alarmEnabled = alarmEnabled
+        self.proStatus = proStatus
     }
     
     public static func from(_ user: User) -> UserModel {
         .init(objectId: user.objectID,
               hapticsEnabled: user.hapticsEnabled,
               notificationEnabled: user.notificationEnabled,
-              alarmEnabled: user.alarmEnabled)
+              alarmEnabled: user.alarmEnabled,
+              proStatus: user.proStatus)
     }
     
     public var id: Int {
@@ -32,6 +35,7 @@ public struct UserModel: Hashable, Sendable, Identifiable {
         hasher.combine(hapticsEnabled)
         hasher.combine(notificationEnabled)
         hasher.combine(alarmEnabled)
+        hasher.combine(proStatus)
         return hasher.finalize()
     }
 }

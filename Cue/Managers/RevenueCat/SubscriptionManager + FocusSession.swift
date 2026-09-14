@@ -18,13 +18,13 @@ extension SubscriptionManager {
     
     /// Whether the user may create one more focus session on top of `existingSessions`.
     func canCreateFocusSession(existingSessions: Int) -> Bool {
-        userIsPro || existingSessions < Self.freeFocusSessionAllowance
+        store.isProUser || existingSessions < Self.freeFocusSessionAllowance
     }
     
     /// The sessions a user may actually see and start. Pro lifts the cap; everyone else
     /// keeps their allowance and the rest stay behind the paywall.
     func allowedFocusSessions(_ focusSessions: [FocusSessionModel]) -> [FocusSessionModel] {
-        guard !userIsPro else { return focusSessions }
+        guard !store.isProUser else { return focusSessions }
         return Array(focusSessions.prefix(Self.freeFocusSessionAllowance))
     }
     

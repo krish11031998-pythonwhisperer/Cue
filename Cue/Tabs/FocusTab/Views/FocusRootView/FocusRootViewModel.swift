@@ -104,7 +104,7 @@ class FocusRootViewModel {
     var performingInitialFetch: Bool = false
     
     var isProUser: Bool {
-        subscriptionManager?.userIsPro ?? false
+        store?.isProUser ?? false
     }
     
     init() {
@@ -115,10 +115,9 @@ class FocusRootViewModel {
     
     func setup(store: Store, subscriptionManager: SubscriptionManager, coordinator: FocusSessionCoordinator) {
         guard !initialSetup else { return }
-        // Assign before `store`, whose `didSet` kicks off the fetch that reads `isProUser`.
         self.subscriptionManager = subscriptionManager
         self.store = store
-        self.setupObservation(store: store, subscription: subscriptionManager, coordinator: coordinator)
+        self.setupObservation(store: store, coordinator: coordinator)
         self.initialSetup = true
     }
     
@@ -377,7 +376,7 @@ class FocusRootViewModel {
     
     // MARK: - Observations
     
-    func setupObservation(store: Store, subscription: SubscriptionManager, coordinator: FocusSessionCoordinator) {
+    func setupObservation(store: Store, coordinator: FocusSessionCoordinator) {
         Task {
             await withDiscardingTaskGroup { group in
                 group.addTask {
@@ -396,7 +395,7 @@ class FocusRootViewModel {
                 }
                 
                 group.addTask {
-                    await self.observeProUserStatus(subscription: subscription)
+                    await self.observeProUserStatus(store: store)
                 }
             }
             
@@ -428,8 +427,8 @@ class FocusRootViewModel {
         }
     }
     
-    private func observeProUserStatus(subscription: SubscriptionManager) async {
-        let proUserStatus = Observations({ subscription.userIsPro })
+    private func observeProUserStatus(store: Store) async {
+        let proUserStatus = Observations({ store.isProUser })
         for await _ in proUserStatus.dropFirst(1) {
             self.initialFetch()
         }

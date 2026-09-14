@@ -163,9 +163,11 @@ struct FTQuickStartView: View {
 
 #Preview {
     @Previewable @State var coordinator: FocusSessionCoordinator = .init(alarmCoordinator: nil, liveActivityCoordinator: nil, appShieldCoordinator: nil, storeCoordinator: nil)
+    @Previewable @State var store: Store = .init()
     // NOTE: the launch control is already rendered by FTQuickStartView's own bottom
     // footer (FloatingFocusTimerFooterView), so the previous `.safeAreaBar` overlay
     // here was a duplicate and has been removed.
     FTQuickStartView(coordinator: coordinator, reminders: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()])
-        .environment(SubscriptionManager())
+        .environment(store)
+        .environment(SubscriptionManager(store: store))
 }

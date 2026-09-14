@@ -12,10 +12,16 @@ import TipKit
 
 @main
 struct CueApp: App {
-    @State private var store: Store = .init()
-    @State private var subscriptionManager: SubscriptionManager = .init()
+    @State private var store: Store
+    @State private var subscriptionManager: SubscriptionManager
     
     init() {
+        // `SubscriptionManager` writes the resolved entitlement into `Store`, which persists it
+        // on the `User`, so the two have to share one instance.
+        let store = Store()
+        _store = State(initialValue: store)
+        _subscriptionManager = State(initialValue: SubscriptionManager(store: store))
+        
         #if DEBUG
         // Tips fire once and then stay dismissed, which makes iterating on copy painful — start
         // each debug launch from a clean datastore. Must run before `configure`.

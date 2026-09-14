@@ -7,6 +7,7 @@
 
 import RevenueCat
 import Foundation
+import Model
 
 @Observable
 @MainActor final class SubscriptionManager {
@@ -24,29 +25,25 @@ import Foundation
         static let entitlementIdentifier: String? = "cue:it Pro"
     }
     
-    var customerInfo: CustomerInfo? {
-        didSet {
-            guard let entitlementIdentifier = Constants.entitlementIdentifier else { return }
-            subscriptionActive = customerInfo?.entitlements[entitlementIdentifier]?.isActive == true
-        }
-    }
+    /// Owns the persisted pro status. This manager only ever *writes* the entitlement to it —
+    /// read the user's pro status from `store.isProUser`, which survives launches and works
+    /// offline, rather than from `customerInfo`, which is `nil` until RevenueCat answers.
+    @ObservationIgnored
+    let store: Store
     
-    var userIsPro: Bool {
-        guard let customerInfo else { return false }
-        return customerInfo.entitlements["cue:it Pro"]?.isActive == true
+    var customerInfo: CustomerInfo? {
+        didSet { persistProStatus(from: customerInfo) }
     }
     
     /* The latest offerings */
     var offerings: Offerings?
 
-    /* Checks if a subscription is active for a given entitlement */
-    var subscriptionActive: Bool = false
-
     var isFetchingOfferings: Bool = false
 
     var isPurchasing: Bool = false
     
-    init() {
+    init(store: Store) {
+        self.store = store
         // Configure the SDK with the API Key
         Purchases.configure(withAPIKey: Constants.apiKey)
         /* Listen to changes in the `customerInfo` object using an `AsyncStream` */
@@ -55,6 +52,31 @@ import Foundation
                 await MainActor.run { customerInfo = newCustomerInfo }
             }
         }
+    }
+    
+    
+    // MARK: - Persisting the entitlement
+    
+    /// Writes the entitlement RevenueCat just reported through to `Store`, which persists it on
+    /// the `User` and publishes the change.
+    ///
+    /// A `nil` `customerInfo` means "no answer yet", never "not subscribed", so it leaves the
+    /// persisted status alone — otherwise a launch would downgrade a paying user to free before
+    /// the SDK had a chance to reply.
+    private func persistProStatus(from customerInfo: CustomerInfo?) {
+        guard let customerInfo,
+              let entitlementIdentifier = Constants.entitlementIdentifier
+        else { return }
+        
+        let entitlement = customerInfo.entitlements[entitlementIdentifier]
+        
+        guard entitlement?.isActive == true else {
+            return store.updateProStatus(.free)
+        }
+        
+        // A lifetime or non-renewing entitlement has no expiration date; `nil` there means
+        // "does not lapse", which is exactly how `UserProStatus` reads it.
+        store.updateProStatus(.pro, expiryDate: entitlement?.expirationDate)
     }
 
     func purchase(_ product: StoreProduct) async -> Bool {
@@ -105,6 +127,8 @@ import Foundation
     /// a non-throwing restore with nothing to restore returns `.success(false)`.
     func restorePurchase() async -> Result<Bool, Error> {
         do {
+            // Assigning `customerInfo` rather than waiting on `customerInfoStream` also
+            // persists the restored entitlement the moment we know about it.
             let restoredInfo = try await Purchases.shared.restorePurchases()
             self.customerInfo = restoredInfo
             guard let entitlementIdentifier = Constants.entitlementIdentifier else { return .success(false) }
@@ -142,7 +166,7 @@ import Foundation
     /// `isProFeature` lets a call site gate only some of its cases — a timer-type picker gates
     /// pomodoro but must still let the user pick classic, for example.
     func proUserAction(isProFeature: Bool = true, _ action: @escaping () -> Void) {
-        guard isProFeature, !userIsPro else { return action() }
+        guard isProFeature, !store.isProUser else { return action() }
         NotificationCenter.default.post(name: .presentPaywall, object: nil)
     }
 }
