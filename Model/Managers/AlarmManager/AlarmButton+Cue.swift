@@ -23,7 +23,7 @@ extension AlarmButton {
     }
     
     static var resumeButton: Self {
-        .init(text: .init(stringLiteral: "Stop"), textColor: .white, systemImageName: "play.fill")
+        .init(text: .init(stringLiteral: "Resume"), textColor: .white, systemImageName: "play.fill")
     }
     
 }

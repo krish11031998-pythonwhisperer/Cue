@@ -10,7 +10,7 @@ import SwiftUI
 struct CueWidgetsBundle: WidgetBundle {
     var body: some Widget {
 //        ReminderAlarmLiveActivity()
-//        FocusAlarmLiveActivity()
+        FocusAlarmLiveActivity()
         FocusSessionLiveActivity()
     }
 }

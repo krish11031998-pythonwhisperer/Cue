@@ -137,11 +137,17 @@ public class CueAlarmManager {
         return nil
     }
     
+    /// Schedules the alarm that closes a Focus Session.
+    ///
+    /// `metadata` is the session's identity - name, icon, colour, kind, task count. It is
+    /// stored on the alarm so that `FocusAlarmLiveActivity` can render the session when the
+    /// alarm fires, long after the session that scheduled it is out of reach.
     @concurrent
-    public func scheduleAlarm(title: String, startDate: Date, timeDuration: TimeInterval, color: Color = .blue) async -> (UUID, Alarm)? {
+    public func scheduleAlarm(metadata: CueFocusAlarmAttributes, startDate: Date, timeDuration: TimeInterval, tintColor: Color = .blue) async -> (UUID, Alarm)? {
         let targetAlarm = startDate.addingTimeInterval(timeDuration)
         
         let id: UUID = .init()
+        let title = metadata.title
         let alert: AlarmPresentation.Alert
         let alarmSchedule: Alarm.Schedule
         
@@ -158,10 +164,13 @@ public class CueAlarmManager {
             alert = AlarmPresentation.Alert(title: .init(stringLiteral: title), stopButton: .stopButton, secondaryButton: .snoozeButton, secondaryButtonBehavior: .countdown)
         }
         
+        // Snoozing an alarm moves it into `.countdown`, and pausing that into `.paused`.
+        // Without these two presentations both states reach the Live Activity title-less.
+        let alarmPresentation = AlarmPresentation(alert: alert,
+                                                  countdown: .init(title: .init(stringLiteral: title), pauseButton: .pauseButton),
+                                                  paused: .init(title: .init(stringLiteral: title), resumeButton: .resumeButton))
         
-        let alarmPresentation = AlarmPresentation(alert: alert)
-        
-        let attributes = AlarmAttributes<CueFocusAlarmAttributes>(presentation: alarmPresentation, metadata: .init(title: title), tintColor: Color.blue)
+        let attributes = AlarmAttributes<CueFocusAlarmAttributes>(presentation: alarmPresentation, metadata: metadata, tintColor: tintColor)
         
         let configuration = AlarmManager.AlarmConfiguration.init(countdownDuration: .init(preAlert: nil, postAlert: 5 * 60),
                                                                  schedule: alarmSchedule,
