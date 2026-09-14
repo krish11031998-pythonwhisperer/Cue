@@ -40,9 +40,7 @@ struct FocusRootView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("", systemSymbol: .plus) {
-                        subscriptionManager.proUserAction {
-                            self.viewModel.presentation = .presentCreateFocusSession
-                        }
+                        self.viewModel.createFocusSessionAction()
                     }
                 }
             }

@@ -183,7 +183,7 @@ class CreateFocusSessionViewModel: TimerAdjustmentManager, PlaygroundImageGenera
         self.imageURL = focusSessionModel.imageFileName.map { ImageFileManager.url(for: $0) }
     }
     
-    func createOrUpdateFocusSession(for mode: CreateFocusSessionSheet.Mode) async {
+    func createOrUpdateFocusSession(for mode: CreateFocusSessionSheet.Mode) async -> Bool {
         let savedImageFileName = await saveGeneratedImage()
         switch mode {
         case .create:
@@ -230,15 +230,14 @@ class CreateFocusSessionViewModel: TimerAdjustmentManager, PlaygroundImageGenera
             focusSessionModel.objectId = preSetFocusSessionModel.objectId
             action(focusSessionModel)
         }
+        
+        return true
     }
     
     func deleteFocusSession(for objectId: NSManagedObjectID) {
         store?.deleteFocusSession(focusSessionID: objectId)
     }
     
-    /// Copies the generated image into the app's images directory and returns the file
-    /// name to persist. Returns `nil` if it could not be saved — the Image Playground URL
-    /// points at a temporary file the system may already have reaped.
     private func saveGeneratedImage() async -> String? {
         guard needsToSaveImage, let imageURL else {
             return nil
@@ -430,7 +429,7 @@ struct CreateFocusSessionSheet: View {
                     
                     Button {
                         Task {
-                            await viewModel.createOrUpdateFocusSession(for: mode)
+                            guard await viewModel.createOrUpdateFocusSession(for: mode) else { return }
                             dismiss()
                         }
                     } label: {

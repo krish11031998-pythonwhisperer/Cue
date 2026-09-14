@@ -89,6 +89,8 @@ class FocusRootViewModel {
     @ObservationIgnored
     private(set) var reminders: [ReminderModel] = []
     @ObservationIgnored
+    private(set) var focusSessions: [FocusSessionModel] = []
+    @ObservationIgnored
     private var sessionState: FocusSessionState = .idle
     @ObservationIgnored
     var store: Store? {
@@ -131,6 +133,7 @@ class FocusRootViewModel {
             let (reminders, focusSessions) = await (fetchReminders, fetchFocusSessions)
             
             self.reminders = reminders
+            self.focusSessions = focusSessions
             self.setupSections(reminders: reminders, focusSessions: focusSessions)
             self.performingInitialFetch = false
         }
@@ -211,6 +214,7 @@ class FocusRootViewModel {
     // MARK: - Focused Routines
     
     private func updateFocusSessionSections(_ focusSessions: [FocusSessionModel]) {
+        self.focusSessions = focusSessions
         var newSections = sections.filter { $0.id == Section.quickStart.id }
         
         let newFocusSessionSections = [setupFocusedSessionSection(focusSessions), setupCustomFocusSessionSection(focusSessions)].compactMap { $0 }
@@ -279,7 +283,6 @@ class FocusRootViewModel {
     
     private func setupCustomFocusSessionSection(_ focusSession: [FocusSessionModel]) -> DiffableCollectionSection? {
         let customFocusSessions = focusSession.filter { $0.reminder == nil }
-        guard !customFocusSessions.isEmpty else { return nil }
         
         let action: (FocusSessionModel) -> Callback = { [weak self] focusSessionModel in
             { [weak self] in
@@ -299,42 +302,36 @@ class FocusRootViewModel {
                 self?.store?.deleteFocusSession(focusSessionID: focusSession.objectId)
             }
         }
-        
+
         let editAction: (FocusSessionModel) -> Callback = { [weak self] focusSession in
             { [weak self] in
-                self?.proFeatureAction { [weak self] in
-                    self?.presentation = .editFocusSession(focusSession)
-                }
+                self?.presentation = .editFocusSession(focusSession)
             }
         }
         
-        var cells: [DiffableCollectionCellProvider] = []
-        
-        if isProUser {
-            cells = customFocusSessions.map {
-                let sessionType: FocusSessionType
-                switch $0.sessionType {
-                case .classic:
-                    sessionType = .classic
-                case .pomodoro:
-                    sessionType = .pomodoro(currentIndex: 0, total: 0)
-                @unknown default:
-                    sessionType = .classic
-                }
-                
-                let imageModel: CustomFocusSessionCard.ImageModel = .init(url: $0.imageFileName.map { ImageFileManager.url(for: $0) }) { url in
-                    try? ImageFileManager.retrieveImage(for: url)
-                }
-                
-                let cardModel: CustomFocusSessionCard.Model = .init(sessionType: sessionType,
-                                                                    image: imageModel,
-                                                                    name: $0.name,
-                                                                    timerDuration: $0.timerDuration,
-                                                                    deleteAction: deleteAction($0),
-                                                                    editAction: editAction($0),
-                                                                    action: action($0))
-                return DiffableCollectionItem<CustomFocusSessionCard>(cardModel)
+        var cells: [DiffableCollectionCellProvider] = allowedFocusSessions(customFocusSessions).map {
+            let sessionType: FocusSessionType
+            switch $0.sessionType {
+            case .classic:
+                sessionType = .classic
+            case .pomodoro:
+                sessionType = .pomodoro(currentIndex: 0, total: 0)
+            @unknown default:
+                sessionType = .classic
             }
+            
+            let imageModel: CustomFocusSessionCard.ImageModel = .init(url: $0.imageFileName.map { ImageFileManager.url(for: $0) }) { url in
+                try? ImageFileManager.retrieveImage(for: url)
+            }
+            
+            let cardModel: CustomFocusSessionCard.Model = .init(sessionType: sessionType,
+                                                                image: imageModel,
+                                                                name: $0.name,
+                                                                timerDuration: $0.timerDuration,
+                                                                deleteAction: deleteAction($0),
+                                                                editAction: editAction($0),
+                                                                action: action($0))
+            return DiffableCollectionItem<CustomFocusSessionCard>(cardModel)
         }
         
         let layout: NSCollectionLayoutSection = .orthogonalGrid(gridWidth: .fractionalWidth(0.92),
@@ -343,9 +340,7 @@ class FocusRootViewModel {
                                                                 contentInsets: .init(top: 16, leading: 16, bottom: 16, trailing: 16)).addHeader()
         
         let addNewSession = DiffableCollectionItem<AddCustomFocusSessionCard>(.init { [weak self] in
-            self?.proFeatureAction { [weak self] in
-                self?.presentation = .presentCreateFocusSession
-            }
+            self?.createFocusSessionAction()
         })
         
         cells.append(addNewSession)
@@ -435,18 +430,23 @@ class FocusRootViewModel {
     
     private func observeProUserStatus(subscription: SubscriptionManager) async {
         let proUserStatus = Observations({ subscription.userIsPro })
-        for await isProUser in proUserStatus.dropFirst(1) {
+        for await _ in proUserStatus.dropFirst(1) {
             self.initialFetch()
         }
     }
     
     
     // MARK: - Pro Feature Action
-    
-    private func proFeatureAction(_ action: @escaping Callback) {
-        guard let subscriptionManager else {
-            return NotificationCenter.default.post(name: .presentPaywall, object: nil)
+
+    func createFocusSessionAction() {
+        guard let subscriptionManager else { return }
+        subscriptionManager.focusSessionCreationAction(existingSessions: focusSessions.count) { [weak self] in
+            self?.presentation = .presentCreateFocusSession
         }
-        subscriptionManager.proUserAction(action)
+    }
+    
+    private func allowedFocusSessions(_ focusSessions: [FocusSessionModel]) -> [FocusSessionModel] {
+        guard let subscriptionManager else { return [] }
+        return subscriptionManager.allowedFocusSessions(focusSessions)
     }
 }
