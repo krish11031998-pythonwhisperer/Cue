@@ -857,20 +857,23 @@ fileprivate struct TestView: View {
 
 
 #Preview("Create") {
+    @Previewable @State var store: Store = .init()
     TestView(mode: .create)
-        .environment(Store())
-        .environment(SubscriptionManager())
+        .environment(store)
+        .environment(SubscriptionManager(store: store))
 }
 
 #Preview("Edit (Classic)") {
+    @Previewable @State var store: Store = .init()
     TestView(mode: .edit(.init(name: "Deep Focus", sessionType: .classic, timerDuration: 3 * 60 * 60, breakDuration: 15 * 60, blockedApps: nil, alarm: .endOfSession, sessionCount: nil, reminder: nil)))
-        .environment(Store())
-        .environment(SubscriptionManager())
+        .environment(store)
+        .environment(SubscriptionManager(store: store))
 }
 
 
 #Preview("Edit (Pomodoro)") {
+    @Previewable @State var store: Store = .init()
     TestView(mode: .edit(.init(name: "Let's do this!", sessionType: .pomodoro, timerDuration: 45 * 60, breakDuration: 15 * 60, blockedApps: nil, alarm: .endOfSession, sessionCount: 4, reminder: nil)))
-        .environment(Store())
-        .environment(SubscriptionManager())
+        .environment(store)
+        .environment(SubscriptionManager(store: store))
 }

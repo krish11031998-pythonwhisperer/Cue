@@ -8,6 +8,7 @@
 import SwiftUI
 import VanorUI
 import RevenueCat
+import Model
 
 struct CuePaywallView: View {
     
@@ -205,7 +206,7 @@ struct CuePaywallView: View {
 
 
 #Preview {
-    @Previewable @State var subscriptionManager: SubscriptionManager = .init()
+    @Previewable @State var subscriptionManager: SubscriptionManager = .init(store: .init())
     CuePaywallView()
         .environment(subscriptionManager)
 }

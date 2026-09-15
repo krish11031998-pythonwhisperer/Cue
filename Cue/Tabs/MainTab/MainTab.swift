@@ -21,7 +21,6 @@ struct MainTab: View {
     typealias Tabs = MainTabViewModel.Tabs
     
     @Environment(Store.self) var store
-    @Environment(SubscriptionManager.self) var subscriptionManager
     @State private var tabAccessorySize: CGSize = .zero
     
     // MARK:  FocusTabBottomAccessoryControl
@@ -78,7 +77,7 @@ struct MainTab: View {
             }
             
             #if !NEW_QUICK_START
-            if subscriptionManager.userIsPro {
+            if store.isProUser {
                 Tab(value: .organize) {
                     OrangizeTabView()
                 } label: {

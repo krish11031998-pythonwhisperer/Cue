@@ -358,6 +358,31 @@ import AsyncAlgorithms
     }
     
     
+    // MARK: - Pro Status
+    
+    /// The last entitlement answer the store gave us, read off the observable `userModel`.
+    public var proStatus: UserProStatus { userModel?.proStatus ?? .unknown }
+    
+    /// Whether pro features are unlocked, from the last answer the store gave us.
+    ///
+    /// Survives launches, so a returning subscriber is Pro from the first frame instead of
+    /// after RevenueCat replies — and stays Pro while offline, up to `proStatus.expiryDate`.
+    public var isProUser: Bool { proStatus.isPro }
+    
+    /// Records a fresh entitlement answer from the store, stamping it with the current date.
+    ///
+    /// Writes through to Core Data only when the answer actually differs from what we hold: the
+    /// subscription SDK re-emits the same `customerInfo` on every launch and foreground, and a
+    /// no-op save would wake every context observer for nothing.
+    public func updateProStatus(_ status: ProStatus, expiryDate: Date? = nil) {
+        guard status != proStatus.status || expiryDate != proStatus.expiryDate else { return }
+        let newStatus = UserProStatus(status: status, expiryDate: expiryDate, updatedAt: .now)
+        updateUser { user in
+            user.proStatus = newStatus
+        }
+    }
+    
+    
     // MARK: - Enable Disable Notifications
     
     func enableNotifications() {

@@ -296,7 +296,7 @@ extension NewCreateReminderView {
                     viewModel.reminderNotification = newValue
                 }
                 
-                guard newValue == .alarm, !subscriptionManager.userIsPro else { return }
+                guard newValue == .alarm, !viewModel.store.isProUser else { return }
                 // Assigning through the `@Observable` setter invalidates the picker even though
                 // the value is unchanged — that is what snaps the segment back.
                 viewModel.reminderNotification = .notification
@@ -414,6 +414,7 @@ extension NewCreateReminderView {
 }
 
 #Preview {
-    NewCreateReminderView(mode: .create, store: .init(), dismissActionFromParent: nil)
-        .environment(SubscriptionManager())
+    @Previewable @State var store: Store = .init()
+    NewCreateReminderView(mode: .create, store: store, dismissActionFromParent: nil)
+        .environment(SubscriptionManager(store: store))
 }

@@ -215,13 +215,13 @@ struct SettingView: View {
                 Section {
                     Button {
                         playSelectionHaptic()
-                        if subscriptionManager.userIsPro {
+                        if store.isProUser {
                             self.presentation = .manageSubscription
                         } else {
                             self.presentation = .subscription
                         }
                     } label: {
-                        CueItProCard(userIsPro: subscriptionManager.userIsPro)
+                        CueItProCard(userIsPro: store.isProUser)
                     }
                     .buttonStyle(.plain)
                 }
@@ -520,7 +520,8 @@ struct SettingView: View {
 
 
 #Preview {
+    @Previewable @State var store: Store = .init()
     SettingView()
-        .environment(Store())
-        .environment(SubscriptionManager())
+        .environment(store)
+        .environment(SubscriptionManager(store: store))
 }

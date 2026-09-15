@@ -12,7 +12,6 @@ import AsyncAlgorithms
 
 struct OrangizeTabView: View {
     @Environment(Store.self) var store
-    @Environment(SubscriptionManager.self) var subscriptionManager
     @State private var viewModel: OrganizeTabViewModel = .init()
     
     var body: some View {
@@ -41,7 +40,7 @@ struct OrangizeTabView: View {
             .navigationTitle("Organize")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
-                if subscriptionManager.userIsPro {
+                if store.isProUser {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("", systemSymbol: .plus) {
                             viewModel.selectedPresentation = .tags

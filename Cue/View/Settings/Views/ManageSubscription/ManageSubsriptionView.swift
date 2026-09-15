@@ -8,6 +8,7 @@
 import SwiftUI
 import RevenueCat
 import VanorUI
+import Model
 
 @MainActor
 @Observable
@@ -152,7 +153,7 @@ struct ManageSubsriptionView: View {
 }
 
 #Preview {
-    @Previewable @State var subscriptionManager: SubscriptionManager = .init()
+    @Previewable @State var subscriptionManager: SubscriptionManager = .init(store: .init())
     ManageSubsriptionView()
         .environment(subscriptionManager)
 }
