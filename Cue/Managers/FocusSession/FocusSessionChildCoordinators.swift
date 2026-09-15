@@ -13,7 +13,7 @@ import Model
 
 @MainActor
 protocol FocusTimerAlarmCoordinator {
-    func scheduleAlarmForTimer(startDate: Date, timeInterval: TimeInterval, title: String, color: Color) async -> (UUID, Alarm)?
+    func scheduleAlarmForTimer(startDate: Date, timeInterval: TimeInterval, sessionAttributes: FocusSessionAttributes) async -> (UUID, Alarm)?
     func cancelAlarm(_ uuid: UUID)
     func requestAuthorization() async -> Bool
     func authorizationStatus() async -> AlarmManager.AuthorizationState

@@ -15,9 +15,14 @@ class FocusAlarmManager: FocusTimerAlarmCoordinator {
     
     var alarmManager: CueAlarmManager?
       
-    public func scheduleAlarmForTimer(startDate: Date, timeInterval: TimeInterval, title: String, color: Color) async -> (UUID, Alarm)? {
+    /// Schedules the session's alarm carrying the session's own attributes, so the alarm
+    /// presents as the session it closes rather than as a generic timer.
+    public func scheduleAlarmForTimer(startDate: Date, timeInterval: TimeInterval, sessionAttributes: FocusSessionAttributes) async -> (UUID, Alarm)? {
         guard let alarmManager else { return nil }
-        return await alarmManager.scheduleAlarm(title: title, startDate: startDate, timeDuration: timeInterval, color: color)
+        return await alarmManager.scheduleAlarm(metadata: .init(sessionAttributes),
+                                                startDate: startDate,
+                                                timeDuration: timeInterval,
+                                                tintColor: sessionAttributes.color.baseColor)
     }
     
     public func requestAuthorization() async -> Bool {

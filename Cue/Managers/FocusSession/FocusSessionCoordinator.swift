@@ -230,18 +230,9 @@ class FocusSessionCoordinator: FocusSessionControl {
     // MARK: - LiveActivity
     
     private func setupLiveActivity() {
-        guard var sessionAttributes,
+        guard let sessionAttributes = resolvedSessionAttributes(),
               let startTime,
               let content = currentContentState() else { return }
-        
-        sessionAttributes.sessionType = {
-            switch selectedTimerType {
-            case .classic:
-                return .classic
-            case .pomodoro:
-                return .pomodoro
-            }
-        }()
         
         let activityID = UUID()
         session?.liveActivityID = activityID
@@ -303,6 +294,41 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
     
     
+    // MARK: - Session Attributes
+    
+    private var currentSessionType: FocusSessionLiveActivityAttributes.FocusSessionType {
+        switch selectedTimerType {
+        case .classic:
+            return .classic
+        case .pomodoro:
+            return .pomodoro
+        }
+    }
+    
+    /// The session's attributes stamped with the type of session actually running.
+    ///
+    /// `sessionAttributes` is seeded by whoever launches the session (the quick-start view,
+    /// or a saved `FocusSessionModel`) and carries a nil `sessionType` until the session
+    /// starts. Both the Live Activity and the alarm need the stamped value, so it is
+    /// resolved in one place rather than each of them patching its own copy.
+    private func resolvedSessionAttributes() -> FocusSessionAttributes? {
+        guard var attributes = sessionAttributes else { return nil }
+        attributes.sessionType = currentSessionType
+        return attributes
+    }
+    
+    /// Attributes to hand to the alarm. Unlike the Live Activity, an alarm is worth firing
+    /// even for a session that was started without attributes - it just falls back to a
+    /// plain Focus identity rather than going out generic.
+    private func alarmSessionAttributes() -> FocusSessionAttributes {
+        resolvedSessionAttributes() ?? .init(name: defaultSessionName,
+                                             color: Color.proSky,
+                                             icon: .symbol(.timer),
+                                             sessionType: currentSessionType,
+                                             numberOfTasks: 0)
+    }
+    
+    
     // MARK: - Alarms
     
     func setupAlarmForOngoingSesion() {
@@ -325,7 +351,7 @@ class FocusSessionCoordinator: FocusSessionControl {
                         timeInterval = Double(pomodoroSessionCount) * self.timerDuration + Double(self.pomodoroSessionCount - 1) * self.breakDuration
                     }
                     
-                    let id = await self.scheduleAlarm(title: titleForAlarm, startTime: startDate, timerDuration: timeInterval)
+                    let id = await self.scheduleAlarm(sessionAttributes: self.alarmSessionAttributes(), startTime: startDate, timerDuration: timeInterval)
                     session?.alarmID = id
                 }
             }
@@ -338,6 +364,7 @@ class FocusSessionCoordinator: FocusSessionControl {
             
             let timerDuration = self.timerDuration
             let breakDuration = self.breakDuration
+            let alarmAttributes = alarmSessionAttributes()
             
             Task { @MainActor in
                 let alarmIds: [UUID] = await withTaskGroup(of: UUID?.self) { group in
@@ -346,7 +373,7 @@ class FocusSessionCoordinator: FocusSessionControl {
                             let timeDiff = Double(idx) * (timerDuration + breakDuration)
                             let alarmStartTime = startTime.addingTimeInterval(timeDiff)
                             
-                            return await self.scheduleAlarm(title: self.titleForAlarm, startTime: alarmStartTime, timerDuration: self.timerDuration)
+                            return await self.scheduleAlarm(sessionAttributes: alarmAttributes, startTime: alarmStartTime, timerDuration: self.timerDuration)
                         }
                     }
                     
@@ -366,17 +393,9 @@ class FocusSessionCoordinator: FocusSessionControl {
         }
     }
     
-    private var titleForAlarm: String {
-        let alarmTitle: String
-        switch selectedTimerType {
-        case .classic:
-            alarmTitle = "Classic Alarm"
-        case .pomodoro:
-            alarmTitle = "Pomodoro Alarm"
-        }
-        
-        return alarmTitle
-    }
+    /// Fallback name for a session that was started without any attributes. A session
+    /// launched through the app always carries its own name.
+    private var defaultSessionName: String { "Focus" }
     
     func checkIfCanSetAlarm() async {
         switch await alarmCoordinator?.authorizationStatus() {
@@ -417,9 +436,11 @@ class FocusSessionCoordinator: FocusSessionControl {
     }
     
     @discardableResult
-    func scheduleAlarm(title: String, startTime: Date, timerDuration: TimeInterval) async -> UUID? {
+    func scheduleAlarm(sessionAttributes: FocusSessionAttributes, startTime: Date, timerDuration: TimeInterval) async -> UUID? {
         guard isAlarmOn else { return nil }
-        let data = await alarmCoordinator?.scheduleAlarmForTimer(startDate: startTime, timeInterval: timerDuration, title: title, color: Color.proSky.baseColor)
+        let data = await alarmCoordinator?.scheduleAlarmForTimer(startDate: startTime,
+                                                                 timeInterval: timerDuration,
+                                                                 sessionAttributes: sessionAttributes)
         guard let (uuid, _) = data else { return nil }
         return uuid
     }
