@@ -249,9 +249,12 @@ import AsyncAlgorithms
         reminder.update(context: viewContext, transform: transform)
     }
     
-    public func deleteReminderTask(reminderTaskID: NSManagedObjectID) {
+    public func deleteReminderTask(reminderTaskID: NSManagedObjectID, save: Bool = true) {
         let reminder = ReminderTask.fetch(context: viewContext, for: reminderTaskID)
         reminder.delete(context: viewContext)
+        if save {
+            viewContext.saveContext()
+        }
     }
     
     @discardableResult

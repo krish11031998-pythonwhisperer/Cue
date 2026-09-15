@@ -44,6 +44,25 @@ struct NewCreateReminderView: View {
         ReminderEditField.allCases.map { $0.config(viewModel) }
     }
     
+    var taskActions: CreateReminderTasksView.Actions {
+        .init { name in
+            withAnimation(.easeInOut) {
+                textFieldIsFocused = false
+                viewModel.addTask(title: name)
+            }
+        } generateTasks: {
+            textFieldIsFocused = false
+            subscriptionManager.proUserAction {
+                viewModel.suggestionSubtasks()
+            }
+        } renameTask: { id, name in
+            viewModel.renameTask(id: id, newName: name)
+        } deleteTask: { id in
+            viewModel.deleteTask(id: id)
+        }
+
+    }
+    
     var body: some View {
         ScrollView {
             LazyVStack {
@@ -74,19 +93,23 @@ struct NewCreateReminderView: View {
                 .padding(.bottom, 14)
                 
                 
+//                CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions,
+//                                        isLoadingSuggestions: viewModel.isLoadingSuggestions,
+//                                        taskViewModels: viewModel.taskViewModels){ [weak viewModel] taskName in
+//                    withAnimation(.easeInOut) {
+//                        textFieldIsFocused = false
+//                        viewModel?.addTask(title: taskName)
+//                    }
+//                } generateTasks: { [weak viewModel] in
+//                    textFieldIsFocused = false
+//                    subscriptionManager.proUserAction {
+//                        viewModel?.suggestionSubtasks()
+//                    }
+//                }
                 CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions,
                                         isLoadingSuggestions: viewModel.isLoadingSuggestions,
-                                        taskViewModels: viewModel.taskViewModels){ [weak viewModel] taskName in
-                    withAnimation(.easeInOut) {
-                        textFieldIsFocused = false
-                        viewModel?.addTask(title: taskName)
-                    }
-                } generateTasks: { [weak viewModel] in
-                    textFieldIsFocused = false
-                    subscriptionManager.proUserAction {
-                        viewModel?.suggestionSubtasks()
-                    }
-                }
+                                        taskViewModels: viewModel.tasks,
+                                        actions: taskActions)
                 
                 Section {
                     FocusSessionView(icon: viewModel.icon,
@@ -95,12 +118,12 @@ struct NewCreateReminderView: View {
                         // Present the create Focus Session View.
                         subscriptionManager.focusSessionCreationAction(existingSessions: viewModel.store.focusSessionModels.count) {
                             if let focusSessionModel {
-                                viewModel.presentation = .editFocusSession(focusSessionModel, { [weak viewModel] focusSessionModel in
-                                    viewModel?.focusSessionModel = focusSessionModel
+                                viewModel.presentation = .editFocusSession(focusSessionModel, { focusSessionModel in
+                                    viewModel.focusSessionModel = focusSessionModel
                                 })
                             } else {
-                                viewModel.presentation = .createFocusSession(viewModel.reminderTitle, { [weak viewModel] focusSessionModel in
-                                    viewModel?.focusSessionModel = focusSessionModel
+                                viewModel.presentation = .createFocusSession(viewModel.reminderTitle, { focusSessionModel in
+                                    viewModel.focusSessionModel = focusSessionModel
                                 })
                             }
                         }
@@ -130,7 +153,7 @@ struct NewCreateReminderView: View {
             }
             .padding(.horizontal, 20)
         }
-        .animation(.easeInOut, value: viewModel.taskViewModels)
+        .animation(.easeInOut, value: viewModel.tasks)
         .onChange(of: textFieldIsFocused, { oldValue, newValue in
             guard newValue else { return }
             if self.viewModel.presentation != nil {

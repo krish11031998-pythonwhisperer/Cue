@@ -96,7 +96,7 @@ class NewCreateReminderViewModel: CreateReminderManager {
     var date: Date = Date()
     var timeDate: Date = .init()
     var tags: [TagModel] = []
-    var tasks: [CreateReminderTask] = []
+    var tasks: [ReminderTaskRow] = []
     var scheduleBuilder: Reminder.ScheduleBuilder = .init(.now)
     var icon: Icon
     var colorModel: ColorModel = .init(color: .sky, colorName: "sky")
@@ -104,7 +104,7 @@ class NewCreateReminderViewModel: CreateReminderManager {
     var isLoadingSuggestions: Bool = false
     var focusSessionModel: FocusSessionModel? = nil
     
-    private init(store: Store, mode: Mode, suggestionTask: Task<Void, Never>? = nil, edittingMode: Bool, reminderID: NSManagedObjectID? = nil, reminderTitle: String, snoozeDuration: Double, reminderNotification: ReminderNotification, date: Date, timeDate: Date, tasks: [CreateReminderTask], tags: [TagModel], scheduleBuilder: Reminder.ScheduleBuilder, icon: Icon, colorModel: ColorModel, focusSessionModel: FocusSessionModel? = nil) {
+    private init(store: Store, mode: Mode, suggestionTask: Task<Void, Never>? = nil, edittingMode: Bool, reminderID: NSManagedObjectID? = nil, reminderTitle: String, snoozeDuration: Double, reminderNotification: ReminderNotification, date: Date, timeDate: Date, tasks: [ReminderTaskRow], tags: [TagModel], scheduleBuilder: Reminder.ScheduleBuilder, icon: Icon, colorModel: ColorModel, focusSessionModel: FocusSessionModel? = nil) {
         self.mode = mode
         self.store = store
         self.suggestionTask = suggestionTask
@@ -139,7 +139,7 @@ class NewCreateReminderViewModel: CreateReminderManager {
                 scheduleBuilder = .init(intervalWeek: nil, weekdays: nil, dates: nil)
             }
             let icon: Icon = .init(reminderModel.icon) ?? .symbol(SFSymbol.allSymbols.randomElement()!)
-            let reminderTasks: [CreateReminderTask] = reminderModel.tasks.compactMap { task -> CreateReminderTask? in
+            let reminderTasks: [ReminderTaskRow] = reminderModel.tasks.compactMap { task -> ReminderTaskRow? in
                 guard let icon = Icon(task.icon) else { return nil }
                 return .init(title: task.title, icon: icon, objectID: task.objectId)
             }
@@ -214,5 +214,18 @@ class NewCreateReminderViewModel: CreateReminderManager {
         } else {
             createReminder()
         }
+    }
+    
+    func renameTask(id: UUID, newName: String) {
+        guard let index = tasks.firstIndex(where: { $0.id == id }) else { return }
+        tasks[index].title = newName
+    }
+    
+    func deleteTask(id: UUID) {
+        guard let index = tasks.firstIndex(where: { $0.id == id }),
+              let objectID = tasks[index].objectID else { return }
+        store.deleteReminderTask(reminderTaskID: objectID, save: false)
+        self.tasks.remove(at: index)
+        
     }
 }

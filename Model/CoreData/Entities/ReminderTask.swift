@@ -38,6 +38,5 @@ public final class ReminderTask: NSManagedObject, CoreDataEntity {
 
     public func delete(context: NSManagedObjectContext) {
         context.delete(self)
-        context.saveContext()
     }
 }

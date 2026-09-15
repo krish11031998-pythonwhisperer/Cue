@@ -13,22 +13,17 @@ import CoreData
 internal import AlarmKit
 import FamilyControls
 
-struct CreateReminderTask: Identifiable, Equatable {
-    let title: String
+struct ReminderTaskRow: Identifiable, Equatable {
+    let id: UUID
+    var title: String
     var icon: Icon
     let objectID: NSManagedObjectID?
     
-    init(title: String, icon: Icon, objectID: NSManagedObjectID?) {
+    init(id: UUID = .init(), title: String, icon: Icon, objectID: NSManagedObjectID?) {
+        self.id = id
         self.title = title
         self.icon = icon
         self.objectID = objectID
-    }
-    
-    var id: Int {
-        var hasher = Hasher()
-        hasher.combine(title)
-        hasher.combine(icon)
-        return hasher.finalize()
     }
 }
 
@@ -47,7 +42,7 @@ protocol CreateReminderManager: AnyObject {
     var date: Date { get set }
     var timeDate: Date { get set }
     var tags: [TagModel] { get set }
-    var tasks: [CreateReminderTask] { get set }
+    var tasks: [ReminderTaskRow] { get set }
     var reminderNotification: ReminderNotification { set get }
     var scheduleBuilder: Reminder.ScheduleBuilder { get set }
     var icon: Icon { get set }
@@ -136,43 +131,43 @@ extension CreateReminderManager {
     var timeString: String {
         timeDate.timeBuilder()
     }
-    
-    var taskViewModels: [ReminderTaskView.Model] {
-        var models: [ReminderTaskView.Model] = []
-        
-        let edit: (Int) -> ((String) -> Void) = { [weak self] index in
-            { [weak self] newTaskName in
-                if let task = self?.tasks[index] {
-                    self?.tasks[index] = .init(title: newTaskName, icon: task.icon, objectID: task.objectID)
-                }
-            }
-        }
-
-        let delete: (Int) -> (() -> Void) = { [weak self] index in
-            { [weak self] in
-                let task = self?.tasks[index]
-                if let objectID = task?.objectID {
-                    self?.store.deleteReminderTask(reminderTaskID: objectID)
-                }
-                self?.tasks.remove(at: index)
-            }
-        }
-
-        for(index, task) in tasks.enumerated() {
-            let viewType = ReminderTaskView.ViewType.displayOnly(edit(index), delete(index)) { [weak self] in
-                print("(DEBUG) tapped on icon!")
-//                self?.calendarPresentation = .iconSelector
-                self?.presentIconSheet()
-            }
-        
-            let model = ReminderTaskView.Model(taskTitle: task.title,
-                                               icon: task.icon,
-                                               viewType: viewType,
-                                               action: nil)
-            models.append(model)
-        }
-        return models
-    }
+//    
+//    var taskViewModels: [ReminderTaskView.Model] {
+//        var models: [ReminderTaskView.Model] = []
+//        
+//        let edit: (Int) -> ((String) -> Void) = { [weak self] index in
+//            { [weak self] newTaskName in
+//                if let task = self?.tasks[index] {
+//                    self?.tasks[index] = .init(title: newTaskName, icon: task.icon, objectID: task.objectID)
+//                }
+//            }
+//        }
+//
+//        let delete: (Int) -> (() -> Void) = { [weak self] index in
+//            { [weak self] in
+//                let task = self?.tasks[index]
+//                if let objectID = task?.objectID {
+//                    self?.store.deleteReminderTask(reminderTaskID: objectID)
+//                }
+//                self?.tasks.remove(at: index)
+//            }
+//        }
+//
+//        for(index, task) in tasks.enumerated() {
+//            let viewType = ReminderTaskView.ViewType.displayOnly(edit(index), delete(index)) { [weak self] in
+//                print("(DEBUG) tapped on icon!")
+////                self?.calendarPresentation = .iconSelector
+//                self?.presentIconSheet()
+//            }
+//        
+//            let model = ReminderTaskView.Model(taskTitle: task.title,
+//                                               icon: task.icon,
+//                                               viewType: viewType,
+//                                               action: nil)
+//            models.append(model)
+//        }
+//        return models
+//    }
     
     
     // Helper Methods
@@ -203,7 +198,7 @@ extension CreateReminderManager {
         suggestionTask = Task { [weak self] in
             guard let reminderTitle = self?.reminderTitle else { return }
             let suggestions = await self?.reminderSubtasksSession.suggestionTasks(for: reminderTitle)
-            let tasks: [CreateReminderTask]? = suggestions?.subTasks.map { suggestion in
+            let tasks: [ReminderTaskRow]? = suggestions?.subTasks.map { suggestion in
                     .init(title: suggestion.title, icon: .emoji(.init(suggestion.icon)), objectID: nil)
             }
             
