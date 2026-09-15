@@ -76,7 +76,7 @@ struct NewCreateReminderView: View {
                 
                 CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions,
                                         isLoadingSuggestions: viewModel.isLoadingSuggestions,
-                                        taskViewModels: viewModel.taskViewModels){ [weak viewModel] taskName in
+                                        taskRows: viewModel.taskRows){ [weak viewModel] taskName in
                     withAnimation(.easeInOut) {
                         textFieldIsFocused = false
                         viewModel?.addTask(title: taskName)
@@ -130,7 +130,7 @@ struct NewCreateReminderView: View {
             }
             .padding(.horizontal, 20)
         }
-        .animation(.easeInOut, value: viewModel.taskViewModels)
+        .animation(.easeInOut, value: viewModel.taskRows)
         .onChange(of: textFieldIsFocused, { oldValue, newValue in
             guard newValue else { return }
             if self.viewModel.presentation != nil {
