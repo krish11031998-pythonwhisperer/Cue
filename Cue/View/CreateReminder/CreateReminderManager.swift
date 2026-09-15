@@ -14,27 +14,22 @@ internal import AlarmKit
 import FamilyControls
 
 struct CreateReminderTask: Identifiable, Equatable {
-    /// Identity has to survive a retitle and an icon swap, and has to tell two subtasks
-    /// that happen to share a title apart, so it cannot be derived from the contents.
-    let id: UUID
     let title: String
     var icon: Icon
     let objectID: NSManagedObjectID?
     
-    init(id: UUID = UUID(), title: String, icon: Icon, objectID: NSManagedObjectID?) {
-        self.id = id
+    init(title: String, icon: Icon, objectID: NSManagedObjectID?) {
         self.title = title
         self.icon = icon
         self.objectID = objectID
     }
-}
-
-/// Pairs a row with the identity of the task that produced it. `ReminderTaskView.Model.id`
-/// hashes only the title and icon, so it collides across identical subtasks and cannot be
-/// used to key the list on its own.
-struct ReminderTaskRow: Identifiable, Equatable {
-    let id: UUID
-    let model: ReminderTaskView.Model
+    
+    var id: Int {
+        var hasher = Hasher()
+        hasher.combine(title)
+        hasher.combine(icon)
+        return hasher.finalize()
+    }
 }
 
 struct ColorModel {
@@ -142,44 +137,41 @@ extension CreateReminderManager {
         timeDate.timeBuilder()
     }
     
-    /// Rows capture the task's identity, never its position. A swipe action is held by the
-    /// swipe modifier and can outlive the array it was built from, so a captured index would
-    /// go on addressing a slot that has since moved or disappeared.
-    var taskRows: [ReminderTaskRow] {
-        tasks.map { task in
-            let id = task.id
-            let edit: (String) -> Void = { [weak self] newTaskName in
-                self?.renameTask(id: id, to: newTaskName)
+    var taskViewModels: [ReminderTaskView.Model] {
+        var models: [ReminderTaskView.Model] = []
+        
+        let edit: (Int) -> ((String) -> Void) = { [weak self] index in
+            { [weak self] newTaskName in
+                if let task = self?.tasks[index] {
+                    self?.tasks[index] = .init(title: newTaskName, icon: task.icon, objectID: task.objectID)
+                }
             }
-            let delete: Callback = { [weak self] in
-                self?.deleteTask(id: id)
+        }
+
+        let delete: (Int) -> (() -> Void) = { [weak self] index in
+            { [weak self] in
+                let task = self?.tasks[index]
+                if let objectID = task?.objectID {
+                    self?.store.deleteReminderTask(reminderTaskID: objectID)
+                }
+                self?.tasks.remove(at: index)
             }
-            let viewType = ReminderTaskView.ViewType.displayOnly(edit, delete) { [weak self] in
+        }
+
+        for(index, task) in tasks.enumerated() {
+            let viewType = ReminderTaskView.ViewType.displayOnly(edit(index), delete(index)) { [weak self] in
+                print("(DEBUG) tapped on icon!")
+//                self?.calendarPresentation = .iconSelector
                 self?.presentIconSheet()
             }
-            
+        
             let model = ReminderTaskView.Model(taskTitle: task.title,
                                                icon: task.icon,
                                                viewType: viewType,
                                                action: nil)
-            return .init(id: id, model: model)
+            models.append(model)
         }
-    }
-    
-    func renameTask(id: UUID, to newTitle: String) {
-        guard let index = tasks.firstIndex(where: { $0.id == id }) else { return }
-        let task = tasks[index]
-        tasks[index] = .init(id: task.id, title: newTitle, icon: task.icon, objectID: task.objectID)
-    }
-    
-    func deleteTask(id: UUID) {
-        // Resolved against `tasks` as it stands now, so a stale row is a no-op rather than
-        // a delete of whichever task has since taken that slot.
-        guard let index = tasks.firstIndex(where: { $0.id == id }) else { return }
-        if let objectID = tasks[index].objectID {
-            store.deleteReminderTask(reminderTaskID: objectID)
-        }
-        tasks.remove(at: index)
+        return models
     }
     
     
@@ -192,15 +184,12 @@ extension CreateReminderManager {
     }
     
     func addTask(title: String) {
-        let task = CreateReminderTask(title: title, icon: .symbol(.progressIndicator), objectID: nil)
-        self.tasks.append(task)
+        self.tasks.append(.init(title: title, icon: .symbol(.progressIndicator), objectID: nil))
         Task {
             let emoji = await emojiSession.generateEmoji(for: title)
             
-            // Matched on identity: looking the row up by title drops the emoji on the wrong
-            // subtask as soon as two of them share a title.
-            if let index = self.tasks.firstIndex(where: { $0.id == task.id }) {
-                self.tasks[index].icon = .emoji(emoji)
+            if let firstIndex = self.tasks.firstIndex(where: { $0.title == title }) {
+                self.tasks[firstIndex].icon = .emoji(emoji)
             }
         }
     }

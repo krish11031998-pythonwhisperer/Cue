@@ -12,14 +12,14 @@ struct CreateReminderTasksView: View {
     
     let canLoadSuggestions: Bool
     let isLoadingSuggestions: Bool
-    let taskRows: [ReminderTaskRow]
+    let taskViewModels: [ReminderTaskView.Model]
     let addTask: (String) -> Void
     let generateTasks: () -> Void
     
     var body: some View {
         Section {
-            ForEach(taskRows) { row in
-                ReminderTaskView(model: row.model)
+            ForEach(taskViewModels) { taskViewModel in
+                ReminderTaskView(model: taskViewModel)
                     .transition(.scale(scale: 1, anchor: .center))
             }
         } header: {
@@ -30,7 +30,7 @@ struct CreateReminderTasksView: View {
             CreateReminderSectionFooterView { taskName in
                 addTask(taskName)
             }
-            .padding(.top, taskRows.isEmpty ? 0 : 6)
+            .padding(.top, taskViewModels.isEmpty ? 0 : 6)
         }
         .environment(\.createReminderStyle, .list)
     }
