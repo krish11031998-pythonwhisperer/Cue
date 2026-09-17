@@ -229,7 +229,7 @@ struct RoutineCardView: View {
     // MARK: - Background
 
     /// The card's fill: the app background, a tint of the routine's own colour while
-    /// it is unlogged, and the gradient that wipes over it from the icon once it is.
+    /// it is unlogged, and `loggedFill` wiping over it from the icon once it is.
     private var cardBackground: some View {
         ZStack(alignment: .center) {
             RoutineCapsule()
@@ -241,16 +241,29 @@ struct RoutineCardView: View {
             RoutineCapsule()
                 .fill(tintColor)
 
-            LinearGradient(stops: [.init(color: Color.cueItBackground.opacity(0.25), location: 0),
-                                   .init(color: theme.baseColor, location: 0.65)],
-                           startPoint: .leading,
-                           endPoint: .trailing)
-            .mask(alignment: .center) {
-                ExpandingCircle(startFrame: iconFrame,
-                                finalCornerRadius: capsuleCornerRadius,
-                                pct: isLogged ? 1 : 0)
-            }
+            loggedFill
+                .mask(alignment: .center) {
+                    ExpandingCircle(startFrame: iconFrame,
+                                    finalCornerRadius: capsuleCornerRadius,
+                                    pct: isLogged ? 1 : 0)
+                }
         }
+    }
+
+    /// The fill a logged routine wipes on.
+    ///
+    /// The old fill ran leading to trailing and started from the app background, which
+    /// left every logged card washed out down its left edge and gave the colour nowhere
+    /// to sit behind the icon. This one never leaves the routine's own colour family:
+    /// one step off the base colour at the top leading corner, easing into the base
+    /// colour itself, so the card reads as solidly filled with a soft diagonal sheen.
+    ///
+    /// For a flat card instead, this can be the base colour on its own.
+    private var loggedFill: LinearGradient {
+        LinearGradient(stops: [.init(color: theme.backgroundQuaternary, location: 0),
+                               .init(color: theme.baseColor, location: 0.6)],
+                       startPoint: .topLeading,
+                       endPoint: .bottomTrailing)
     }
 
     /// The unlogged card's outline. Solid and faint while the routine is still ahead,
