@@ -15,9 +15,12 @@ struct FocusSessionLiveActivity: Widget {
     
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: FocusSessionLiveActivityAttributes.self) { context in
-            FocusSessionLockScreenLiveActivityView(attributes: context.attributes,
-                                                   state: context.state,
-                                                   toggleIntent: ToggleFocusSessionIntent())
+            // Lock Screen, StandBy and the Apple Watch Smart Stack all come through here.
+            // `FocusSessionActivityContentView` picks the layout off `\.activityFamily`
+            // and supplies the container background the last two need.
+            FocusSessionActivityContentView(attributes: context.attributes,
+                                            state: context.state,
+                                            toggleIntent: ToggleFocusSessionIntent())
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.bottom) {
@@ -36,7 +39,8 @@ struct FocusSessionLiveActivity: Widget {
             } minimal: {
                 FocusLiveActivitySessionIcon(context.attributes, state: context.state, viewType: .iconWithProgressMinimal)
             }
-        }.supplementalActivityFamilies([.small])
+        }
+        .supplementalActivityFamilies([.small])
     }
 }
 
