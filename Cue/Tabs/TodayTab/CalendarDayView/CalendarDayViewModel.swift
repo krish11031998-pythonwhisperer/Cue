@@ -40,6 +40,47 @@ class CalendarDayViewModel {
             return startTime.date!..<endTime.date!
         }
         
+        /// The hours this stretch of the day covers, as a half-open range.
+        ///
+        /// Mirrors `timeRange(date:)`, but in plain hours so the day rail can size and
+        /// fill each stretch without building dates.
+        var hourRange: Range<Int> {
+            switch self {
+            case .morning:
+                return 0..<12
+            case .afternoon:
+                return 12..<17
+            case .evening:
+                return 17..<24
+            }
+        }
+        
+        /// How much of a 24 hour day this stretch takes up.
+        var dayFraction: CGFloat {
+            CGFloat(hourRange.count) / 24
+        }
+        
+        func contains(hour: Int) -> Bool {
+            hourRange.contains(hour)
+        }
+        
+        /// The stretch of the day a given moment falls into.
+        static func current(at date: Date = .now) -> TimeOfDay {
+            allCases.first { $0.contains(hour: date.hours) } ?? .evening
+        }
+        
+        /// The hours the stretch covers, spelled out for its header.
+        var hoursTitle: String {
+            switch self {
+            case .morning:
+                return "12am – 12pm"
+            case .afternoon:
+                return "12pm – 5pm"
+            case .evening:
+                return "5pm – 12am"
+            }
+        }
+        
         var title: String {
             switch self {
             case .morning:
@@ -89,7 +130,7 @@ class CalendarDayViewModel {
     struct Section: Hashable, Identifiable {
         
         struct RowModel: Hashable, Identifiable {
-            let viewConfig: ReminderView.Model
+            let viewConfig: RoutineCardView.Model
             let reminder: ReminderModel
             
             var id: Int {
@@ -102,6 +143,11 @@ class CalendarDayViewModel {
         
         let timeOfDay: TimeOfDay
         let reminders: [RowModel]
+        
+        /// How many of this stretch's routines are already logged, for its header counter.
+        var completedCount: Int {
+            reminders.filter(\.viewConfig.isLogged).count
+        }
         
         var id: Int {
             var hasher: Hasher = .init()
@@ -137,7 +183,7 @@ class CalendarDayViewModel {
                                               day: calendarDay.date.day,
                                               hour: schedule.hour,
                                               minute: schedule.minute).date {
-                let reminderViewModel = reminderModels(reminder, calendarDay: calendarDay)
+                let reminderViewModel = reminderModels(reminder, calendarDay: calendarDay, scheduledDate: startTime)
                 let rowModel: Section.RowModel = .init(viewConfig: reminderViewModel, reminder: reminder)
                 switch startTime {
                 case TimeOfDay.morning.timeRange(date: calendarDay.date):
@@ -154,6 +200,16 @@ class CalendarDayViewModel {
         
         let sections: [Section] = TimeOfDay.allCases.map { .init(timeOfDay: $0, reminders: remindersInDay[$0] ?? []) }
         self.sections = sections
+    }
+    
+    /// Routines logged across the whole day, for the header's day rail.
+    var completedCount: Int {
+        sections.reduce(0) { $0 + $1.completedCount }
+    }
+    
+    /// Routines scheduled across the whole day, for the header's day rail.
+    var totalCount: Int {
+        sections.reduce(0) { $0 + $1.reminders.count }
     }
     
     func loggedReminders(_ loggedReminders: [CalendarDay.LoggedReminder]) {
@@ -174,8 +230,8 @@ class CalendarDayViewModel {
         }
     }
     
-    func reminderModels(_ reminder: ReminderModel, calendarDay: CalendarDay) -> ReminderView.Model {
-        let tasks: [ReminderView.TaskModel] = reminder.tasks.map { task in
+    func reminderModels(_ reminder: ReminderModel, calendarDay: CalendarDay, scheduledDate: Date?) -> RoutineCardView.Model {
+        let tasks: [RoutineCardView.TaskModel] = reminder.tasks.map { task in
             let icon: Icon = .init(task.icon) ?? .symbol(.circle)
             let isLogged = calendarDay.loggedReminderTasks.reduce(false, { $0 || $1.objectId == task.objectId })
             return .init(title: task.title, icon: icon, isLogged: isLogged) { [weak self] in
@@ -198,14 +254,14 @@ class CalendarDayViewModel {
         
         let isLogged = calendarDay.loggedReminders.contains(where: { $0.reminder == reminder })
         
-        let model: ReminderView.Model = .init(title: reminder.title,
-                                              icon: icon,
-                                              lightColor: reminder.color.resolved(for: .light),
-                                              darkColor: reminder.color.resolved(for: .dark),
-                                              time: reminder.schedule?.timeScheduled,
-                                              state: .hasLogged(isLogged),
-                                              tasks: tasks,
-                                              tags: reminder.tags.map { .init(name: $0.name, color: $0.color) }) { [weak self] in
+        let model: RoutineCardView.Model = .init(title: reminder.title,
+                                                 icon: icon,
+                                                 lightColor: reminder.color.resolved(for: .light),
+                                                 darkColor: reminder.color.resolved(for: .dark),
+                                                 scheduledDate: scheduledDate,
+                                                 isLogged: isLogged,
+                                                 tasks: tasks,
+                                                 tags: reminder.tags.map { .init(name: $0.name, color: $0.color) }) { [weak self] in
             self?.logReminder(isLoggedBefore: isLogged, date: calendarDay.date, reminder: reminder)
         } deleteReminder: { [weak self] in
             withAnimation(.snappy) {

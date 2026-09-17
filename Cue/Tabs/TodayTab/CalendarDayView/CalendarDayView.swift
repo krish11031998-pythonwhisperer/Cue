@@ -8,6 +8,7 @@
 import SwiftUI
 import VanorUI
 import Model
+import Combine
 
 struct ScreenVerticalPadding {
     let topPadding: CGFloat
@@ -51,7 +52,13 @@ public struct CalendarDayView: View {
     @State private var presentation: Presentation? = nil
     @State private var addReminder: Bool = false
     @State private var viewModel: CalendarDayViewModel
+    /// Refreshed on the minute so the day rail, the "now" stretch and each card's
+    /// countdown stay honest while the page is open.
+    @State private var now: Date = .now
+    @State private var collapsedSegments: Set<CalendarDayViewModel.TimeOfDay> = []
     @Environment(\.screenPadding) var screenPadding
+    
+    private let minuteTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     
     init (store: Store, calendarDay: CalendarDay) {
         self._viewModel = .init(initialValue: .init(calendarDate: calendarDay.date, store: store))
@@ -66,32 +73,21 @@ public struct CalendarDayView: View {
     public var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                VStack(alignment: .center, spacing: 4) {
-                    Text(Calendar.current.weekdaySymbols[date.weekDayValue - 1].lowercased())
-                        .font(.bitcountMedium(style: .extraLargeTitle))
-                    Text(date.headerDateStringFormatter())
-                        .font(.subheadline)
-                }
-                .padding(.bottom, 10)
+                DayProgressHeaderView(date: date,
+                                      now: now,
+                                      completedCount: viewModel.completedCount,
+                                      totalCount: viewModel.totalCount)
                 .padding(.top, 10)
-                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.bottom, 20)
                 
                 if !calendarDay.reminders.isEmpty {
                     ForEach(viewModel.sections) { section in
                         Section {
-                            ForEach(section.reminders) { model in
-                                Button {
-                                    self.presentation = .editReminder(model.reminder)
-                                } label: {
-                                    ReminderView(model: model.viewConfig)
-                                        .id(model)
-                                        .padding(.bottom, 10)
-                                }
-                                .buttonStyle(.plain)
+                            if !isCollapsed(section.timeOfDay) {
+                                sectionContent(section)
                             }
                         } header: {
-                            SectionHeader(section: section.timeOfDay, hasTasks: !section.reminders.isEmpty)
-                                .padding(.bottom, 8)
+                            sectionHeader(section)
                         } footer: {
                             Color.clear
                                 .frame(height: 14, alignment: .center)
@@ -107,6 +103,11 @@ public struct CalendarDayView: View {
         .task(id: calendarDay) {
             self.viewModel.sections(calendarDay: calendarDay)
             self.viewModel.loggedReminders(calendarDay.loggedReminders)
+        }
+        .onReceive(minuteTimer) { date in
+            withAnimation(.easeInOut) {
+                self.now = date
+            }
         }
         .sheet(item: $presentation, content: { presentation in
             switch presentation {
@@ -151,20 +152,58 @@ public struct CalendarDayView: View {
     }
     
     
-    // MARK: - SectionHeader
+    // MARK: - Sections
     
-    #warning("Move this to VanorUI")
-    struct SectionHeader: View {
-        
-        let section: CalendarDayViewModel.TimeOfDay
-        let hasTasks: Bool
-        
-        var body: some View {
-            HStack(alignment: .center, spacing: 4) {
-                Text(section.title.lowercased())
-                    .font(hasTasks ? .bitcountMedium(style: .title3) : .bitcountRegular(style: .title3))
-                Image(systemSymbol: .chevronDown)
-                    .font(.caption2)
+    private var isToday: Bool {
+        date.startOfDay == now.startOfDay
+    }
+    
+    /// The stretch of the day `now` sits in — only meaningful on today's page.
+    private func isCurrentSegment(_ segment: CalendarDayViewModel.TimeOfDay) -> Bool {
+        isToday && segment.contains(hour: now.hours)
+    }
+    
+    private func isCollapsed(_ segment: CalendarDayViewModel.TimeOfDay) -> Bool {
+        collapsedSegments.contains(segment)
+    }
+    
+    @ViewBuilder
+    private func sectionHeader(_ section: CalendarDayViewModel.Section) -> some View {
+        Button {
+            SensoryFeedbackManager.shared.playSelection()
+            withAnimation(.snappy) {
+                if collapsedSegments.contains(section.timeOfDay) {
+                    collapsedSegments.remove(section.timeOfDay)
+                } else {
+                    collapsedSegments.insert(section.timeOfDay)
+                }
+            }
+        } label: {
+            DaySegmentHeaderView(segment: section.timeOfDay,
+                                 completedCount: section.completedCount,
+                                 totalCount: section.reminders.count,
+                                 isCurrent: isCurrentSegment(section.timeOfDay),
+                                 isCollapsed: isCollapsed(section.timeOfDay))
+        }
+        .buttonStyle(.plain)
+        .padding(.bottom, 10)
+    }
+    
+    @ViewBuilder
+    private func sectionContent(_ section: CalendarDayViewModel.Section) -> some View {
+        if section.reminders.isEmpty {
+            DaySegmentEmptyRow(segment: section.timeOfDay)
+                .padding(.bottom, 10)
+        } else {
+            ForEach(section.reminders) { model in
+                Button {
+                    self.presentation = .editReminder(model.reminder)
+                } label: {
+                    RoutineCardView(model: model.viewConfig, now: now)
+                        .id(model)
+                        .padding(.bottom, 10)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
