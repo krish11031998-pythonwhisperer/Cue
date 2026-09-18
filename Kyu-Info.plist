@@ -2,13 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSAlarmKitUsageDescription</key>
 	<string>Cue:it uses alarms to power your Focus Timer and task alerts.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIAppFonts</key>
 	<array>
-		<string>BitcountSingle-Light.tff</string>
+		<string>BitcountSingle-Light.ttf</string>
 		<string>BitcountSingle-Medium.ttf</string>
 		<string>BitcountSingle-Regular.ttf</string>
 		<string>BitcountSingle-SemiBold.ttf</string>
