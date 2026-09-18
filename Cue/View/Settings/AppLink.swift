@@ -10,9 +10,9 @@ import Foundation
 /// Single source of truth for the outward-facing links and identity strings.
 enum AppLink {
     
-    /// TODO: replace with the real App Store id once the listing is live —
-    /// `rateApp` uses the in-app review sheet, but `appStore` is what gets shared.
-    static let appStoreID: String = "0000000000"
+    /// cue:it's numeric Apple ID from App Store Connect. Both `appStore` (the Share row)
+    /// and `writeReview` (the Rate row) are built from it.
+    static let appStoreID: String = "6759007631"
     
     static let supportEmail: String = "krish_venkat11@hotmail.com"
     

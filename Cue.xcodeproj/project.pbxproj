@@ -100,7 +100,6 @@
 		EF2950F12F38B18300FEAD32 /* Kyu-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Kyu-Info.plist"; sourceTree = "<group>"; };
 		EF2950FA2F38BDF800FEAD32 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		EF2950FC2F38BDF800FEAD32 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		EF622AAF303B33A800140F64 /* vanor-ui-library */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vanor-ui-library"; path = "../Shipyard/vanor-ui-library"; sourceTree = SOURCE_ROOT; };
 		EF9F5F56302A72D900075A0A /* KyuDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KyuDebug.entitlements; sourceTree = "<group>"; };
 		EFDFA597302A84EE00A5094A /* CueSheildConfiguration.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CueSheildConfiguration.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		EFDFA598302A84EE00A5094A /* ManagedSettings.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ManagedSettings.framework; path = System/Library/Frameworks/ManagedSettings.framework; sourceTree = SDKROOT; };
@@ -253,7 +252,6 @@
 				EFDFA5AF302A864000A5094A /* CueSheildAction */,
 				EF32251F2F1EF02B0054901C /* Frameworks */,
 				EF079D732F1BE5EC00986EF8 /* Products */,
-				EF622AAF303B33A800140F64 /* vanor-ui-library */,
 			);
 			sourceTree = "<group>";
 		};
@@ -583,7 +581,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CueWidgets/CueWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "CueWidgets-Info.plist";
@@ -614,7 +612,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CueWidgets/CueWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "CueWidgets-Info.plist";
@@ -776,13 +774,16 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Kyu-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "cue:it";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "cue:it uses your microphone to turn what you say into reminders and notes. Transcription happens on device.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -819,13 +820,16 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Kyu-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "cue:it";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "cue:it uses your microphone to turn what you say into reminders and notes. Transcription happens on device.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -853,7 +857,7 @@
 			buildSettings = {
 				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
@@ -891,7 +895,7 @@
 			buildSettings = {
 				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
@@ -930,7 +934,7 @@
 				CODE_SIGN_ENTITLEMENTS = CueSheildConfiguration/CueSheildConfigurationDebug.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CueSheildConfiguration/Info.plist;
@@ -962,7 +966,7 @@
 				CODE_SIGN_ENTITLEMENTS = CueSheildConfiguration/CueSheildConfiguration.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CueSheildConfiguration/Info.plist;
@@ -993,7 +997,7 @@
 				CODE_SIGN_ENTITLEMENTS = CueSheildAction/CueSheildActionDebug.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CueSheildAction/Info.plist;
@@ -1025,7 +1029,7 @@
 				CODE_SIGN_ENTITLEMENTS = CueSheildAction/CueSheildAction.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = 8T963ZW2EJ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CueSheildAction/Info.plist;
