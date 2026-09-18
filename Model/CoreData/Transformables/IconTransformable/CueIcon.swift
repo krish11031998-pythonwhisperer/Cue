@@ -49,7 +49,17 @@ public class CueIcon: NSObject, NSSecureCoding, Codable, @unchecked Sendable {
     // MARK: - isEqual
     
     public override func isEqual(_ object: Any?) -> Bool {
-        guard let other = object as? Self else { return false }
-        return emoji == other.emoji || symbol == other.symbol
+        guard let other = object as? CueIcon else { return false }
+        return emoji == other.emoji && symbol == other.symbol
+    }
+    
+    
+    // MARK: - hash
+    
+    public override var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(symbol)
+        hasher.combine(emoji)
+        return hasher.finalize()
     }
 }
