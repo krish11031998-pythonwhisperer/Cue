@@ -59,10 +59,6 @@ struct FocusRootView: View {
             switch fullScreenPresentation {
             case .startFocusSession(let focusSessionModel):
                 FTActiveSessionView(coordinator: coordinator, mode: .startSession(focusSessionModel))
-            #if !NEW_QUICK_START
-            case .ongoingSession:
-                FTActiveSessionView(coordinator: coordinator, mode: .ongoing)
-            #endif
             case .quickStart:
                 FTQuickStartView(coordinator: coordinator, reminders: viewModel.reminders)
             }

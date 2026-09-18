@@ -368,11 +368,7 @@ public struct FocusQuickStartView: ConfigurableView {
                 Text(model.title)
                     .font(.title2.weight(.semibold))
             }
-            #if NEW_COUNTDOWN_TIMER
             .foregroundColor(model.theme.foregroundTertiary)
-            #else
-            .foregroundColor(.primary)
-            #endif
         }
     }
     

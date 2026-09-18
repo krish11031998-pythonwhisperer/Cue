@@ -31,18 +31,11 @@ class FocusRootViewModel {
     enum FullScreenPresentation: Identifiable {
         case startFocusSession(FocusSessionModel)
         case quickStart
-        #if !NEW_QUICK_START
-        case ongoingSession
-        #endif
         
         var id: String {
             switch self {
             case .startFocusSession(let focusSessionModel):
                 return "startFocusSession_\(focusSessionModel.id)"
-            #if !NEW_QUICK_START
-            case .ongoingSession:
-                return "ongoingSession"
-            #endif
             case .quickStart:
                 return "quickStart"
             }
@@ -107,11 +100,7 @@ class FocusRootViewModel {
         subscriptionManager?.userIsPro ?? false
     }
     
-    init() {
-        #if !NEW_QUICK_START
-        observeNotification()
-        #endif
-    }
+    init() { }
     
     func setup(store: Store, subscriptionManager: SubscriptionManager, coordinator: FocusSessionCoordinator) {
         guard !initialSetup else { return }
@@ -351,28 +340,6 @@ class FocusRootViewModel {
 
         return section
     }
-    
-    
-    // MARK: - Observations
-    
-    #if !NEW_QUICK_START
-    private func observeNotification() {
-        let quickStart: AnyPublisher<FullScreenPresentation, Never> = NotificationCenter.default.publisher(for: .presentQuickStart)
-            .map { _ in FullScreenPresentation.quickStart }
-            .eraseToAnyPublisher()
-        
-        let ongoingSession: AnyPublisher<FullScreenPresentation, Never> = NotificationCenter.default.publisher(for: .currentFTSession)
-            .map { _ in FullScreenPresentation.ongoingSession }
-            .eraseToAnyPublisher()
-        
-        Publishers.Merge(quickStart, ongoingSession)
-            .receive(on: DispatchQueue.main)
-            .sinkReceive { [weak self] in
-                self?.fullScreenPresentation = $0
-            }
-            .store(in: &cancellables)
-    }
-    #endif
     
     
     // MARK: - Observations

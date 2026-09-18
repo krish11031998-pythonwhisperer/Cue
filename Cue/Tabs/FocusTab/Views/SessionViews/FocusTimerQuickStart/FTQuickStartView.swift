@@ -120,7 +120,6 @@ struct FTQuickStartView: View {
             viewModel.updateWithReminders(newValue)
         }
         .environment(\.theme, viewModel.selectedTimerItem.theme)
-        #if NEW_COUNTDOWN_TIMER
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
@@ -134,7 +133,6 @@ struct FTQuickStartView: View {
                 .buttonStyle(.plain)
             }
         }
-        #endif
     }
     
     private func dragGestureHandler(_ point: CGPoint) {

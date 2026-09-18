@@ -26,18 +26,7 @@ struct FocusTimerTabView: View {
     }
     
     var body: some View {
-        #if NEW_COUNTDOWN_TIMER
         FocusRootView(coordinator: coordinator)
-        #else
-        FTQuickStartView(coordinator: coordinator, reminders: viewModel.calendarDay?.reminders ?? [])
-            .task {
-                await viewModel.fetchRemindersForToday()
-            }
-            .tabBarMinimizeBehavior(.automatic)
-            .onChange(of: viewModel.calendarDay?.reminders, initial: true) { oldValue, newValue in
-                print("(DEBUG) reminders: \(newValue?.count ?? 0)")
-            }
-        #endif
     }
     
 }

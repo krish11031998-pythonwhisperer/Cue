@@ -120,13 +120,7 @@ public struct CalendarDayView: View {
         .overlay(alignment: .center) {
             if calendarDay.reminders.isEmpty {
                 ContentUnavailableView {
-                    #if KARINA_TESTING
-                    #else
-                    Image(systemSymbol: .squareSlash)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 120, height: 120, alignment: .center)
-                    #endif
+                    EmptyView()
                 } description: {
                     Group {
                         if calendarDay.date.startOfDay < Date.now.startOfDay {

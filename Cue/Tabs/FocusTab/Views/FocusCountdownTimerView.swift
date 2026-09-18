@@ -29,11 +29,7 @@ struct FocusCountdownTimerView: View {
     }
     
     var countdownViewType: CountdownViewType {
-        #if NEW_COUNTDOWN_TIMER
-        return .circle
-        #else
-        return .circle
-        #endif
+        .circle
     }
     
     var theme: LCHColor {
@@ -45,12 +41,10 @@ struct FocusCountdownTimerView: View {
         }
     }
     
-    #if NEW_COUNTDOWN_TIMER
     var icon: Icon? {
         guard case .reminder(let reminderModel) = viewModel.selectedTimerItem else { return .symbol(.timer) }
         return .init(reminderModel.icon)
     }
-    #endif
     
     var body: some View {
         ZStack(alignment: .center) {
@@ -109,11 +103,7 @@ struct FocusCountdownTimerView: View {
         @Binding var frame: CGRect
         
         var font: FocusSessionTimeCountdownView.FontType {
-            #if NEW_COUNTDOWN_TIMER
             return .custom(.bitcountMedium(style: .extraLargeTitle))
-            #else
-            return .defaultLargeTitle
-            #endif
         }
         
         var body: some View {
@@ -196,18 +186,10 @@ struct FocusCountdownTimerView: View {
                 Text(timerDuration.timerDurationString)
                     .contentTransition(.numericText(value: timerDuration))
                     .animation(.easeInOut, value: timerDuration)
-                    #if NEW_COUNTDOWN_TIMER
                     .font(.bitcountMedium(style: .largeTitle))
-                    #else
-                    .font(.largeTitle.weight(.bold))
-                    #endif
                     .padding(.top, 16)
             }
-            #if NEW_COUNTDOWN_TIMER
             .foregroundColor(Color.proSky.foregroundTertiary)
-            #else
-            .foregroundColor(.primary)
-            #endif
         }
     }
     
@@ -240,13 +222,8 @@ struct FocusCountdownTimerView: View {
                 Text(coordinator.timerDuration.timerDurationString)
                     .contentTransition(.numericText(value: coordinator.timerDuration))
                     .animation(.easeInOut, value: coordinator.timerDuration)
-                #if NEW_COUNTDOWN_TIMER
                     .font(.bitcountMedium(style: .largeTitle))
                     .foregroundStyle(theme.foregroundTertiary)
-                #else
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundStyle(.primary)
-                #endif
                     .padding(.top, 16)
             }
         }

@@ -12,31 +12,23 @@ struct FocusTabBottomAccessoryView: View {
     
     @Bindable var coordinator: FocusSessionCoordinator
     @Environment(\.tabViewBottomAccessoryPlacement) var tabBarPlacement
-    #if NEW_QUICK_START
     private let onTap: Callback
-    #endif
     
-    #if NEW_QUICK_START
     init(coordinator: FocusSessionCoordinator, onTap: @escaping Callback) {
         self.coordinator = coordinator
         self.onTap = onTap
     }
-    #else
-    init(coordinator: FocusSessionCoordinator) {
-        self.coordinator = coordinator
-    }
-    #endif
     
     private var transition: AnyTransition {
         .asymmetric(insertion: .scale(scale: 0.95, anchor: .center).combined(with: .opacity), removal: .scale(scale: 1.1).combined(with: .opacity))
     }
-
+    
     // The two call sites below differ only in their action, so this takes it as a
     // parameter. Called from `body`, so the `sessionAttributes` read stays observed.
     private func startTimerButtonModel(action: @escaping () -> Void) -> FTStartTimerButton.Model {
         .init(viewMode: .bottomTabAccessory, action: action)
     }
-
+    
     // Mirrors how every other call site derives the session type.
     private var sessionType: FocusSessionType {
         switch coordinator.selectedTimerType {
@@ -47,7 +39,7 @@ struct FocusTabBottomAccessoryView: View {
                              total: coordinator.pomodoroSessionCount)
         }
     }
-
+    
     // NOTE: computed, so every `coordinator` read happens during `body` evaluation —
     // that is what keeps SwiftUI observation alive for `state` / `informationString`.
     private var ongoingSessionControlModel: FTOngoingSessionControl.Model {
@@ -86,20 +78,15 @@ struct FocusTabBottomAccessoryView: View {
             return nil
         }
     }
-
+    
     var body: some View {
         ZStack {
             switch coordinator.state {
             case .idle, .reset:
-                #if NEW_COUNTDOWN_TIMER
                 FTStartTimerButton(model: startTimerButtonModel {
                     NotificationCenter.default.post(name: .presentQuickStart, object: nil)
                 })
                 .transition(transition)
-                #else
-                FTStartTimerButton(model: startTimerButtonModel(action: coordinator.startTimer))
-                    .transition(transition)
-                #endif
             case .start, .resume, .pause:
                 if let sessionAttributes = coordinator.sessionAttributes, let timeRange = timeRange {
                     SessionOverviewBottomEdgeView(model: .init(name: sessionAttributes.name,
@@ -111,11 +98,7 @@ struct FocusTabBottomAccessoryView: View {
                     .padding(.init(top: 6, leading: 6, bottom: 6, trailing: 10))
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        #if NEW_QUICK_START
                         onTap()
-                        #else
-                        NotificationCenter.default.post(name: .currentFTSession, object: nil)
-                        #endif
                     }
                 } else {
                     FTOngoingSessionControl(model: ongoingSessionControlModel)
@@ -131,19 +114,15 @@ struct FocusTabBottomAccessoryView: View {
 #Preview {
     @Previewable @State var control = FocusSessionCoordinator.previawableSessionCoordinator
     Group {
-#if NEW_QUICK_START
         FocusTabBottomAccessoryView(coordinator: control) { }
-#else
-        FocusTabBottomAccessoryView(coordinator: control)
-#endif        
     }
-        .environment(control)
-        .clipShape(Capsule())
-        .glassEffect(.regular, in: .capsule)
-        .padding(.horizontal, 20)
-        .frame(maxWidth: .infinity, alignment: .center)
-        .frame(height: 54)
-        .task {
-            control.timerDuration = 10 * 60
-        }
+    .environment(control)
+    .clipShape(Capsule())
+    .glassEffect(.regular, in: .capsule)
+    .padding(.horizontal, 20)
+    .frame(maxWidth: .infinity, alignment: .center)
+    .frame(height: 54)
+    .task {
+        control.timerDuration = 10 * 60
+    }
 }

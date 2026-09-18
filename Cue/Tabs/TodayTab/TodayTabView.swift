@@ -23,23 +23,13 @@ struct TodayTabView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(Store.self) var store
     @Environment(SubscriptionManager.self) var subscriptionManager
-    #if !NEW_CALENDAR
-    private var presentCreateReminder: () -> Void
-    #else
     let startDate: Date?
-    #endif
     @State private var viewModel: TodayViewModel = .init()
     @State private var topPadding: CGFloat = .zero
-    
-    #if !NEW_CALENDAR
-    init(presentCreateReminder: @escaping () -> Void) {
-        self.presentCreateReminder = presentCreateReminder
-    }
-    #else
+
     init(startDate: Date? = nil) {
         self.startDate = startDate
     }
-    #endif
     
     var id: Int {
         var hasher = Hasher()
@@ -48,85 +38,41 @@ struct TodayTabView: View {
     }
     
     var body: some View {
-        Group {
-            #if !NEW_CALENDAR
-            NavigationView {
-                ZStack(alignment: .center) {
-                    Color.cueItBackground
-                        .ignoresSafeArea(.all)
-                    if store.reminders.isEmpty {
-                        ContentUnavailableView("No Reminders", systemImage: "bell.fill", description: descriptionText)
-                            .font(.headline)
-                    } else {
-                        tabView()
-                    }
-                }
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            withAnimation(.easeInOut) {
-                                self.viewModel.fullPresentation = .settings
-                            }
-                        } label: {
-                            Image(systemSymbol: .gearshape)
-                                .font(.headline)
-                        }
-                    }
-                    
-                    #if !KARINA_TESTING
-                    if subscriptionManager.userIsPro {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button {
-                                print("(DEBUG) showTimer")
-                                viewModel.presentation = .timer
-                            } label: {
-                                Image(systemSymbol: .timer)
-                                    .font(.headline)
-                            }
-                            .tint(Color.proSky.baseColor)
-                        }
-                    }
-                    #endif
-                }
+        ZStack(alignment: .center) {
+            Color.cueItBackground
+                .ignoresSafeArea(.all)
+            if store.reminderModels.isEmpty {
+                ContentUnavailableView("No Reminders", systemImage: "bell.fill", description: descriptionText)
+                    .font(.headline)
+            } else {
+                tabView()
             }
-            #else
-            ZStack(alignment: .center) {
-                Color.cueItBackground
-                    .ignoresSafeArea(.all)
-                if store.reminderModels.isEmpty {
-                    ContentUnavailableView("No Reminders", systemImage: "bell.fill", description: descriptionText)
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    withAnimation(.easeInOut) {
+                        self.viewModel.fullPresentation = .settings
+                    }
+                } label: {
+                    Image(systemSymbol: .gearshape)
                         .font(.headline)
-                } else {
-                    tabView()
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        withAnimation(.easeInOut) {
-                            self.viewModel.fullPresentation = .settings
-                        }
-                    } label: {
-                        Image(systemSymbol: .gearshape)
-                            .font(.headline)
-                    }
-                }
-                
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemSymbol: .calendar)
-                            .font(.headline)
-                    }
+            
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemSymbol: .calendar)
+                        .font(.headline)
                 }
             }
-            .task(id: startDate) { @MainActor in
-                if let startDate {
-                    self.viewModel.today = startDate.startOfDay
-                }
+        }
+        .task(id: startDate) { @MainActor in
+            if let startDate {
+                self.viewModel.today = startDate.startOfDay
             }
-            #endif
         }
         .preference(key: IsTodayPreferenceKey.self, value: viewModel.todayInCalendar?.date.startOfDay == viewModel.today.startOfDay)
         .onChange(of: viewModel.today, { _, _ in

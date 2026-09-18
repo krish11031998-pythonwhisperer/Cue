@@ -86,11 +86,7 @@ struct FTActiveSessionView: View {
         let icon: Icon?
         
         var font: FocusSessionTimeCountdownView.FontType {
-            #if NEW_COUNTDOWN_TIMER
             return .custom(.bitcountMedium(style: .extraLargeTitle))
-            #else
-            return .defaultLargeTitle
-            #endif
         }
         
         var body: some View {

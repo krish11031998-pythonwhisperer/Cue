@@ -17,9 +17,6 @@ class MainTabViewModel {
     enum Tabs: Hashable {
         case home
         case organize
-        #if !NEW_CALENDAR
-        case calendar
-        #endif
         case focus
         case create
     }
@@ -29,9 +26,7 @@ class MainTabViewModel {
         case createReminderWithAI
         case onboarding
         case paywall
-        #if NEW_QUICK_START
         case ongoingSession
-        #endif
         
         var id: Int { rawValue }
         
@@ -45,10 +40,8 @@ class MainTabViewModel {
                 return .fullScreen
             case .paywall:
                 return .fraction(1)
-            #if NEW_QUICK_START
             case .ongoingSession:
                 return .fullScreen
-            #endif
             }
         }
     }
@@ -105,10 +98,8 @@ class MainTabViewModel {
             presentation = .createReminder
         case .paywall:
             break
-        #if NEW_QUICK_START
         case .ongoingSession:
             break
-        #endif
         }
     }
 }

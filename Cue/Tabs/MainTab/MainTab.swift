@@ -43,31 +43,12 @@ struct MainTab: View {
     var body: some View {
         TabView(selection: $viewModel.selectedTab) {
             Tab(value: Tabs.home) {
-                #if NEW_CALENDAR
                 TodayCalendarView()
-                #else
-                TodayTabView {
-                    self.viewModel.presentCreateReminder = true
-                }
-                .ignoresSafeArea(edges: .bottom)
-                #endif
             } label: {
                 Image(systemSymbol: .checkmarkCircleFill)
                     .font(.body)
                     .tint(Color.proSky.baseColor)
             }
-            
-            #if !NEW_CALENDAR
-            Tab(value: .calendar) {
-                CalendarView {
-                    self.viewModel.presentCreateReminder = true
-                }
-            } label: {
-                Image(systemSymbol: .calendar)
-                    .font(.body)
-                    .tint(Color.proSky.baseColor)
-            }
-            #endif
             
             Tab(value: .focus) {
                 FocusTimerTabView(coordinator: viewModel.focusTimerCoordinator)
@@ -77,17 +58,15 @@ struct MainTab: View {
                     .tint(Color.proSky.baseColor)
             }
             
-            #if !NEW_QUICK_START
-            if subscriptionManager.userIsPro {
-                Tab(value: .organize) {
-                    OrangizeTabView()
-                } label: {
-                    Image(systemSymbol: .folder)
-                        .font(.body)
-                        .tint(Color.proSky.baseColor)
-                }
-            }
-            #endif
+//            if subscriptionManager.userIsPro {
+//                Tab(value: .organize) {
+//                    OrangizeTabView()
+//                } label: {
+//                    Image(systemSymbol: .folder)
+//                        .font(.body)
+//                        .tint(Color.proSky.baseColor)
+//                }
+//            }
             
             Tab(value: .create, role: createTabRole) {
                 Color.clear
@@ -96,25 +75,22 @@ struct MainTab: View {
                     .font(.body)
             }
         }
-        #if NEW_QUICK_START
         .optionalBottomAccessoryView(enabled: viewModel.focusTimerCoordinator.session != nil) {
             FocusTabBottomAccessoryView(coordinator: viewModel.focusTimerCoordinator) {
                 viewModel.presentation = .ongoingSession
             }
             .matchedTransitionSource(id: "bottomAccessory", in: focusTimerTabNamespace)
         }
-        #else
-        .optionalBottomAccessoryView(selectedTab: viewModel.selectedTab, enabledTabs: bottomTabAccessories) { selectedTab in
-            switch selectedTab {
-            case .home:
-                TodayTabBarAccessoryView(isToday: viewModel.isToday, todayPublisher: viewModel.todayPublisher)
-            case .focus:
-                FocusTabBottomAccessoryView(coordinator: viewModel.focusTimerCoordinator)
-            default:
-                EmptyView()
-            }
-        }
-        #endif
+//        .optionalBottomAccessoryView(selectedTab: viewModel.selectedTab, enabledTabs: bottomTabAccessories) { selectedTab in
+//            switch selectedTab {
+//            case .home:
+//                TodayTabBarAccessoryView(isToday: viewModel.isToday, todayPublisher: viewModel.todayPublisher)
+//            case .focus:
+//                FocusTabBottomAccessoryView(coordinator: viewModel.focusTimerCoordinator)
+//            default:
+//                EmptyView()
+//            }
+//        }
         .onPreferenceChange(IsTodayPreferenceKey.self, perform: {
             self.viewModel.isToday = $0
         })
@@ -150,11 +126,9 @@ struct MainTab: View {
                 OnboardingMainView(store: store)
             case .paywall:
                 CuePaywallView()
-            #if NEW_QUICK_START
             case .ongoingSession:
                 FTActiveSessionView(coordinator: viewModel.focusTimerCoordinator, mode: .ongoing)
                     .navigationTransition(.zoom(sourceID: "bottomAccessory", in: focusTimerTabNamespace))
-            #endif
             }
         })
         .paywallPresentation()
