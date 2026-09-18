@@ -92,20 +92,6 @@ struct NewCreateReminderView: View {
                 .padding(.top, 14)
                 .padding(.bottom, 14)
                 
-                
-//                CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions,
-//                                        isLoadingSuggestions: viewModel.isLoadingSuggestions,
-//                                        taskViewModels: viewModel.taskViewModels){ [weak viewModel] taskName in
-//                    withAnimation(.easeInOut) {
-//                        textFieldIsFocused = false
-//                        viewModel?.addTask(title: taskName)
-//                    }
-//                } generateTasks: { [weak viewModel] in
-//                    textFieldIsFocused = false
-//                    subscriptionManager.proUserAction {
-//                        viewModel?.suggestionSubtasks()
-//                    }
-//                }
                 CreateReminderTasksView(canLoadSuggestions: viewModel.canLoadSuggestions,
                                         isLoadingSuggestions: viewModel.isLoadingSuggestions,
                                         taskViewModels: viewModel.tasks,

@@ -21,8 +21,6 @@ struct CreateReminderTasksView: View {
     let isLoadingSuggestions: Bool
     let taskViewModels: [ReminderTaskRow]
     let actions: Actions
-//    let addTask: (String) -> Void
-//    let generateTasks: () -> Void
     
     var body: some View {
         Section {
