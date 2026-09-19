@@ -11,6 +11,7 @@ import VanorUI
 import FamilyControls
 import ImagePlayground
 import CoreData
+internal import AlarmKit
 
 extension FocusTimerType {
     static func sessionType(_ timerType: FocusSessionKind) -> Self {
@@ -282,6 +283,26 @@ class CreateFocusSessionViewModel: TimerAdjustmentManager, PlaygroundImageGenera
             }
         }
     }
+    
+    func requestAlarmAuthorization() async -> Bool {
+        do {
+            switch try await CueAlarmManager.checkAuthorizationStatus() {
+            case .notDetermined:
+                return false
+            case .denied:
+                self.alertError = .deniedAlarm
+                return false
+            case .authorized:
+                return true
+            @unknown default:
+                self.alertError = .unknown
+                return false
+            }
+        } catch {
+            self.alertError = .unknown
+            return false
+        }
+    }
 }
 
 struct CreateFocusSessionSheet: View {
@@ -413,8 +434,10 @@ struct CreateFocusSessionSheet: View {
                     .buttonStyle(.plain)
                     .padding(.top, 16)
                     
-                    AlarmSelectionView(timerType: viewModel.timerType, alarmKind: $viewModel.alarmKind)
-                        .padding(.top, 16)
+                    AlarmSelectionView(timerType: viewModel.timerType, alarmKind: $viewModel.alarmKind) {
+                        await viewModel.requestAlarmAuthorization()
+                    }
+                    .padding(.top, 16)
                 }
             }
             .contentMargins(.horizontal, .init(top: 0, leading: 24, bottom: 0, trailing: 24), for: .scrollContent)
@@ -794,11 +817,23 @@ struct CreateFocusSessionSheet: View {
         let timerType: FocusTimerType
         @Binding var alarmKind: FocusSessionAlarmOption
         @State private var alarmOn: Bool
+        let requestAlarmAuthorization: () async -> Bool
 
-        init(timerType: FocusTimerType, alarmKind: Binding<FocusSessionAlarmOption>) {
+        init(timerType: FocusTimerType, alarmKind: Binding<FocusSessionAlarmOption>, requestAlarmAuthorization: @escaping () async -> Bool) {
             self.timerType = timerType
             self._alarmKind = alarmKind
             self._alarmOn = .init(wrappedValue: alarmKind.wrappedValue == .off ? false : true)
+            self.requestAlarmAuthorization = requestAlarmAuthorization
+        }
+        
+        private func turnOnAlarm(_ kind: FocusSessionAlarmOption) {
+            Task { @MainActor in
+                if await requestAlarmAuthorization() {
+                    alarmKind = kind
+                } else {
+                    alarmOn = false
+                }
+            }
         }
         
         var body: some View {
@@ -812,7 +847,11 @@ struct CreateFocusSessionSheet: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .onChange(of: alarmOn) { oldValue, newValue in
-                        alarmKind = alarmOn ? .endOfSession : .off
+                        if newValue {
+                            turnOnAlarm(.endOfSession)
+                        } else {
+                            alarmKind = .off
+                        }
                     }
                 case .pomodoro:
                     HStack(alignment: .center, spacing: 8) {
@@ -830,7 +869,7 @@ struct CreateFocusSessionSheet: View {
                             }
                             
                             Button {
-                                alarmKind = .endOfSession
+                                turnOnAlarm(.endOfSession)
                             } label: {
                                 Text("End of Session")
                                 Text("Set one alarm that will fire at the end of the final focus session")
@@ -838,7 +877,7 @@ struct CreateFocusSessionSheet: View {
                             }
                             
                             Button {
-                                alarmKind = .betweenSessions
+                                turnOnAlarm(.betweenSessions)
                             } label: {
                                 Text("Between Session")
                                 Text("Set alarms that will fire at the end of each focus session")
@@ -889,12 +928,15 @@ extension CreateFocusSessionViewModel {
     @MainActor
     enum AlertError: Error, LocalizedError, CueAlertError {
         case deniedAppBlock
+        case deniedAlarm
         case unknown
         
         var buttonTitle: String? {
             switch self {
             case .deniedAppBlock:
                 return "Enable Screen Time Restrictions"
+            case .deniedAlarm:
+                return "Enable Alarms"
             case .unknown:
                 return nil
             }
@@ -902,7 +944,7 @@ extension CreateFocusSessionViewModel {
         
         var actions: [CueAlertAction] {
             switch self {
-            case .deniedAppBlock:
+            case .deniedAppBlock, .deniedAlarm:
                 return [.customAction(buttonTitle!, {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
@@ -917,6 +959,8 @@ extension CreateFocusSessionViewModel {
             switch self {
             case .deniedAppBlock:
                 return "Denied Screen Time Restrictions"
+            case .deniedAlarm:
+                return "Denied Alarms"
             case .unknown:
                 return "Unknown Error"
             }
@@ -926,6 +970,8 @@ extension CreateFocusSessionViewModel {
             switch self {
             case .deniedAppBlock:
                 return "You denied access for Screen Time Restrictions"
+            case .deniedAlarm:
+                return "You denied access for Alarms"
             case .unknown:
                 return "Something Wrong happened, Try again later."
             }
@@ -933,7 +979,7 @@ extension CreateFocusSessionViewModel {
         
         var recoverySuggestion: String? {
             switch self {
-            case .deniedAppBlock:
+            case .deniedAppBlock, .deniedAlarm:
                 return "Tap on '\(buttonTitle ?? "Action Below")'"
             case .unknown:
                 return nil

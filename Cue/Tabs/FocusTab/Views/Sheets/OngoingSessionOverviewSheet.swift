@@ -9,6 +9,7 @@ import VanorUI
 import SwiftUI
 import Model
 import FamilyControls
+internal import AlarmKit
 
 @Observable
 @MainActor
@@ -97,6 +98,25 @@ class OngoingSessionOverviewSheetModel: ScrollViewPhaseTracker {
             }
         }
     }
+    
+    func presentAlarm(_ completion: @escaping Callback) {
+        Task { @MainActor in
+            do {
+                switch try await CueAlarmManager.checkAuthorizationStatus() {
+                case .notDetermined:
+                    break
+                case .denied:
+                    self.alertError = .deniedAlarm
+                case .authorized:
+                    completion()
+                @unknown default:
+                    self.alertError = .unknown
+                }
+            } catch {
+                self.alertError = .unknown
+            }
+        }
+    }
 }
 
 struct OngoingSessionOverviewSheet: View {
@@ -161,7 +181,9 @@ struct OngoingSessionOverviewSheet: View {
     var sessionActions: [SessionOverviewHeaderView.AccessoryAction] {
         let alarmAction = SessionOverviewHeaderView.AccessoryAction.alarm(timeIntervalRange.upperBound, coordinator.isAlarmOn) { turnOn in
             if turnOn {
-                coordinator.setupAlarmForOngoingSesion()
+                viewModel.presentAlarm {
+                    coordinator.setupAlarmForOngoingSesion()
+                }
             } else {
                 coordinator.cancelScheduledAlarm()
             }
@@ -388,12 +410,15 @@ extension OngoingSessionOverviewSheetModel {
     @MainActor
     enum AlertError: Error, LocalizedError, CueAlertError {
         case deniedAppBlock
+        case deniedAlarm
         case unknown
         
         var buttonTitle: String? {
             switch self {
             case .deniedAppBlock:
                 return "Enable Screen Time Restrictions"
+            case .deniedAlarm:
+                return "Enable Alarms"
             case .unknown:
                 return nil
             }
@@ -401,7 +426,7 @@ extension OngoingSessionOverviewSheetModel {
         
         var actions: [CueAlertAction] {
             switch self {
-            case .deniedAppBlock:
+            case .deniedAppBlock, .deniedAlarm:
                 return [.customAction(buttonTitle!, {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
@@ -416,6 +441,8 @@ extension OngoingSessionOverviewSheetModel {
             switch self {
             case .deniedAppBlock:
                 return "Denied Screen Time Restrictions"
+            case .deniedAlarm:
+                return "Denied Alarms"
             case .unknown:
                 return "Unknown Error"
             }
@@ -425,6 +452,8 @@ extension OngoingSessionOverviewSheetModel {
             switch self {
             case .deniedAppBlock:
                 return "You denied access for Screen Time Restrictions"
+            case .deniedAlarm:
+                return "You denied access for Alarms"
             case .unknown:
                 return "Something Wrong happened, Try again later."
             }
@@ -432,7 +461,7 @@ extension OngoingSessionOverviewSheetModel {
         
         var recoverySuggestion: String? {
             switch self {
-            case .deniedAppBlock:
+            case .deniedAppBlock, .deniedAlarm:
                 return "Tap on '\(buttonTitle ?? "Action Below")'"
             case .unknown:
                 return nil

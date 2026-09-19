@@ -9,6 +9,8 @@ import SwiftUI
 import VanorUI
 import FamilyControls
 import TipKit
+import Model
+internal import AlarmKit
 
 struct FTSessionView<Content: View>: View {
     
@@ -61,6 +63,8 @@ struct FTSessionView<Content: View>: View {
                 }
             } presentAction: { sessionType in
                 presentAction(sessionType: sessionType)
+            } presentAlarm: { completion in
+                presentAlarm(completion)
             }
         }
         .sheet(isPresented: $coordinator.showTasksSheet) {
@@ -98,20 +102,23 @@ struct FTSessionView<Content: View>: View {
         let viewType: ViewType
         let presentAppBlock: (Callback?) -> Void
         let presentAction: (FocusTimerType) -> Void
+        let presentAlarm: (@escaping Callback) -> Void
         
         init(coordinator: FocusSessionCoordinator,
              viewType: ViewType,
              presentAppBlock: @escaping (Callback?) -> Void,
-             presentAction: @escaping (FocusTimerType) -> Void) {
+             presentAction: @escaping (FocusTimerType) -> Void,
+             presentAlarm: @escaping (@escaping Callback) -> Void) {
             self.viewType = viewType
             self.coordinator = coordinator
             self.presentAppBlock = presentAppBlock
             self.presentAction = presentAction
+            self.presentAlarm = presentAlarm
         }
         
         var body: some View {
             VStack(alignment: .center, spacing: 8) {
-                FTSessionInfoFooterView(viewType: viewType, coordinator: coordinator, presentAppBlock: presentAppBlock, presentAction: presentAction)
+                FTSessionInfoFooterView(viewType: viewType, coordinator: coordinator, presentAppBlock: presentAppBlock, presentAction: presentAction, presentAlarm: presentAlarm)
                 FTSessionControlFooterView(viewType: viewType, coordinator: coordinator)
             }
             .padding(.horizontal, 16)
@@ -134,6 +141,7 @@ struct FTSessionView<Content: View>: View {
             @Bindable var coordinator: FocusSessionCoordinator
             let presentAppBlock: (Callback?) -> Void
             let presentAction: (FocusTimerType) -> Void
+            let presentAlarm: (@escaping Callback) -> Void
             
             // NOTE: Must stay a computed property so every `coordinator` read below happens
             // during `body` evaluation — that is what keeps SwiftUI observation alive for
@@ -160,7 +168,11 @@ struct FTSessionView<Content: View>: View {
                         }
                     },
                     disableAppShield: { coordinator.removeAppShield() },
-                    enableAlarm: { coordinator.setupAlarmForOngoingSesion() },
+                    enableAlarm: {
+                        presentAlarm {
+                            coordinator.setupAlarmForOngoingSesion()
+                        }
+                    },
                     disableAlarm: { coordinator.cancelScheduledAlarm() }
                 )
             }
@@ -196,12 +208,26 @@ struct FTSessionView<Content: View>: View {
                     },
                     toggleAlarm: {
                         subscriptionManager.proUserAction {
-                            coordinator.toggleAlarm()
+                            if coordinator.isAlarmOn {
+                                coordinator.toggleAlarm()
+                            } else {
+                                presentAlarm {
+                                    coordinator.toggleAlarm()
+                                }
+                            }
                         }
                     },
                     turnOffAlarm: { coordinator.isAlarmOn = false },
-                    setAlarmEndOfSession: { coordinator.updateAlarmAt(.endOfSession) },
-                    setAlarmBetweenSessions: { coordinator.updateAlarmAt(.betweenPomodoroSessions) },
+                    setAlarmEndOfSession: {
+                        presentAlarm {
+                            coordinator.updateAlarmAt(.endOfSession)
+                        }
+                    },
+                    setAlarmBetweenSessions: {
+                        presentAlarm {
+                            coordinator.updateAlarmAt(.betweenPomodoroSessions)
+                        }
+                    },
                     checkIfCanSetAlarm: { await coordinator.checkIfCanSetAlarm() },
                     // `currentTip` is one of these at a time; the other three casts give nil.
                     tips: .init(duration: launchControlTips.currentTip as? SessionDurationTip,
@@ -324,6 +350,25 @@ struct FTSessionView<Content: View>: View {
         }
     }
     
+    func presentAlarm(_ completion: @escaping Callback) {
+        Task { @MainActor in
+            do {
+                switch try await CueAlarmManager.checkAuthorizationStatus() {
+                case .notDetermined:
+                    break
+                case .denied:
+                    self.alertError = .deniedAlarm
+                case .authorized:
+                    completion()
+                @unknown default:
+                    self.alertError = .unknown
+                }
+            } catch {
+                self.alertError = .unknown
+            }
+        }
+    }
+    
     private func presentAction(sessionType: FocusTimerType) {
         switch sessionType {
         case .classic:
@@ -342,12 +387,15 @@ extension FTSessionView {
     @MainActor
     enum AlertError: Error, LocalizedError, CueAlertError {
         case deniedAppBlock
+        case deniedAlarm
         case unknown
         
         var buttonTitle: String? {
             switch self {
             case .deniedAppBlock:
                 return "Enable Screen Time Restrictions"
+            case .deniedAlarm:
+                return "Enable Alarms"
             case .unknown:
                 return nil
             }
@@ -355,7 +403,7 @@ extension FTSessionView {
         
         var actions: [CueAlertAction] {
             switch self {
-            case .deniedAppBlock:
+            case .deniedAppBlock, .deniedAlarm:
                 return [.customAction(buttonTitle!, {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
@@ -370,6 +418,8 @@ extension FTSessionView {
             switch self {
             case .deniedAppBlock:
                 return "Denied Screen Time Restrictions"
+            case .deniedAlarm:
+                return "Denied Alarms"
             case .unknown:
                 return "Unknown Error"
             }
@@ -379,6 +429,8 @@ extension FTSessionView {
             switch self {
             case .deniedAppBlock:
                 return "You denied access for Screen Time Restrictions"
+            case .deniedAlarm:
+                return "You denied access for Alarms"
             case .unknown:
                 return "Something Wrong happened, Try again later."
             }
@@ -386,7 +438,7 @@ extension FTSessionView {
         
         var recoverySuggestion: String? {
             switch self {
-            case .deniedAppBlock:
+            case .deniedAppBlock, .deniedAlarm:
                 return "Tap on '\(buttonTitle ?? "Action Below")'"
             case .unknown:
                 return nil

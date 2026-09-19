@@ -10,6 +10,7 @@ import VanorUI
 import Model
 import CoreData
 import FoundationModels
+internal import AlarmKit
 
 @Observable
 class NewCreateReminderViewModel: CreateReminderManager {
@@ -91,6 +92,7 @@ class NewCreateReminderViewModel: CreateReminderManager {
     
     var imageFrame: CGRect = .zero
     var presentation: Presentation? = nil
+    var alertError: AlertError? = nil
     var reminderTitle: String = ""
     var snoozeDuration: Double = 15 * 60
     var date: Date = Date()
@@ -216,6 +218,28 @@ class NewCreateReminderViewModel: CreateReminderManager {
         }
     }
     
+    func presentAlarm(_ completion: @escaping Callback) {
+        Task { @MainActor in
+            do {
+                switch try await CueAlarmManager.checkAuthorizationStatus() {
+                case .notDetermined:
+                    self.reminderNotification = .notification
+                case .denied:
+                    self.alertError = .deniedAlarm
+                    self.reminderNotification = .notification
+                case .authorized:
+                    completion()
+                @unknown default:
+                    self.alertError = .unknown
+                    self.reminderNotification = .notification
+                }
+            } catch {
+                self.alertError = .unknown
+                self.reminderNotification = .notification
+            }
+        }
+    }
+    
     func renameTask(id: UUID, newName: String) {
         guard let index = tasks.firstIndex(where: { $0.id == id }) else { return }
         tasks[index].title = newName
@@ -227,5 +251,65 @@ class NewCreateReminderViewModel: CreateReminderManager {
         store.deleteReminderTask(reminderTaskID: objectID, save: false)
         self.tasks.remove(at: index)
         
+    }
+}
+
+
+// MARK: - Alert
+
+extension NewCreateReminderViewModel {
+    @MainActor
+    enum AlertError: Error, LocalizedError, CueAlertError {
+        case deniedAlarm
+        case unknown
+        
+        var buttonTitle: String? {
+            switch self {
+            case .deniedAlarm:
+                return "Enable Alarms"
+            case .unknown:
+                return nil
+            }
+        }
+        
+        var actions: [CueAlertAction] {
+            switch self {
+            case .deniedAlarm:
+                return [.customAction(buttonTitle!, {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }), .cancel]
+            case .unknown:
+                return [.ok]
+            }
+        }
+        
+        var errorDescription: String? {
+            switch self {
+            case .deniedAlarm:
+                return "Denied Alarms"
+            case .unknown:
+                return "Unknown Error"
+            }
+        }
+        
+        var failureReason: String? {
+            switch self {
+            case .deniedAlarm:
+                return "You denied access for Alarms"
+            case .unknown:
+                return "Something Wrong happened, Try again later."
+            }
+        }
+        
+        var recoverySuggestion: String? {
+            switch self {
+            case .deniedAlarm:
+                return "Tap on '\(buttonTitle ?? "Action Below")'"
+            case .unknown:
+                return nil
+            }
+        }
     }
 }

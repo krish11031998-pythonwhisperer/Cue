@@ -153,6 +153,7 @@ struct NewCreateReminderView: View {
                 }
             }
         }
+        .cueAlert(alert: $viewModel.alertError)
         .sheet(item: $viewModel.presentation, content: { presentation in
             switch presentation {
             case .emojiAndColorPicker:
@@ -302,7 +303,13 @@ extension NewCreateReminderView {
                 viewModel.reminderNotification
             } set: { newValue in
                 subscriptionManager.proUserAction(isProFeature: newValue == .alarm) {
-                    viewModel.reminderNotification = newValue
+                    if newValue == .alarm {
+                        viewModel.presentAlarm {
+                            viewModel.reminderNotification = .alarm
+                        }
+                    } else {
+                        viewModel.reminderNotification = newValue
+                    }
                 }
                 
                 guard newValue == .alarm, !subscriptionManager.userIsPro else { return }
@@ -344,9 +351,11 @@ extension NewCreateReminderView {
                         ActionButtonListRow(config: .init(symbol: .zzz, label: String.formattedTimelineInterval(viewModel.snoozeDuration), action: {
                             viewModel.presentation = .snoozeDuration
                         }))
+                        #if DEBUG
                         ActionButtonListRow(config: .init(symbol: .clockArrowTriangleheadCounterclockwiseRotate90, label: String.formattedTimelineInterval(viewModel.remindMeBefore), action: {
                             viewModel.presentation = .remindMeDuration
                         }))
+                        #endif
                     }
                 }
             }

@@ -85,6 +85,16 @@ public class CueAlarmManager {
         }
     }
     
+    public static func checkAuthorizationStatus() async throws -> AlarmManager.AuthorizationState {
+        do {
+            let result = try await AlarmManager.shared.requestAuthorization()
+            return result
+        } catch {
+            print("(ERROR) alarm request failed: ", error.localizedDescription)
+            throw error
+        }
+    }
+    
     public static func scheduleAnAlarm(reminder: ReminderModel) async -> (UUID, Alarm)? {
         
         guard let schedule = reminder.schedule else { return nil }
