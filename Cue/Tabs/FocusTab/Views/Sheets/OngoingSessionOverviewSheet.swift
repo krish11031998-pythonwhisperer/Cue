@@ -26,6 +26,7 @@ class OngoingSessionOverviewSheetModel: ScrollViewPhaseTracker {
     
     var selectedPresentationDetent: PresentationDetent = .medium
     var presentation: Presentation? = nil
+    var alertError: AlertError? = nil
     var completedTasks: Set<ReminderTaskModel> = .init()
     var isSaving: Bool = false
     var headerSize: CGSize = .zero
@@ -70,6 +71,32 @@ class OngoingSessionOverviewSheetModel: ScrollViewPhaseTracker {
     }
     
     var largestDetent: PresentationDetent { .large }
+    
+    func presentAppSheild() {
+        Task { @MainActor in
+            do {
+                switch try await CueAppBlockManager.retrieveAuthorization() {
+                case .notDetermined:
+                    break
+                case .denied:
+                    self.alertError = .deniedAppBlock
+                case .approved, .approvedWithDataAccess:
+                    self.presentation = .appSheild
+                @unknown default:
+                    self.alertError = .unknown
+                }
+            } catch let appBlockError as CueAppBlockManager.Error {
+                switch appBlockError {
+                case .deniedAccess:
+                    self.alertError = .deniedAppBlock
+                case .unknownStatus:
+                    self.alertError = .unknown
+                }
+            } catch {
+                self.alertError = .unknown
+            }
+        }
+    }
 }
 
 struct OngoingSessionOverviewSheet: View {
@@ -142,7 +169,7 @@ struct OngoingSessionOverviewSheet: View {
         
         let applicationSheild = SessionOverviewHeaderView.AccessoryAction.appSheild(coordinator.shieldActivities, coordinator.appShieldIsOn) { turnOn in
             if turnOn {
-                viewModel.presentation = .appSheild
+                viewModel.presentAppSheild()
             } else {
                 coordinator.removeAppShield()
             }
@@ -224,6 +251,7 @@ struct OngoingSessionOverviewSheet: View {
                                    isAppSheildOn: coordinator.appShieldIsOn,
                                    pauseTime: coordinator.pausedAt)
             }
+            .cueAlert(alert: $viewModel.alertError)
             .sheet(item: $viewModel.presentation, onDismiss: nil) { presentation in
                 switch presentation {
                 case .appSheild:
@@ -351,5 +379,64 @@ extension ClosedRange where Self.Bound == CGFloat {
         let num = value - min
         
         return num / denom
+    }
+}
+
+// MARK: - Alert
+
+extension OngoingSessionOverviewSheetModel {
+    @MainActor
+    enum AlertError: Error, LocalizedError, CueAlertError {
+        case deniedAppBlock
+        case unknown
+        
+        var buttonTitle: String? {
+            switch self {
+            case .deniedAppBlock:
+                return "Enable Screen Time Restrictions"
+            case .unknown:
+                return nil
+            }
+        }
+        
+        var actions: [CueAlertAction] {
+            switch self {
+            case .deniedAppBlock:
+                return [.customAction(buttonTitle!, {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }), .cancel]
+            case .unknown:
+                return [.ok]
+            }
+        }
+        
+        var errorDescription: String? {
+            switch self {
+            case .deniedAppBlock:
+                return "Denied Screen Time Restrictions"
+            case .unknown:
+                return "Unknown Error"
+            }
+        }
+        
+        var failureReason: String? {
+            switch self {
+            case .deniedAppBlock:
+                return "You denied access for Screen Time Restrictions"
+            case .unknown:
+                return "Something Wrong happened, Try again later."
+            }
+        }
+        
+        var recoverySuggestion: String? {
+            switch self {
+            case .deniedAppBlock:
+                return "Tap on '\(buttonTitle ?? "Action Below")'"
+            case .unknown:
+                return nil
+            }
+        }
     }
 }

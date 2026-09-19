@@ -34,6 +34,7 @@ struct FTSessionView<Content: View>: View {
     @Environment(SubscriptionManager.self) var subscriptionManager
     @Environment(\.dismiss) var dismiss
     @State private var sheetPresentation: Presentation? = nil
+    @State private var alertError: AlertError? = nil
     @Bindable var coordinator: FocusSessionCoordinator
     let viewType: ViewType
     @ViewBuilder var content: () -> Content
@@ -83,6 +84,7 @@ struct FTSessionView<Content: View>: View {
                 .presentationDetents([.fraction(1)])
             }
         }
+        .cueAlert(alert: $alertError)
         .paywallPresentation()
         // Launch-control tips. Swap `foregroundSecondary` -> `foregroundTertiary` to compare.
         .tipViewStyle(.next(tint: Color.proSky.foregroundSecondary))
@@ -299,11 +301,25 @@ struct FTSessionView<Content: View>: View {
     func presentAppBlock(_ completion: Callback?) {
         Task { @MainActor in
             do {
-                guard try await CueAppBlockManager.retrieveAuthorization() == .approved else { return }
-                self.sheetPresentation = .appBlock(completion)
+                switch try await CueAppBlockManager.retrieveAuthorization() {
+                case .notDetermined:
+                    break
+                case .denied:
+                    self.alertError = .deniedAppBlock
+                case .approved, .approvedWithDataAccess:
+                    self.sheetPresentation = .appBlock(completion)
+                @unknown default:
+                    self.alertError = .unknown
+                }
+            } catch let appBlockError as CueAppBlockManager.Error {
+                switch appBlockError {
+                case .deniedAccess:
+                    self.alertError = .deniedAppBlock
+                case .unknownStatus:
+                    self.alertError = .unknown
+                }
             } catch {
-            #warning("Present an error alert")
-                print("(ERROR) While retrieving Authorization for App block: ", error.localizedDescription)
+                self.alertError = .unknown
             }
         }
     }
@@ -320,3 +336,61 @@ struct FTSessionView<Content: View>: View {
     
 }
 
+// MARK: - Alert
+
+extension FTSessionView {
+    @MainActor
+    enum AlertError: Error, LocalizedError, CueAlertError {
+        case deniedAppBlock
+        case unknown
+        
+        var buttonTitle: String? {
+            switch self {
+            case .deniedAppBlock:
+                return "Enable Screen Time Restrictions"
+            case .unknown:
+                return nil
+            }
+        }
+        
+        var actions: [CueAlertAction] {
+            switch self {
+            case .deniedAppBlock:
+                return [.customAction(buttonTitle!, {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }), .cancel]
+            case .unknown:
+                return [.ok]
+            }
+        }
+        
+        var errorDescription: String? {
+            switch self {
+            case .deniedAppBlock:
+                return "Denied Screen Time Restrictions"
+            case .unknown:
+                return "Unknown Error"
+            }
+        }
+        
+        var failureReason: String? {
+            switch self {
+            case .deniedAppBlock:
+                return "You denied access for Screen Time Restrictions"
+            case .unknown:
+                return "Something Wrong happened, Try again later."
+            }
+        }
+        
+        var recoverySuggestion: String? {
+            switch self {
+            case .deniedAppBlock:
+                return "Tap on '\(buttonTitle ?? "Action Below")'"
+            case .unknown:
+                return nil
+            }
+        }
+    }
+}

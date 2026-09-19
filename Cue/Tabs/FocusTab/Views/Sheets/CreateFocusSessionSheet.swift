@@ -114,6 +114,7 @@ class CreateFocusSessionViewModel: TimerAdjustmentManager, PlaygroundImageGenera
     var timerType: FocusTimerType = .classic
     var alarmKind: FocusSessionAlarmOption = .off
     var presentation: Presentation? = nil
+    var alertError: AlertError? = nil
     // MARK: PlaygroundImageGenerator
     var needsToSaveImage: Bool = false
     var imageURL: URL? = nil
@@ -255,6 +256,32 @@ class CreateFocusSessionViewModel: TimerAdjustmentManager, PlaygroundImageGenera
             return nil
         }
     }
+    
+    func presentAppSheild() {
+        Task { @MainActor in
+            do {
+                switch try await CueAppBlockManager.retrieveAuthorization() {
+                case .notDetermined:
+                    break
+                case .denied:
+                    self.alertError = .deniedAppBlock
+                case .approved, .approvedWithDataAccess:
+                    self.presentation = .appBlock
+                @unknown default:
+                    self.alertError = .unknown
+                }
+            } catch let appBlockError as CueAppBlockManager.Error {
+                switch appBlockError {
+                case .deniedAccess:
+                    self.alertError = .deniedAppBlock
+                case .unknownStatus:
+                    self.alertError = .unknown
+                }
+            } catch {
+                self.alertError = .unknown
+            }
+        }
+    }
 }
 
 struct CreateFocusSessionSheet: View {
@@ -376,7 +403,7 @@ struct CreateFocusSessionSheet: View {
                     FocusSessionTypeSelector(timerType: $viewModel.timerType)
 
                     Button {
-                        self.viewModel.presentation = .appBlock
+                        viewModel.presentAppSheild()
                     } label: {
                         AppBlockView(familyActivation: viewModel.familySelection)
                             .modifier(RowBackground())
@@ -391,6 +418,7 @@ struct CreateFocusSessionSheet: View {
                 }
             }
             .contentMargins(.horizontal, .init(top: 0, leading: 24, bottom: 0, trailing: 24), for: .scrollContent)
+            .cueAlert(alert: $viewModel.alertError)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(role: .close) {
@@ -851,6 +879,65 @@ fileprivate struct TestView: View {
                 .presentationBackground {
                     Color.clear
                 }
+        }
+    }
+}
+
+// MARK: - Alert
+
+extension CreateFocusSessionViewModel {
+    @MainActor
+    enum AlertError: Error, LocalizedError, CueAlertError {
+        case deniedAppBlock
+        case unknown
+        
+        var buttonTitle: String? {
+            switch self {
+            case .deniedAppBlock:
+                return "Enable Screen Time Restrictions"
+            case .unknown:
+                return nil
+            }
+        }
+        
+        var actions: [CueAlertAction] {
+            switch self {
+            case .deniedAppBlock:
+                return [.customAction(buttonTitle!, {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }), .cancel]
+            case .unknown:
+                return [.ok]
+            }
+        }
+        
+        var errorDescription: String? {
+            switch self {
+            case .deniedAppBlock:
+                return "Denied Screen Time Restrictions"
+            case .unknown:
+                return "Unknown Error"
+            }
+        }
+        
+        var failureReason: String? {
+            switch self {
+            case .deniedAppBlock:
+                return "You denied access for Screen Time Restrictions"
+            case .unknown:
+                return "Something Wrong happened, Try again later."
+            }
+        }
+        
+        var recoverySuggestion: String? {
+            switch self {
+            case .deniedAppBlock:
+                return "Tap on '\(buttonTitle ?? "Action Below")'"
+            case .unknown:
+                return nil
+            }
         }
     }
 }

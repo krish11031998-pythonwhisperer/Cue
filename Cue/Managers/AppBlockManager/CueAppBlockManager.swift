@@ -53,7 +53,7 @@ class CueAppBlockManager: FocusAppShieldCoordinator {
         switch authorizationStatus {
         case .notDetermined:
             if await requestAuthorization() {
-                return authorizationStatus
+                return .approved
             } else {
                 throw Error.deniedAccess
             }
