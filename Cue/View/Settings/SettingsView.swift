@@ -294,7 +294,6 @@ struct SettingView: View {
                 }
             }
             .presentationDetents([.large])
-            .preferredColorScheme(.dark)
         }
     }
     

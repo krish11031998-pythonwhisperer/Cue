@@ -33,6 +33,7 @@ struct CreationFloatingView: View {
     @Environment(SubscriptionManager.self) var subscriptionManager
     @Binding var presentation: Presentation?
     @Binding var presentFloatingMenu: Bool
+    @State private var animationToPresent: Bool = false
     
     enum ButtonType: String, Identifiable, CaseIterable {
         case createRoutineWithAI
@@ -59,12 +60,52 @@ struct CreationFloatingView: View {
         var id: String { rawValue }
     }
     
+    private func insets(proxy: GeometryProxy) -> EdgeInsets {
+        .init(top: 0,
+              leading: proxy.safeAreaInsets.leading,
+              bottom: proxy.safeAreaInsets.bottom + 24,
+              trailing: proxy.safeAreaInsets.trailing + 24)
+    }
+    
     var body: some View {
         GeometryReader { proxy in
+            ZStack(alignment: .bottomTrailing) {
+                Color.clear
+                if animationToPresent {
+                    ButtonStack {
+                        self.buttonAction(for: $0)
+                    }
+                    .transition(.peekover(identity: .toIdentity).combined(with: .opacity.animation(.easeInOut(duration: 0.1))))
+                    .padding(insets(proxy: proxy))
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.snappy(duration: 0.3)) {
+                    self.animationToPresent = false
+                } completion: {
+                    self.presentFloatingMenu = false
+                }
+            }
+        }
+        .onAppear {
+            withAnimation(.snappy(duration: 0.3)) {
+                self.animationToPresent = true
+            }
+        }
+    }
+    
+    
+    // MARK: ButtonStacks
+    
+    private struct ButtonStack: View {
+        let action: (ButtonType) -> Void
+        
+        var body: some View {
             VStack(alignment: .center, spacing: 8) {
                 ForEach(ButtonType.allCases) { buttonType in
                     Button {
-                        self.buttonAction(for: buttonType)
+                        self.action(buttonType)
                     } label: {
                         Label {
                             Text(buttonType.title)
@@ -74,22 +115,11 @@ struct CreationFloatingView: View {
                         .labelStyle(FloatButtonLabelStyle())
                     }
                     .buttonStyle(.plain)
-                    .transition(.scale(scale: 0.9).animation(.easeInOut))
                 }
             }
-            .padding(.init(top: 0,
-                           leading: proxy.safeAreaInsets.leading,
-                           bottom: proxy.safeAreaInsets.bottom + 24,
-                           trailing: proxy.safeAreaInsets.trailing + 24))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                self.presentFloatingMenu = false
-            }
+            .fixedSize()
         }
-        .animation(.easeInOut, value: presentFloatingMenu)
     }
-    
     
     // MARK: - Button Action
     

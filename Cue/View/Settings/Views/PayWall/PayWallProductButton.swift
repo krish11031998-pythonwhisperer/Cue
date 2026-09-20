@@ -9,47 +9,6 @@ import SwiftUI
 import VanorUI
 import RevenueCat
 
-struct PeekoverTransform: GeometryEffect {
-    
-    var show: CGFloat
-    let additionalY: CGFloat
-    
-    var animatableData: CGFloat {
-        get { show }
-        set { show = newValue }
-    }
-    
-    init(show: CGFloat, additionalY: CGFloat) {
-        self.show = show
-        self.additionalY = additionalY
-    }
-    
-    func effectValue(size: CGSize) -> ProjectionTransform {
-        print("(DEBUG) size.height:", size.height)
-        let transform = CGAffineTransform(translationX: 0, y: (-size.height + additionalY) * show)
-        return .init(transform)
-    }
-}
-
-struct PeekoverModifier: ViewModifier {
-    let show: Bool
-    let additionalY: CGFloat
-    
-    func body(content: Content) -> some View {
-        content
-            .modifier(PeekoverTransform(show: show ? 1 : 0, additionalY: additionalY))
-    }
-}
-
-//struct PeekoverTransition: Transition {
-//    
-//}
-extension AnyTransition {
-    static func peekover(additionalY: CGFloat = 0) -> AnyTransition {
-        .modifier(active: PeekoverModifier(show: false, additionalY: additionalY), identity: PeekoverModifier(show: true, additionalY: additionalY))
-    }
-}
-
 struct PayWallProductButton: View {
     
     struct Model: Hashable {
