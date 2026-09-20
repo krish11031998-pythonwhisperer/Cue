@@ -131,31 +131,31 @@ struct SettingView: View {
         
         var hasSwitch: Bool {
             switch self {
-            case .haptics, .notifications, .alarms:
+            case .haptics, .notifications:
                 return true
             default:
                 return false
             }
         }
-        
+
         /// Rows that hand off to Safari / Mail / the share sheet get the outward accessory.
+        /// `alarms` is here too: alarm permission lives in iOS Settings, not in the app, so the
+        /// row opens that page rather than pretending to own a switch it cannot honour.
         var leavesTheApp: Bool {
             switch self {
-            case .feedback, .rateApp, .shareApp, .privacyPolicy, .terms:
+            case .feedback, .rateApp, .shareApp, .privacyPolicy, .terms, .alarms:
                 return true
             default:
                 return false
             }
         }
-        
+
         func defaultBoolValues(for user: UserModel?) -> Bool {
             switch self {
             case .haptics:
                 return user?.hapticsEnabled ?? false
             case .notifications:
                 return user?.notificationEnabled ?? false
-            case .alarms:
-                return user?.alarmEnabled ?? false
             default:
                 return false
             }
@@ -308,8 +308,7 @@ struct SettingView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(permissionFooterMessage)
                 Button("Open iOS Settings") {
-                    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-                    UIApplication.shared.open(url)
+                    openAppSettings()
                 }
                 .font(.footnote.weight(.semibold))
                 .buttonStyle(.plain)
@@ -340,7 +339,7 @@ struct SettingView: View {
         case .subscription:
             self.presentation = .subscription
         case .alarms:
-            store.updateAlarmsAccess()
+            openAppSettings()
         case .haptics:
             store.updateUser { user in
                 user.hapticsEnabled = !user.hapticsEnabled
@@ -365,6 +364,13 @@ struct SettingView: View {
         }
     }
     
+    /// Alarm permission is owned by iOS, not by us, so the Alarms row and the permission
+    /// footer both hand off to the app's page in iOS Settings.
+    private func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+
     private func playSelectionHaptic() {
         guard store.userModel?.hapticsEnabled == true else { return }
         SensoryFeedbackManager.shared.playSelection()
