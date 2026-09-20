@@ -86,7 +86,7 @@ public class NotificationManager: NSObject, NotificationSchedulerDelegate {
             return true
         case .notDetermined:
             do {
-                try await notificationCenter.requestAuthorization(options: [.sound, .badge, .sound])
+                try await notificationCenter.requestAuthorization(options: [.sound, .badge, .alert])
                 return await self.requestForAuthorizationAfterCheckingNotificationSettings()
             } catch {
                 print("(ERROR) Error while reqeusting for notification authorization: \(error.localizedDescription)")
