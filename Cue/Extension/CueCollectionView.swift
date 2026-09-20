@@ -99,6 +99,7 @@ struct CollectionView: UIViewRepresentable {
     func makeUIView(context: Context) -> DiffableCollectionView {
         let collectionView = DiffableCollectionView(frame: .zero, collectionViewLayout: .init())
         collectionView.backgroundColor = .clear
+        collectionView.topEdgeEffect.style = .soft
         return collectionView
     }
     

@@ -230,13 +230,34 @@ class CueAIViewModel: Sendable {
                             schedule = nil
                         }
                         try Task.checkCancellation()
-                        #warning("Need to fix this before saving")
                         
-                        // MARK: - Create Reminder Subtasks
+                        // MARK:  Create Reminder Subtasks
                         
                         let reminderTasks = await self?.createReminderSubTasks(reminder.tasks) ?? []
                         
-                        self?.store.createReminder(title: reminder.title, icon: reminder.icon, date: reminder.date, colorName: reminder.colorName, snoozeDuration: reminder.snoozeDuration, scheduleBuilder: schedule, tasks: reminderTasks, reminderNotification: .notification, tags: reminder.tags)
+                        // MARK: Create Focus Session for Reminder
+                        
+                        var createdFocusSessionModel: Model.FocusSession?
+                        if let focusSession = reminder.focusSession {
+                            createdFocusSessionModel = self?.store.createFocusSession(name: focusSession.name,
+                                                                          sessionType: focusSession.sessionType,
+                                                                          timerDuration: focusSession.timerDuration,
+                                                                          breakDuration: focusSession.breakDuration,
+                                                                          blockedApps: focusSession.blockedApps,
+                                                                          alarm: focusSession.alarm,
+                                                                          sessionCount: focusSession.sessionCount)
+                        }
+                        
+                        self?.store.createReminder(title: reminder.title,
+                                                   icon: reminder.icon,
+                                                   date: reminder.date,
+                                                   colorName: reminder.colorName,
+                                                   snoozeDuration: reminder.snoozeDuration,
+                                                   scheduleBuilder: schedule,
+                                                   tasks: reminderTasks,
+                                                   reminderNotification: .notification,
+                                                   tags: reminder.tags,
+                                                   focusSession: createdFocusSessionModel)
                     }
                 }
                 

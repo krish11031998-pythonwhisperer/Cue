@@ -152,7 +152,10 @@ class FocusRootViewModel {
         let focusedRoutineSection = setupFocusedSessionSection(focusSessions)
         let customFocusSection = setupCustomFocusSessionSection(focusSessions)
 
-        self.sections = [quickStartSection, focusedRoutineSection, customFocusSection].compactMap { $0 }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(150))
+            self.sections = [quickStartSection, focusedRoutineSection, customFocusSection].compactMap { $0 }
+        }
     }
     
     

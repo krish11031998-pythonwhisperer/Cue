@@ -110,17 +110,20 @@ struct TagView: View {
                     .foregroundStyle(Color.proSky.baseColor)
                 
                 Text("No Tags Available")
-                    .font(.title)
+                    .font(.title.weight(.semibold))
                     .foregroundStyle(Color.proSky.foregroundPrimary)
             }
         } description: {
-            Text("Add tags and start organizing your reminders")
+            Text("Add tags and start organizing your routines")
                 .font(.headline)
                 .foregroundStyle(Color.proSky.foregroundSecondary)
         } actions: {
             Button("Create Reminder") {
-                print("(DEBUG) tapped on tags")
+                viewModel.presentAddTagSheet = true
             }
+            .tint(Color.proSky.baseColor)
+            .buttonStyle(.glassProminent)
+            .controlSize(.large)
         }
     }
 }

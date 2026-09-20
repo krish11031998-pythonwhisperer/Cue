@@ -18,6 +18,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "EFDFA5AC302A864000A5094A"
                BuildableName = "CueSheildAction.appex"
+               BlueprintName = "CueSheildAction"
                ReferencedContainer = "container:Cue.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

@@ -131,44 +131,6 @@ extension CreateReminderManager {
     var timeString: String {
         timeDate.timeBuilder()
     }
-//    
-//    var taskViewModels: [ReminderTaskView.Model] {
-//        var models: [ReminderTaskView.Model] = []
-//        
-//        let edit: (Int) -> ((String) -> Void) = { [weak self] index in
-//            { [weak self] newTaskName in
-//                if let task = self?.tasks[index] {
-//                    self?.tasks[index] = .init(title: newTaskName, icon: task.icon, objectID: task.objectID)
-//                }
-//            }
-//        }
-//
-//        let delete: (Int) -> (() -> Void) = { [weak self] index in
-//            { [weak self] in
-//                let task = self?.tasks[index]
-//                if let objectID = task?.objectID {
-//                    self?.store.deleteReminderTask(reminderTaskID: objectID)
-//                }
-//                self?.tasks.remove(at: index)
-//            }
-//        }
-//
-//        for(index, task) in tasks.enumerated() {
-//            let viewType = ReminderTaskView.ViewType.displayOnly(edit(index), delete(index)) { [weak self] in
-//                print("(DEBUG) tapped on icon!")
-////                self?.calendarPresentation = .iconSelector
-//                self?.presentIconSheet()
-//            }
-//        
-//            let model = ReminderTaskView.Model(taskTitle: task.title,
-//                                               icon: task.icon,
-//                                               viewType: viewType,
-//                                               action: nil)
-//            models.append(model)
-//        }
-//        return models
-//    }
-    
     
     // Helper Methods
     

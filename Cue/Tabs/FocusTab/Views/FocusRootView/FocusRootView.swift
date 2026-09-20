@@ -31,12 +31,14 @@ struct FocusRootView: View {
                 Color.cueItBackground
                     .ignoresSafeArea(edges: .all)
                 if viewModel.sections.isEmpty {
-                    ContentUnavailableView("No Focus Sessions", systemImage: "timer", description: Text("Create a focus session to get started."))
+                    ProgressView()
+                        .transition(.opacity.animation(.easeOut))
                 } else {
                     CollectionView(section: viewModel.sections, completion: nil)
-                        .ignoresSafeArea(edges: .vertical)
+                        .transition(.scale(scale: 0.985).combined(with: .opacity).animation(.easeIn))
                 }
             }
+            .ignoresSafeArea(edges: .vertical)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("", systemSymbol: .plus) {
