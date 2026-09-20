@@ -7,6 +7,7 @@
 
 import SwiftUI
 import VanorUI
+import FoundationModels
 
 struct IconAndTitleLabelStyle: LabelStyle {
     func makeBody(configuration: Configuration) -> some View {
@@ -37,25 +38,27 @@ struct CreateReminderSectionHeaderView: View {
             
             Spacer()
             
-            Button(action: action) {
-                Group {
-                    if isLoadingSuggestions {
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                            .controlSize(.small)
-                            .tint(Color.proSky.foregroundPrimary)
-                    } else {
-                        Text("suggest")
-                            .font(.bitcountRegular(style: .subheadline))
+            if SystemLanguageModel.supportsCueAI {
+                Button(action: action) {
+                    Group {
+                        if isLoadingSuggestions {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                                .controlSize(.small)
+                                .tint(Color.proSky.foregroundPrimary)
+                        } else {
+                            Text("suggest")
+                                .font(.bitcountRegular(style: .subheadline))
+                        }
                     }
+                    .transition(.opacity)
+                    .animation(.default, value: isLoadingSuggestions)
+                    .padding(.init(top: 2, leading: 4, bottom: 2, trailing: 4))
+                    .clipped()
                 }
-                .transition(.opacity)
-                .animation(.default, value: isLoadingSuggestions)
-                .padding(.init(top: 2, leading: 4, bottom: 2, trailing: 4))
-                .clipped()
+                .buttonStyle(.glass)
+                .disabled(!canLoadSuggestions)                
             }
-            .buttonStyle(.glass)
-            .disabled(!canLoadSuggestions)
         }
     }
 }

@@ -8,6 +8,7 @@
 import SwiftUI
 import VanorUI
 import Model
+import FoundationModels
 
 struct CueAIView: View {
     
@@ -38,32 +39,52 @@ struct CueAIView: View {
         }
     }
     
+    var showTextField: Bool {
+        switch SystemLanguageModel.cueAIAvailability {
+        case .available:
+            return true
+        case .needsEnablement, .needsToLoad, .unavailable:
+            return false
+        }
+    }
+    
     var body: some View {
         ZStack(alignment: .center) {
             
             WaveformBubbleView(gradientStops: gradientStops)
                 .ignoresSafeArea(edges: .all)
             
-            VStack(alignment: .leading, spacing: 10) {
-                switch viewModel.recorderState {
-                case .resume, .pause:
-                    Text(viewModel.transribedString + viewModel.volatileTranscribedText)
-                        .contentTransition(.opacity)
-                        .animation(.easeInOut, value: viewModel.transribedString + viewModel.volatileTranscribedText)
-                        .padding(.horizontal, 20)
-                case .idle, .stop:
-                    EmptyView()
+            switch SystemLanguageModel.cueAIAvailability {
+            case .available:
+                
+                
+                VStack(alignment: .leading, spacing: 10) {
+                    switch viewModel.recorderState {
+                    case .resume, .pause:
+                        Text(viewModel.transribedString + viewModel.volatileTranscribedText)
+                            .contentTransition(.opacity)
+                            .animation(.easeInOut, value: viewModel.transribedString + viewModel.volatileTranscribedText)
+                            .padding(.horizontal, 20)
+                    case .idle, .stop:
+                        EmptyView()
+                    }
+                    
+                    ReminderScrollView(viewModel: viewModel)
                 }
                 
-                ReminderScrollView(viewModel: viewModel)
-            }
-            
-            if textFieldIsInFocus {
-                Color.red.opacity(0.2)
-                    .ignoresSafeArea(edges: .all)
-                    .onTapGesture {
-                        self.textFieldIsInFocus = false
-                    }
+                if textFieldIsInFocus {
+                    Color.red.opacity(0.2)
+                        .ignoresSafeArea(edges: .all)
+                        .onTapGesture {
+                            self.textFieldIsInFocus = false
+                        }
+                }
+            case .needsEnablement:
+                AvailableButNotEnabled()
+            case .needsToLoad:
+                AvailableButNotLoaded()
+            case .unavailable:
+                CueAINotAvailable()
             }
         }
         .onPreferenceChange(CueTextFieldFocusPreferenceKey.self, perform: {
@@ -111,12 +132,14 @@ struct CueAIView: View {
             }
         })
         .safeAreaBar(edge: .bottom, alignment: .center, spacing: 0) {
-            CueRecordingTextFieldFloatingView(generating: viewModel.isGenerating,
-                                              canSaveGenerated: !viewModel.reminders.isEmpty,
-                                              waveformBuilder: nil) { [weak viewModel] in
-                viewModel?.recorderState = $0
-            } generateReminder: { [weak viewModel] text in
-                viewModel?.generationState = .generate(text)
+            if showTextField {
+                CueRecordingTextFieldFloatingView(generating: viewModel.isGenerating,
+                                                  canSaveGenerated: !viewModel.reminders.isEmpty,
+                                                  waveformBuilder: nil) { [weak viewModel] in
+                    viewModel?.recorderState = $0
+                } generateReminder: { [weak viewModel] text in
+                    viewModel?.generationState = .generate(text)
+                }
             }
         }
         .sheet(item: $viewModel.presentation, content: { presentation in
@@ -192,6 +215,104 @@ struct CueAIView: View {
                 .foregroundStyle(Color.proSky.foregroundTertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+    
+    
+    // MARK: - Empty Views
+    
+    fileprivate struct AvailableButNotEnabled: View {
+        
+        var theme: LCHColor {
+            Color.proSky
+        }
+        
+        var body: some View {
+            ContentUnavailableView {
+                VStack(alignment: .center, spacing: 8) {
+                    Image(systemSymbol: .wandAndSparkles)
+                        .font(.title)
+                    Text("Apple Intelligence is Off.")
+                        .font(.bitcountRegular(style: .title3))
+                }
+                .foregroundStyle(theme.baseColor)
+            } description: {
+                Text("cue:ai needs Apple Intelligence to create your reminders. Turn it on in Settings → Apple Intelligence & Siri.")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(theme.foregroundSecondary)
+            } actions: {
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Text("Enable Apple Intelligence")
+                }
+                .tint(theme.baseColor)
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+            }
+            .background(alignment: .center) {
+                Rectangle()
+                    .fill(Material.thinMaterial)
+                    .ignoresSafeArea()
+            }
+        }
+    }
+    
+    fileprivate struct AvailableButNotLoaded: View {
+        
+        var theme: LCHColor {
+            Color.proSky
+        }
+        
+        var body: some View {
+            ContentUnavailableView {
+                VStack(alignment: .center, spacing: 8) {
+                    ProgressView()
+                        .controlSize(.regular)
+                    Text("cue:ai is Getting Ready")
+                        .font(.bitcountRegular(style: .title3))
+                }
+                .foregroundStyle(theme.baseColor)
+            } description: {
+                Text("Apple Intelligence is still setting up on this device. cue:ai will be ready as soon as it finishes.")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(theme.foregroundSecondary)
+            }
+            .background(alignment: .center) {
+                Rectangle()
+                    .fill(Material.thinMaterial)
+                    .ignoresSafeArea()
+            }
+        }
+    }
+    
+    fileprivate struct CueAINotAvailable: View {
+        
+        var theme: LCHColor {
+            Color.proRed
+        }
+        
+        var body: some View {
+            ContentUnavailableView {
+                VStack(alignment: .center, spacing: 8) {
+                    Image(systemSymbol: .xmarkCircle)
+                        .font(.title)
+                    Text("cue:ai is not avaiable")
+                        .font(.bitcountRegular(style: .title3))
+                }
+                .foregroundStyle(theme.baseColor)
+            } description: {
+                Text("Apple Intelligence is supported on this device.")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(theme.foregroundSecondary)
+            }
+            .background(alignment: .center) {
+                Rectangle()
+                    .fill(Material.thinMaterial)
+                    .ignoresSafeArea()
+            }
+        }
     }
 }
 

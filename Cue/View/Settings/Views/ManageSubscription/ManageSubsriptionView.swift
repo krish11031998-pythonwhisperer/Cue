@@ -135,6 +135,12 @@ struct ManageSubsriptionView: View {
                                 Text(feature.message)
                                     .font(.footnote)
                                     .fontWeight(.medium)
+                                
+                                if let requirement = feature.requirement {
+                                    Text(requirement)
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                }
                             }
                         }
                     }

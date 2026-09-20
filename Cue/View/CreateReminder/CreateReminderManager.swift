@@ -87,13 +87,7 @@ extension CreateReminderManager {
     }
 
     var canLoadSuggestions: Bool {
-        switch SystemLanguageModel.default.availability {
-        case .available:
-            return !self.reminderTitle.isEmpty
-        
-        case .unavailable(let reason):
-            return false
-        }
+        return !self.reminderTitle.isEmpty
     }
     
     var durationString: String {

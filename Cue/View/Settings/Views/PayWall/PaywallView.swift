@@ -223,6 +223,12 @@ struct CuePaywallView: View {
                             .fontWeight(.medium)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
+                        if let requirement = feature.requirement {
+                            Text(requirement)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }

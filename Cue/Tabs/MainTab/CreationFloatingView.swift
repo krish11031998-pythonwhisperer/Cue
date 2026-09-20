@@ -7,6 +7,7 @@
 
 import SwiftUI
 import VanorUI
+import FoundationModels
 
 #warning("Move VanorUI")
 fileprivate struct FloatButtonLabelStyle: LabelStyle {
@@ -60,6 +61,19 @@ struct CreationFloatingView: View {
         var id: String { rawValue }
     }
     
+    /// cue:ai generates its reminders on-device, so the button is only offered where that model
+    /// is usable — on every other device the menu is just `Create`.
+    private var availableButtons: [ButtonType] {
+        ButtonType.allCases.filter { buttonType in
+            switch buttonType {
+            case .createRoutineWithAI:
+                return SystemLanguageModel.supportsCueAI
+            case .createRoutine:
+                return true
+            }
+        }
+    }
+    
     private func insets(proxy: GeometryProxy) -> EdgeInsets {
         .init(top: 0,
               leading: proxy.safeAreaInsets.leading,
@@ -72,7 +86,7 @@ struct CreationFloatingView: View {
             ZStack(alignment: .bottomTrailing) {
                 Color.clear
                 if animationToPresent {
-                    ButtonStack {
+                    ButtonStack(buttons: availableButtons) {
                         self.buttonAction(for: $0)
                     }
                     .transition(.peekover(identity: .toIdentity).combined(with: .opacity.animation(.easeInOut(duration: 0.1))))
@@ -99,11 +113,12 @@ struct CreationFloatingView: View {
     // MARK: ButtonStacks
     
     private struct ButtonStack: View {
+        let buttons: [ButtonType]
         let action: (ButtonType) -> Void
         
         var body: some View {
             VStack(alignment: .center, spacing: 8) {
-                ForEach(ButtonType.allCases) { buttonType in
+                ForEach(buttons) { buttonType in
                     Button {
                         self.action(buttonType)
                     } label: {
@@ -126,7 +141,9 @@ struct CreationFloatingView: View {
     private func buttonAction(for type: ButtonType) {
         switch type {
         case .createRoutineWithAI:
-            self.presentation = .createReminderWithAI
+            subscriptionManager.proUserAction {
+                self.presentation = .createReminderWithAI
+            }
         case .createRoutine:
             self.presentation = .createReminder
         }

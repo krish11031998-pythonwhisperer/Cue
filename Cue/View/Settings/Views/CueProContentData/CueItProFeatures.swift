@@ -64,6 +64,17 @@ enum CueItProFeatures: Int, CaseIterable, Identifiable {
         }
     }
     
+    /// A caveat rendered under `message` wherever the feature is advertised. Only `ai` has one —
+    /// it runs on the on-device model — so every other case is `nil` and renders nothing.
+    var requirement: String? {
+        switch self {
+        case .ai:
+            return "Only available on devices that support Apple Intelligence."
+        case .routines, .focusSession, .alarms, .tags:
+            return nil
+        }
+    }
+    
     var theme: LCHColor {
         let theme: LCHColor
         switch self {

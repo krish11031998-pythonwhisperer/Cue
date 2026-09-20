@@ -35,7 +35,7 @@ struct SuggestedReminderSchedule {
     var minute:Int
     
     @Guide(description: "0 for one-time reminders, otherwise the number of weeks between repetitions")
-    var internvalWeek: Int
+    var intervalWeek: Int
     
     @Guide(description: "Weekday component values based on Calendar.current, 1 is Sunday and 7 is Saturday")
     var weekdays: [Weekday]?
@@ -66,7 +66,7 @@ struct SuggestedReminder {
         components.hour = 19
         components.minute = 0
         
-        return .init(title: "Buy groceries", icon: "🛒", date: .init(hour: 19, minute: 0, internvalWeek: 0, weekdays: nil))
+        return .init(title: "Buy groceries", icon: "🛒", date: .init(hour: 19, minute: 0, intervalWeek: 0, weekdays: nil))
     }
     
     static var exampleTwo: SuggestedReminder {
@@ -75,7 +75,7 @@ struct SuggestedReminder {
         components.hour = 19
         components.minute = 0
         
-        return .init(title: "Workout in at Gym", icon: "🏋️", date: .init(hour: 19, minute: 0, internvalWeek: 1, weekdays: [2, 3, 4].map { SuggestedReminderSchedule.Weekday(weekdayIntValue: $0) }))
+        return .init(title: "Workout in at Gym", icon: "🏋️", date: .init(hour: 19, minute: 0, intervalWeek: 1, weekdays: [2, 3, 4].map { SuggestedReminderSchedule.Weekday(weekdayIntValue: $0) }))
     }
 }
 
@@ -105,16 +105,22 @@ class ReminderGenerator: CueLanguagareModelSession {
                         You should be able to recognize the activity that the user mentions in their prompt.
                         
                         Core rule:
-                        - If the user does NOT mention repetition → create a one
-                        - internvalWeek = 0
-                        - weekdays = nil
-                        - If the user mentions repetition → create a recurring reminders
+                        - You will only create on reminder per prompt.
+                        - If the user does NOT mention repetition, the following rules are applicable for reminders with no-reptition
+                            - internvalWeek = 0
+                            - weekdays = nil
+                        - If the user mentions repetition → create a recurring reminders, the following rules are applicable for recurring reminders
+                            - intervalWeek = between range of 1...4 (1 & 4 are inclusive)
+                            - weekdays = Weekdays mentioned in the prompt.
+                        
+                        Icon:
+                        - Use onl;y one emoji, NOT A COMBINATION of emojis.
                         
                         Title:
                         - Short, natural action (no schedule details)
                         
                         Time:
-                        - Use provided time or infer reasonable defaults
+                        - Use provided time or infer reasonable defaults.
                         
                         Recurring:
                         - Map the recurring weeks → intervalWeek = N where N is number of weeks.
@@ -266,7 +272,7 @@ fileprivate struct TestView: View {
             self.loading = false
             print("(DEBUG) reminder:", suggestedReminder)
             if let suggestedReminder {
-                let reminder = ReminderModel(notificationType: .notification, title: suggestedReminder.title, icon: .init(symbol: nil, emoji: suggestedReminder.icon), date: .now, snoozeDuration: .zero, tasks: [], tags: [], schedule: .init(hour: suggestedReminder.date.hour, minute: suggestedReminder.date.minute, intervalWeeks: suggestedReminder.date.internvalWeek, weekdays: nil, calendarDates: nil), colorName: Color.sky.assetName, focusSession: nil)
+                let reminder = ReminderModel(notificationType: .notification, title: suggestedReminder.title, icon: .init(symbol: nil, emoji: suggestedReminder.icon), date: .now, snoozeDuration: .zero, tasks: [], tags: [], schedule: .init(hour: suggestedReminder.date.hour, minute: suggestedReminder.date.minute, intervalWeeks: suggestedReminder.date.intervalWeek, weekdays: nil, calendarDates: nil), colorName: Color.sky.assetName, focusSession: nil)
                 self.reminders.append(reminder)
             }
         }
