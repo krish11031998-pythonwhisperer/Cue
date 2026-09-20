@@ -36,7 +36,7 @@ struct WelcomeOnboardingView: View {
                     .offset(x: 0, y: -proxy.size.height * 0.1)
             }
             
-            Text("cue:ai is only available on devices that support Apple Intelligence.")
+            Text("cue:ai requires cue:it Pro and a device that supports Apple Intelligence.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

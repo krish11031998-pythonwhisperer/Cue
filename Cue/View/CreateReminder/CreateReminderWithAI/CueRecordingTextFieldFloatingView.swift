@@ -240,6 +240,7 @@ struct CueRecordingTextFieldFloatingView: View {
                             self.viewState = .voiceRecording
                         } label: {
                             Image(systemSymbol: .waveform)
+                                .foregroundStyle(.white)
                         }
                         .buttonStyle(.accessoryButton(size: .small, color: .green))
 

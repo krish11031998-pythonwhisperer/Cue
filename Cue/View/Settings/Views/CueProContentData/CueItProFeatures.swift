@@ -10,10 +10,9 @@ import SwiftUI
 
 /// The pro features advertised on `CuePaywallView` and `ManageSubsriptionView`.
 ///
-/// `allCases` order is the order both screens render, so the four core features lead and `tags`
+/// `allCases` order is the order both screens render, so the three core features lead and `tags`
 /// closes. Keep `message` to a single short line — these render as footnotes under the title.
 enum CueItProFeatures: Int, CaseIterable, Identifiable {
-    case routines
     case focusSession
     case alarms
     case ai
@@ -21,8 +20,6 @@ enum CueItProFeatures: Int, CaseIterable, Identifiable {
     
     var symbol: SFSymbol {
         switch self {
-        case .routines:
-            return .arrowTrianglehead2ClockwiseRotate90
         case .focusSession:
             return .stopwatch
         case .alarms:
@@ -36,8 +33,6 @@ enum CueItProFeatures: Int, CaseIterable, Identifiable {
     
     var title: String {
         switch self {
-        case .routines:
-            return "Routines"
         case .focusSession:
             return "Focus Sessions"
         case .alarms:
@@ -51,14 +46,12 @@ enum CueItProFeatures: Int, CaseIterable, Identifiable {
     
     var message: String {
         switch self {
-        case .routines:
-            return "Recurring plans, broken into subtasks."
         case .focusSession:
-            return "Focus timers that lock out distracting apps."
+            return "Unlimited sessions with Pomodoro timers and app blocking."
         case .alarms:
             return "Reminders that go off, not ones you swipe away."
         case .ai:
-            return "Speak it once and plan your day."
+            return "Speak it, or let AI break a reminder into subtasks."
         case .tags:
             return "Group routines and filter your day by them."
         }
@@ -70,7 +63,7 @@ enum CueItProFeatures: Int, CaseIterable, Identifiable {
         switch self {
         case .ai:
             return "Only available on devices that support Apple Intelligence."
-        case .routines, .focusSession, .alarms, .tags:
+        case .focusSession, .alarms, .tags:
             return nil
         }
     }
@@ -78,8 +71,6 @@ enum CueItProFeatures: Int, CaseIterable, Identifiable {
     var theme: LCHColor {
         let theme: LCHColor
         switch self {
-        case .routines:
-            theme = Color.proIndigo
         case .focusSession:
             theme = Color.proRed
         case .alarms:
