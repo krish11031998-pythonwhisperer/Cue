@@ -11,13 +11,25 @@ import RevenueCat
 enum PaywallError: LocalizedError {
     case failedToPurchase
     case failedToRestore
-    
+    case nothingToRestore
+
     var errorDescription: String? {
         switch self {
         case .failedToPurchase:
-            return "Failed to purchase. Please try again."
+            return "Purchase Failed"
         case .failedToRestore:
-            return "Faild to restore."
+            return "Restore Failed"
+        case .nothingToRestore:
+            return "Nothing to Restore"
+        }
+    }
+
+    var recoverySuggestion: String? {
+        switch self {
+        case .failedToPurchase, .failedToRestore:
+            return "Something went wrong. Please check your connection and try again."
+        case .nothingToRestore:
+            return "We couldn't find an active subscription for this Apple Account."
         }
     }
 }
@@ -86,13 +98,22 @@ class PaywallViewModel {
     
     // MARK: - Purchase
     
-    func purchase(_ purchaseAction: @escaping (StoreProduct) async -> Bool) {
+    func purchase(_ purchaseAction: @escaping (StoreProduct) async -> SubscriptionManager.PurchaseOutcome) {
         guard let selectedProduct else { return }
         purchaseTask?.cancel()
         purchaseTask = Task { @MainActor in
-            let wasSuccess = await purchaseAction(selectedProduct)
-            if wasSuccess {
+            let outcome = await purchaseAction(selectedProduct)
+
+            guard !Task.isCancelled else { return }
+
+            switch outcome {
+            case .success:
                 mustDismiss = true
+            case .cancelled:
+                break
+            case .failed:
+                errorToShow = .failedToPurchase
+                showError = true
             }
         }
     }
@@ -112,9 +133,12 @@ class PaywallViewModel {
                 switch result {
                 case .success(true):
                     mustDismiss = true
-                case .success(false), .failure:
+                case .success(false):
+                    errorToShow = .nothingToRestore
                     showError = true
+                case .failure:
                     errorToShow = .failedToRestore
+                    showError = true
                 }
             }
         }

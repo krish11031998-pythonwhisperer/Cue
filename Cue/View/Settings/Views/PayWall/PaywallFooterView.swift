@@ -13,6 +13,9 @@ struct PaywallFooterView: View {
     @Environment(\.dismiss) var dismiss
     let restoringPurchase: Bool
     let showButtonLoading: Bool
+    /// False while no product is selected — with nothing to buy, Continue would call into
+    /// a `guard` and return silently, which reads as a broken button.
+    let canPurchase: Bool
     let purchaseAction: () -> Void
     let restorePurchasesAction: () -> Void
     
@@ -29,7 +32,7 @@ struct PaywallFooterView: View {
                         }
                     }
             }
-            .disabled(showButtonLoading)
+            .disabled(showButtonLoading || !canPurchase)
             
             HStack(alignment: .center, spacing: 8) {
                 Button("Restore Purchase", action: restorePurchasesAction)

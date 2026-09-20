@@ -10,7 +10,13 @@ import Foundation
 
 @Observable
 @MainActor final class SubscriptionManager {
-    
+
+    enum PurchaseOutcome {
+        case success
+        case cancelled
+        case failed(Error)
+    }
+
     struct Constants {
 
         /*
@@ -32,12 +38,8 @@ import Foundation
     }
     
     var userIsPro: Bool {
-        #if targetEnvironment(simulator)
-        return true
-        #else
         guard let customerInfo else { return false }
         return customerInfo.entitlements["cue:it Pro"]?.isActive == true
-        #endif
     }
     
     /* The latest offerings */
@@ -61,23 +63,21 @@ import Foundation
         }
     }
 
-    func purchase(_ product: StoreProduct) async -> Bool {
+    func purchase(_ product: StoreProduct) async -> PurchaseOutcome {
         isPurchasing = true
         defer { isPurchasing = false }
 
         do {
             let (_, customerInfo, userCancelled) = try await Purchases.shared.purchase(product: product)
 
-            guard !userCancelled else { return false }
+            guard !userCancelled else { return .cancelled }
 
             self.customerInfo = customerInfo
-            
-            return true
+
+            return .success
         } catch {
-            print("Failed to purchase product with error: \(error)")
+            return .failed(error)
         }
-        
-        return false
     }
     
     func purchase(_ package: Package) async {

@@ -42,7 +42,7 @@ struct ManageSubsriptionView: View {
                 } else if subscriptionManager.isFetchingOfferings {
                     ProgressView()
                 } else {
-                    ContentUnavailableView("Missing Date", systemSymbol: .xmarkSealFill)
+                    ContentUnavailableView("No Active Subscription", systemSymbol: .xmarkSealFill)
                         .foregroundStyle(Color.proRed.foregroundSecondary)
                 }
                 

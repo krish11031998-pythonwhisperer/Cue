@@ -37,6 +37,10 @@ struct CuePaywallView: View {
                                 .progressViewStyle(.automatic)
                                 .frame(width: 64, height: 64, alignment: .center)
                                 .frame(maxWidth: .infinity, alignment: .center)
+                        } else if viewModel.products.isEmpty {
+                            ProductsUnavailableView {
+                                Task { await loadProducts() }
+                            }
                         } else {
                             ForEach(viewModel.products) { product in
                                 PayWallProductButton(model: product.viewConfig, isSelected: viewModel.selectedProduct == product.storeProduct) {
@@ -63,7 +67,8 @@ struct CuePaywallView: View {
             .scrollEdgeEffectStyle(.soft, for: .bottom)
             .safeAreaBar(edge: .bottom, alignment: .center, spacing: 8) {
                 PaywallFooterView(restoringPurchase: viewModel.restoringPurchase,
-                                  showButtonLoading: showButtonLoading) {
+                                  showButtonLoading: showButtonLoading,
+                                  canPurchase: viewModel.selectedProduct != nil) {
                     viewModel.purchase { storeProduct in
                         await subscriptionManager.purchase(storeProduct)
                     }
@@ -75,8 +80,11 @@ struct CuePaywallView: View {
             }
         }
         .background(alignment: .top) {
-            RadialGradient(stops: [.init(color: Color.proSky.baseColor, location: 0), .init(color: Color.proSky.baseColor.opacity(0), location: 1)], center: .top, startRadius: 0, endRadius: 300)
-                .ignoresSafeArea(edges: .vertical)
+            ZStack(alignment: .center) {
+                Color.cueItBackground
+                RadialGradient(stops: [.init(color: Color.proSky.baseColor, location: 0), .init(color: Color.proSky.baseColor.opacity(0), location: 1)], center: .top, startRadius: 0, endRadius: 300)
+            }
+            .ignoresSafeArea()
         }
         .alert(isPresented: $viewModel.showError, error: viewModel.errorToShow, actions: {
             Button("Ok", role: .confirm) {
@@ -92,17 +100,54 @@ struct CuePaywallView: View {
             ProductRoadMap()
         })
         .task {
-            await subscriptionManager.fetchOfferings()
-            let currentOffering = subscriptionManager.offerings?.current
-            viewModel.updateProducts(currentOffering)
+            await loadProducts()
         }
         .onDisappear {
             self.viewModel.purchaseTask?.cancel()
             self.viewModel.restorePurchaseTask?.cancel()
         }
     }
-    
-    
+
+
+    // MARK: - Loading
+
+    private func loadProducts() async {
+        await subscriptionManager.fetchOfferings()
+        viewModel.updateProducts(subscriptionManager.offerings?.current)
+    }
+
+
+    // MARK: - Products Unavailable
+
+    private struct ProductsUnavailableView: View {
+
+        let retryAction: () -> Void
+
+        var body: some View {
+            VStack(alignment: .center, spacing: 12) {
+                Image(systemSymbol: .exclamationmarkTriangle)
+                    .font(.largeTitle)
+                    .foregroundStyle(.secondary)
+
+                Text("Plans Unavailable")
+                    .font(.headline)
+
+                Text("We couldn't load the subscription options. Please check your connection and try again.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
+                Button("Try Again", action: retryAction)
+                    .buttonStyle(.glassProminent)
+                    .tint(Color.proSky.baseColor)
+                    .padding(.top, 4)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 24)
+        }
+    }
+
+
     // MARK: - HeaderView
     
     private struct HeaderView: View {

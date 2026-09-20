@@ -45,12 +45,23 @@ struct PayWallProductButton: View {
         return true
     }
     
-    var hasTrial: Bool {
-        guard let introductoryDiscount = model.introductoryDiscount else {
-            return false
+    var trialLabel: String? {
+        guard let introductoryDiscount = model.introductoryDiscount,
+              introductoryDiscount.paymentMode == .freeTrial else {
+            return nil
         }
-        
-        return introductoryDiscount.paymentMode == .freeTrial
+
+        let period = introductoryDiscount.subscriptionPeriod
+        let unit: String
+
+        switch period.unit {
+        case .day:   unit = "day"
+        case .week:  unit = "week"
+        case .month: unit = "month"
+        case .year:  unit = "year"
+        }
+
+        return "\(period.value)-\(unit) free trial"
     }
     
     
@@ -92,8 +103,8 @@ struct PayWallProductButton: View {
         }
         .animation(.default, value: isSelected)
         .background(alignment: .top, content: {
-            if isSelected && hasTrial {
-                Text("7-day free trial")
+            if isSelected, let trialLabel {
+                Text(trialLabel)
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.proSky.invertedForegroundPrimary)
@@ -104,7 +115,6 @@ struct PayWallProductButton: View {
             }
         })
         .onTapGesture {
-            print("(DEBUG) tpping")
             action()
         }
     }
