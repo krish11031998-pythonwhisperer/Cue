@@ -12,6 +12,28 @@ class CueRecorder {
     
     typealias AudioBufferStream = AsyncStream<AVAudioPCMBuffer>
     
+    enum RecorderError: Error, LocalizedError {
+        case accessToMicrophoneDenied
+        
+        var errorDescription: String? {
+            switch self {
+            case .accessToMicrophoneDenied:
+                "No Access to Microphone is denied."
+            }
+        }
+        
+        var failureReason: String? {
+            return nil
+        }
+        
+        var recoverySuggestion: String? {
+            switch self {
+            case .accessToMicrophoneDenied:
+                return "Go to Settings and re-enable micrphone"
+            }
+        }
+    }
+    
     enum RecorderState {
         case resume
         case stop
@@ -33,7 +55,7 @@ class CueRecorder {
         if recorderState != .idle {
             await stopAudioSession()
         }
-        guard await authorizeMicrophone() else { return }
+        guard try await authorizeMicrophone() else { return }
         
         #if os(iOS)
         try await self.setUpAudioSession()
@@ -45,14 +67,14 @@ class CueRecorder {
     
     // MARK: - Authorization
     
-    private func authorizeMicrophone() async -> Bool {
+    private func authorizeMicrophone() async throws -> Bool {
         let currentAccess = await AVCaptureDevice.requestAccess(for: .audio)
         
         if currentAccess {
             return true
         }
-    
-        return false
+        
+        throw RecorderError.accessToMicrophoneDenied
     }
     
     
@@ -116,14 +138,9 @@ class CueRecorder {
         recorderState = .pause
     }
     
-    func startOrResume() {
-        do {
-            try audioEngine.start()
-            recorderState = .resume
-        } catch {
-            #warning("Propagate Error to View")
-            print("(ERROR) error while starting audioEngine: ", error.localizedDescription)
-        }
+    func startOrResume() throws {
+        try audioEngine.start()
+        recorderState = .resume
     }
     
     func stop() {

@@ -56,8 +56,6 @@ struct CueAIView: View {
             
             switch SystemLanguageModel.cueAIAvailability {
             case .available:
-                
-                
                 VStack(alignment: .leading, spacing: 10) {
                     switch viewModel.recorderState {
                     case .resume, .pause:
@@ -87,24 +85,13 @@ struct CueAIView: View {
                 CueAINotAvailable()
             }
         }
-        .safeAreaInset(edge: .top, alignment: .center, spacing: 0) {
-            CueAIPrivacyNote()
-        }
+        .disclaimer(.cueAIRunsOnDevice, type: .persistent)
+        .cueAlert(alert: $viewModel.alert)
         .onPreferenceChange(CueTextFieldFocusPreferenceKey.self, perform: {
             textFieldIsInFocus = $0
         })
         .task(id: viewModel.recorderState) { [weak viewModel] in
-            guard let recorderState = viewModel?.recorderState else { return }
-            switch recorderState {
-            case .idle:
-                break
-            case .resume:
-                await viewModel?.setupRecorderAndStart()
-            case .stop:
-                await viewModel?.stopRecorder()
-            case .pause:
-                viewModel?.pauseRecording()
-            }
+            await viewModel?.handleChangeOfRecorderState()
         }
         .task(id: viewModel.generationState) { [weak viewModel] in
             await viewModel?.generateReminderTask()
@@ -126,6 +113,8 @@ struct CueAIView: View {
                     Task { @MainActor in
                         #warning("Need to track this reminder Creations")
                         await viewModel.createReminders()
+                        // Stay on screen so the save error alert can be shown.
+                        guard viewModel.alert == nil else { return }
                         dismiss()
                     }
                 }
@@ -222,15 +211,7 @@ struct CueAIView: View {
     
     
     // MARK: - Empty Views
-    
-    /// The standing statement that cue:ai and voice capture never leave the device.
-    ///
-    /// Sits in the top safe area of every availability state, so it is on screen even when
-    /// Apple Intelligence is switched off and the screen shows `AvailableButNotEnabled`.
-    /// App Review flagged cue:it under guidelines 5.1.1(i)/5.1.2(i) on the assumption that a
-    /// third-party AI service receives user data — nothing in the UI said otherwise. This is a
-    /// disclosure, deliberately not a consent prompt: no data is shared, so there is nothing to
-    /// ask permission for.
+
     fileprivate struct CueAIPrivacyNote: View {
         
         var body: some View {

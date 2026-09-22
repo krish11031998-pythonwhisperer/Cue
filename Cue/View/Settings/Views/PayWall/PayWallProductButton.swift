@@ -55,7 +55,8 @@ struct PayWallProductButton: View {
                            unit: model.subscriptionPeriod.unit)
     }
     
-    /// The intro offer written out, e.g. "Includes 1-week free trial".
+    /// The intro offer written out, e.g. "Includes 1 week free trial", shown in the badge that
+    /// peeks over the selected card.
     ///
     /// `nil` for plans with no free trial, which renders nothing.
     var trialLabel: String? {
@@ -66,18 +67,6 @@ struct PayWallProductButton: View {
 
         let period = introductoryDiscount.subscriptionPeriod
         return "Includes \(Self.durationLabel(value: period.value, unit: period.unit)) free trial"
-    }
-    
-    /// The badge that peeks over the selected card. Shorter than `trialLabel` because it sits in
-    /// a narrow pill.
-    var trialBadge: String? {
-        guard let introductoryDiscount = model.introductoryDiscount,
-              introductoryDiscount.paymentMode == .freeTrial else {
-            return nil
-        }
-
-        let period = introductoryDiscount.subscriptionPeriod
-        return "\(Self.durationLabel(value: period.value, unit: period.unit)) free trial"
     }
     
     private static func durationLabel(value: Int, unit: SubscriptionPeriod.Unit) -> String {
@@ -109,12 +98,6 @@ struct PayWallProductButton: View {
                     .font(.caption2)
                     .fontWeight(.medium)
                     .foregroundStyle(secondaryForeground)
-                
-                if let trialLabel {
-                    Text(trialLabel)
-                        .font(.caption2)
-                        .foregroundStyle(secondaryForeground)
-                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
@@ -149,8 +132,8 @@ struct PayWallProductButton: View {
         }
         .animation(.default, value: isSelected)
         .background(alignment: .top, content: {
-            if isSelected, let trialBadge {
-                Text(trialBadge)
+            if isSelected, let trialLabel {
+                Text(trialLabel)
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.proSky.invertedForegroundPrimary)

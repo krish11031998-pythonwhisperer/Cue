@@ -19,6 +19,64 @@ enum CueReminderGeneratorError: Error {
     case errorGeneratingReminder
 }
 
+enum CueAIViewError: Error, LocalizedError, CueAlertError {
+    case microphoneAccessDenied
+    case audioEngineCouldNotStart
+    case errorSavingRoutine
+    case errorGeneratingRoutine
+
+    var actions: [CueAlertAction] {
+        switch self {
+        case .microphoneAccessDenied:
+            return [.cancel, .customAction("Open Settings", {
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                UIApplication.shared.open(url)
+            })]
+        case .audioEngineCouldNotStart, .errorSavingRoutine, .errorGeneratingRoutine:
+            return [.ok]
+        }
+    }
+
+    var errorDescription: String? {
+        switch self {
+        case .microphoneAccessDenied:
+            return "Microphone Access Needed"
+        case .audioEngineCouldNotStart:
+            return "Couldn't Start Recording"
+        case .errorSavingRoutine:
+            return "Couldn't Save Reminders"
+        case .errorGeneratingRoutine:
+            return "Couldn't Create Reminder"
+        }
+    }
+
+    var failureReason: String? {
+        switch self {
+        case .microphoneAccessDenied:
+            return "cue:ai needs access to your microphone to turn your voice into reminders."
+        case .audioEngineCouldNotStart:
+            return "Something went wrong while starting the microphone."
+        case .errorSavingRoutine:
+            return "Your reminders couldn't be saved."
+        case .errorGeneratingRoutine:
+            return "cue:ai couldn't turn that into a reminder."
+        }
+    }
+
+    var recoverySuggestion: String? {
+        switch self {
+        case .microphoneAccessDenied:
+            return "Turn on Microphone access for Cue in Settings, or type your reminder instead."
+        case .audioEngineCouldNotStart:
+            return "Make sure no other app is using the microphone, then try again."
+        case .errorSavingRoutine:
+            return "Please try again."
+        case .errorGeneratingRoutine:
+            return "Try rephrasing it with a clear title and time, e.g. \"Drink water every day at 9am\"."
+        }
+    }
+}
+
 @MainActor
 @Observable
 class CueAIViewModel: Sendable {
@@ -63,6 +121,7 @@ class CueAIViewModel: Sendable {
     
     private let reminderGenerator: ReminderGenerator = .init(sessionType: .simple)
     var presentation: Presentation? = nil
+    var alert: CueAIViewError? = nil
     var recorderState: CueRecorder.RecorderState = .idle
     var transribedString: AttributedString = .init()
     var volatileTranscribedText: AttributedString = .init()
@@ -133,8 +192,12 @@ class CueAIViewModel: Sendable {
         
         do {
             try await generateReminderWithGenerator(reminderDescription)
+        } catch is CancellationError {
+            return
         } catch {
-            print("(ERROR) Propagate error to view")
+            print("(ERROR) error generating reminder: ", error.localizedDescription)
+            generationState = .idle
+            alert = .errorGeneratingRoutine
         }
     }
     
@@ -265,6 +328,7 @@ class CueAIViewModel: Sendable {
             }
         } catch {
             print("(ERROR) there as an error while creating the reminders: ", error.localizedDescription)
+            alert = .errorSavingRoutine
         }
         activityIndicator = false
     }
@@ -291,12 +355,17 @@ class CueAIViewModel: Sendable {
     // MARK: - VoiceRecorder
     
     func setupVoiceRecorder() async {
-        await voiceTranscriber.setup()
+        do {
+            try await voiceTranscriber.startOrResume()
+        } catch {
+            handleRecorderError(error)
+            return
+        }
     }
-    
+
     @MainActor
     func setupRecorderAndStart() async {
-        await voiceTranscriber.startOrResume()
+        await setupVoiceRecorder()
         guard transcriptionTask == nil else { return }
         transcriptionTask = Task { @MainActor in
             let transcription = self.voiceTranscriber.transcriptionStream()
@@ -304,6 +373,16 @@ class CueAIViewModel: Sendable {
         }
     }
     
+    private func handleRecorderError(_ error: Error) {
+        print("(ERROR) error starting recorder: ", error.localizedDescription)
+        if case CueRecorder.RecorderError.accessToMicrophoneDenied = error {
+            alert = .microphoneAccessDenied
+        } else {
+            alert = .audioEngineCouldNotStart
+        }
+        recorderState = .idle
+    }
+
     func pauseRecording() {
         voiceTranscriber.pause()
     }
@@ -314,8 +393,18 @@ class CueAIViewModel: Sendable {
         await voiceTranscriber.stop()
     }
     
+    // ViewModel + View Methods
     
-    // MARK: - Recorder -> Trasncriber
-    
-    
+    func handleChangeOfRecorderState() async {
+        switch recorderState {
+        case .idle:
+            break
+        case .resume:
+            await self.setupRecorderAndStart()
+        case .stop:
+            await self.stopRecorder()
+        case .pause:
+            self.pauseRecording()
+        }
+    }
 }

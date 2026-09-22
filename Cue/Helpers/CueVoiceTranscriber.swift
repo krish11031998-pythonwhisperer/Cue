@@ -16,15 +16,13 @@ class CueVoiceTranscriber {
     private var isVoiceRecorderSetup: Bool = false
     private var streamingTask: Task<Void, Never>?
     private(set) var audioWaveformManager: AudioWaveformManager = .init()
-    func setup() async {
-        do {
-            // Setup Audio Recording
-            try await recorder.setupRecorder()
-            // Setup Transcriber
-            await transcriber.setupTranscriberAndAnalyzer()
-        } catch {
-            print("(ERROR) error: ", error.localizedDescription)
-        }
+    
+    func setup() async throws {
+        // Setup Audio Recording
+        try await recorder.setupRecorder()
+        // Setup Transcriber
+        await transcriber.setupTranscriberAndAnalyzer()
+        
         streamingTask = Task {
             // Start Streaming Audio Buffer → Transcriber
             await startStreamingBufferToTranscriber()
@@ -51,10 +49,10 @@ class CueVoiceTranscriber {
     
     // MARK: - Setup Voice Recorder
     
-    func setupIfRequired() async {
+    func setupIfRequired() async throws {
         if !isVoiceRecorderSetup {
             isVoiceRecorderSetup = true
-            await setup()
+            try await setup()
         } else {
             streamingTask = Task {
                 // Start Streaming Audio Buffer → Transcriber
@@ -66,9 +64,9 @@ class CueVoiceTranscriber {
     
     // MARK: - Recorder
     
-    func startOrResume() async {
-        await setupIfRequired()
-        recorder.startOrResume()
+    func startOrResume() async throws {
+        try await setupIfRequired()
+        try recorder.startOrResume()
     }
     
     func pause() {
