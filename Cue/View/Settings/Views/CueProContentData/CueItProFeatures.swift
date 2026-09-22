@@ -59,10 +59,14 @@ enum CueItProFeatures: Int, CaseIterable, Identifiable {
     
     /// A caveat rendered under `message` wherever the feature is advertised. Only `ai` has one —
     /// it runs on the on-device model — so every other case is `nil` and renders nothing.
+    ///
+    /// The on-device wording is load-bearing: the paywall is one of the screens App Review reads
+    /// when checking guidelines 5.1.1(i)/5.1.2(i), and cue:ai is the feature they assumed was
+    /// backed by a third-party service.
     var requirement: String? {
         switch self {
         case .ai:
-            return "Only available on devices that support Apple Intelligence."
+            return "Runs on device with Apple Intelligence — nothing is sent to a third-party AI service. Available only on devices that support Apple Intelligence."
         case .focusSession, .alarms, .tags:
             return nil
         }

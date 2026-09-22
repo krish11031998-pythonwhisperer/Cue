@@ -240,12 +240,20 @@ struct CuePaywallView: View {
     
     private struct ProductGuidelines: View {
         var body: some View {
-            VStack(alignment: .center, spacing: 4) {
-                ForEach(CueProSubscriptionGuidelines.allCases, id: \.message) { guideline in
-                    Text(guideline.message)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+            VStack(alignment: .center, spacing: 8) {
+                Text("For the full length of each subscription period, cue:it Pro unlocks unlimited Focus Sessions with Pomodoro timers and app blocking, alarm-style reminders, cue:ai, and Tags.")
+                    .font(.caption2)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
+                VStack(alignment: .center, spacing: 4) {
+                    ForEach(CueProSubscriptionGuidelines.allCases, id: \.message) { guideline in
+                        Text(guideline.message)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
                 }
             }
         }

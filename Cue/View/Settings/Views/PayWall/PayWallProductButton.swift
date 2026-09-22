@@ -45,6 +45,19 @@ struct PayWallProductButton: View {
         return true
     }
     
+    /// How long one subscription period lasts, e.g. "1 month" or "1 year".
+    ///
+    /// Guideline 3.1.2(c) requires the length of the subscription to be stated in the purchase
+    /// flow itself. The product's display name from App Store Connect is not enough — this is
+    /// rendered under it on every plan, selected or not.
+    var subscriptionLengthLabel: String {
+        Self.durationLabel(value: model.subscriptionPeriod.value,
+                           unit: model.subscriptionPeriod.unit)
+    }
+    
+    /// The intro offer written out, e.g. "Includes 1-week free trial".
+    ///
+    /// `nil` for plans with no free trial, which renders nothing.
     var trialLabel: String? {
         guard let introductoryDiscount = model.introductoryDiscount,
               introductoryDiscount.paymentMode == .freeTrial else {
@@ -52,26 +65,58 @@ struct PayWallProductButton: View {
         }
 
         let period = introductoryDiscount.subscriptionPeriod
-        let unit: String
-
-        switch period.unit {
-        case .day:   unit = "day"
-        case .week:  unit = "week"
-        case .month: unit = "month"
-        case .year:  unit = "year"
+        return "Includes \(Self.durationLabel(value: period.value, unit: period.unit)) free trial"
+    }
+    
+    /// The badge that peeks over the selected card. Shorter than `trialLabel` because it sits in
+    /// a narrow pill.
+    var trialBadge: String? {
+        guard let introductoryDiscount = model.introductoryDiscount,
+              introductoryDiscount.paymentMode == .freeTrial else {
+            return nil
         }
 
-        return "\(period.value)-\(unit) free trial"
+        let period = introductoryDiscount.subscriptionPeriod
+        return "\(Self.durationLabel(value: period.value, unit: period.unit)) free trial"
+    }
+    
+    private static func durationLabel(value: Int, unit: SubscriptionPeriod.Unit) -> String {
+        let unitName: String
+        switch unit {
+        case .day:   unitName = "day"
+        case .week:  unitName = "week"
+        case .month: unitName = "month"
+        case .year:  unitName = "year"
+        }
+        
+        return "\(value) \(unitName)\(value == 1 ? "" : "s")"
+    }
+    
+    private var secondaryForeground: Color {
+        isSelected ? Color.proSky.foregroundTertiary : Color.secondaryText
     }
     
     
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
-            Text(model.productName)
-                .font(.body)
-                .fontWeight(isSelected ? .semibold : .medium)
-                .foregroundStyle(isSelected ? Color.proSky.foregroundSecondary : Color.text)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(model.productName)
+                    .font(.body)
+                    .fontWeight(isSelected ? .semibold : .medium)
+                    .foregroundStyle(isSelected ? Color.proSky.foregroundSecondary : Color.text)
+                
+                Text(subscriptionLengthLabel)
+                    .font(.caption2)
+                    .fontWeight(.medium)
+                    .foregroundStyle(secondaryForeground)
+                
+                if let trialLabel {
+                    Text(trialLabel)
+                        .font(.caption2)
+                        .foregroundStyle(secondaryForeground)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             
             VStack(alignment: .trailing, spacing: 4) {
                 Text(model.localizedPrice)
@@ -83,11 +128,12 @@ struct PayWallProductButton: View {
                     Text("\(localizedPricePerMonth) / mo")
                         .font(.caption2)
                         .fontWeight(isSelected ? .semibold : .regular)
-                        .foregroundStyle(isSelected ? Color.proSky.foregroundTertiary : Color.secondaryText)
+                        .foregroundStyle(secondaryForeground)
                 } else {
                     EmptyView()
                 }
             }
+            .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.init(top: 16, leading: 20, bottom: 16, trailing: 20))
         .containerShape(RoundedRectangle(cornerRadius: 18))
@@ -103,8 +149,8 @@ struct PayWallProductButton: View {
         }
         .animation(.default, value: isSelected)
         .background(alignment: .top, content: {
-            if isSelected, let trialLabel {
-                Text(trialLabel)
+            if isSelected, let trialBadge {
+                Text(trialBadge)
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.proSky.invertedForegroundPrimary)

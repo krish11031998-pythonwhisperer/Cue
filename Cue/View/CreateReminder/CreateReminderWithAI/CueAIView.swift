@@ -87,6 +87,9 @@ struct CueAIView: View {
                 CueAINotAvailable()
             }
         }
+        .safeAreaInset(edge: .top, alignment: .center, spacing: 0) {
+            CueAIPrivacyNote()
+        }
         .onPreferenceChange(CueTextFieldFocusPreferenceKey.self, perform: {
             textFieldIsInFocus = $0
         })
@@ -219,6 +222,37 @@ struct CueAIView: View {
     
     
     // MARK: - Empty Views
+    
+    /// The standing statement that cue:ai and voice capture never leave the device.
+    ///
+    /// Sits in the top safe area of every availability state, so it is on screen even when
+    /// Apple Intelligence is switched off and the screen shows `AvailableButNotEnabled`.
+    /// App Review flagged cue:it under guidelines 5.1.1(i)/5.1.2(i) on the assumption that a
+    /// third-party AI service receives user data — nothing in the UI said otherwise. This is a
+    /// disclosure, deliberately not a consent prompt: no data is shared, so there is nothing to
+    /// ask permission for.
+    fileprivate struct CueAIPrivacyNote: View {
+        
+        var body: some View {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemSymbol: .lockIphone)
+                    .font(.caption)
+                    .foregroundStyle(Color.proSky.baseColor)
+                
+                Text("cue:ai runs entirely on this device using Apple Intelligence. Your voice and what you type are never sent to us or to any third-party AI service.")
+                    .font(.caption2)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.init(top: 10, leading: 14, bottom: 10, trailing: 14))
+            .glassEffect(.regular, in: .roundedRect(cornerRadius: 16))
+            .padding(.horizontal, 20)
+            .padding(.bottom, 8)
+            .accessibilityElement(children: .combine)
+        }
+    }
     
     fileprivate struct AvailableButNotEnabled: View {
         
