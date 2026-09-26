@@ -17,6 +17,9 @@ struct ManageView: View {
     var body: some View {
         NavigationView {
             ZStack(alignment: .center) {
+                Color.cueItBackground
+                    .ignoresSafeArea()
+                
                 if viewModel.sections.isEmpty {
                     ProgressView()
                         .task { @MainActor [weak viewModel] in
@@ -32,28 +35,36 @@ struct ManageView: View {
             .navigationTitle("Manage")
             .toolbarTitleDisplayMode(.inlineLarge)
             .safeAreaInset(edge: .top, alignment: .center, spacing: 8) {
-                ScrollView(.horizontal) {
-                    LazyHStack(alignment: .center, spacing: 4) {
-                        ForEach(viewModel.tagChipModel) { tagChipModel in
-                            TagChipView(model: tagChipModel)
-                        }
-                    }
-                    .padding(.init(top: 12, leading: 16, bottom: 4, trailing: 16))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .local) }) { newValue in
-                        self.viewModel.tagChipFrame = newValue
+                TagChips(viewModel: viewModel)
+            }
+        }
+    }
+    
+    // MARK: TagChip
+    
+    private struct TagChips: View {
+        let viewModel: ManageViewModel
+        
+        var body: some View {
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .center, spacing: 4) {
+                    ForEach(viewModel.tagChipModel) { tagChipModel in
+                        TagChipView(model: tagChipModel)
                     }
                 }
-                .scrollIndicators(.hidden)
-                .scrollEdgeEffectStyle(.soft, for: .all)
+                .padding(.init(top: 12, leading: 16, bottom: 4, trailing: 16))
+                .fixedSize(horizontal: false, vertical: true)
+                .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .local) }) { newValue in
+                    self.viewModel.tagChipFrame = newValue
+                }
             }
+            .scrollIndicators(.hidden)
+            .scrollEdgeEffectStyle(.soft, for: .all)
         }
     }
 }
 
-
 #warning("Move this to VanorUI")
-
 #Preview {
     let reminder = ReminderModel.exampleFour()
     let routineDays = Array(repeating: 0, count: 30).enumerated().map { element in
