@@ -19,6 +19,7 @@ class MainTabViewModel {
         case organize
         case focus
         case create
+        case manage
     }
     
     enum Presentation: Int, Hashable, Identifiable, CuePresentation {

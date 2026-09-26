@@ -24,7 +24,7 @@ public class CalendarManager {
     public static let shared = CalendarManager()
     
     
-    // MARK: - Calendary Days in a Year
+    // MARK: - Calendary Days One Month From Today
     
     @concurrent
     public func setupCalendarForOneMonthFromToday() async -> [CalendarDay] {
@@ -45,6 +45,29 @@ public class CalendarManager {
         
         return calendarDays
     }
+    
+    
+    @concurrent
+    public func setupCalendarForExactOneMonthFromToday() async -> [CalendarDay] {
+        let start = Calendar.current.date(byAdding: .day, value: -29, to: Date.now)!
+        let end = Date.now
+        
+        var currentDate = start
+        var dates: [Date] = []
+        while currentDate <= end {
+            dates.append(currentDate)
+            currentDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!.startOfDay
+        }
+        
+        guard !Task.isCancelled else { return []}
+        
+        let calendarDays = await self.fetchCalendarDays(for: dates)
+        
+        return calendarDays
+    }
+    
+    
+    // MARK: - Calendary Days One Year From Now
     
     public func setupCalendarForOneYearFromNow() async -> [CalendarDay] {
         let startOfYear = Date.now.startOfYear
@@ -100,6 +123,10 @@ public class CalendarManager {
         
         return calendarDay
     }
+    
+    
+    
+    // MARK: - Protected Methods
     
     @concurrent
     nonisolated

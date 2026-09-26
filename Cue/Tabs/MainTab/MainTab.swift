@@ -58,6 +58,14 @@ struct MainTab: View {
                     .tint(Color.proSky.baseColor)
             }
             
+            Tab(value: .manage) {
+                ManageView()
+            } label: {
+                Image(systemSymbol: .clipboard)
+                    .font(.body)
+                    .tint(Color.proSky.baseColor)
+            }
+            
 //            if subscriptionManager.userIsPro {
 //                Tab(value: .organize) {
 //                    OrangizeTabView()
