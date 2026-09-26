@@ -11,81 +11,6 @@ import UIKit
 import SwiftUI
 import VanorUI
 
-//@resultBuilder
-//struct CollectionSectionsBuilder {
-//    
-//    static func buildBlock(_ components: CueCollectionSection...) -> [CueCollectionSection] {
-//        components
-//    }
-//    
-//    static func buildEither(first component: CueCollectionSection) -> CueCollectionSection {
-//        component
-//    }
-//    
-//    static func buildEither(second component: CueCollectionSection) -> CueCollectionSection {
-//        component
-//    }
-//}
-//
-//
-//@resultBuilder
-//struct CollectionItemForEach {
-//    
-//    ForEach
-//}
-//
-//
-//@resultBuilder
-//struct CollectionSectionBuilder {
-//    
-//    static func buildBlock(_ components: DiffableCollectionCellProvider...) -> [DiffableCollectionCellProvider] {
-//        components
-//    }
-//    
-//    static func buildEither(first component: DiffableCollectionCellProvider) -> DiffableCollectionCellProvider {
-//        component
-//    }
-//    
-//    static func buildEither(second component: DiffableCollectionCellProvider) -> DiffableCollectionCellProvider {
-//        component
-//    }
-//    
-//    
-//}
-//
-//
-//
-//struct CueCollectionSection {
-//    let id: Int
-//    @CollectionSectionBuilder
-//    var cells: [DiffableCollectionCellProvider]
-//    var sectionLayout: NSCollectionLayoutSection
-//    var header: (any CollectionSupplementaryViewProvider)?
-//    var footer: (any CollectionSupplementaryViewProvider)?
-//    var decorationItem: (any CollectionDecorationViewProvider)?
-//    
-//    init(id: Int, sectionLayout: NSCollectionLayoutSection, header: (any CollectionSupplementaryViewProvider)? = nil, footer: (any CollectionSupplementaryViewProvider)? = nil, decorationItem: (any CollectionDecorationViewProvider)? = nil, @CollectionSectionBuilder cells: () -> [DiffableCollectionCellProvider]) {
-//        self.id = id
-//        self.cells = cells()
-//        self.sectionLayout = sectionLayout
-//        self.header = header
-//        self.footer = footer
-//        self.decorationItem = decorationItem
-//    }
-//    
-//    var diffableCollectionSection: DiffableCollectionSection {
-//        .init(id, cells: cells, header: header, footer: footer, decorationItem: decorationItem, sectionLayout: sectionLayout)
-//    }
-//}
-//
-//struct CollectionForEach {
-//    
-//    var cells: [DiffableCollectionCellProvider]
-//    
-//    init(data: [Identifiable])
-//    
-//}
-//
 struct CollectionView: UIViewRepresentable {
     
     private let section: [DiffableCollectionSection]
@@ -106,5 +31,58 @@ struct CollectionView: UIViewRepresentable {
     func updateUIView(_ uiView: DiffableCollectionView, context: Context) {
         uiView.reloadWithDynamicSection(sections: section, completion: completion)
     }
+}
+
+struct TabCollectionViewController: UIViewControllerRepresentable {
     
+    private let section: [DiffableCollectionSection]
+    private let additionalContentInsets: UIEdgeInsets
+    private let completion: Callback?
+    
+    init(section: [DiffableCollectionSection], additionalContentInsets: UIEdgeInsets, completion: Callback?) {
+        self.section = section
+        self.additionalContentInsets = additionalContentInsets
+        self.completion = completion
+    }
+    
+    func makeUIViewController(context: Context) -> CollectionViewController {
+        CollectionViewController()
+    }
+    
+    func updateUIViewController(_ uiViewController: CollectionViewController, context: Context) {
+        uiViewController.reload(with: section, completion: completion)
+        uiViewController.applyAdditionalContentInsets(additionalContentInsets)
+    }
+}
+
+class CollectionViewController: UIViewController {
+    
+    private lazy var collectionView: DiffableCollectionView = .init()
+    private var sections: [DiffableCollectionSection] = []
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.addSubview(collectionView)
+        collectionView
+            .fillSuperview()
+        collectionView.backgroundColor = .clear
+        collectionView.topEdgeEffect.style = .soft
+        setupNavigationController()
+    }
+    
+    private func setupNavigationController() {
+        guard let navigationController else { return }
+        navigationController.navigationBar.prefersLargeTitles = true
+        navigationController.navigationBar.largeTitleTextAttributes = [.font: UIFont.bitcountMedium(style: .largeTitle)]
+    }
+    
+    func reload(with sections: [DiffableCollectionSection], completion: Callback?) {
+        guard self.sections != sections else { return }
+        self.sections = sections
+        self.collectionView.reloadWithDynamicSection(sections: sections, completion: completion)
+    }
+    
+    func applyAdditionalContentInsets(_ contentInsets: UIEdgeInsets) {
+        self.additionalSafeAreaInsets = contentInsets
+    }
 }

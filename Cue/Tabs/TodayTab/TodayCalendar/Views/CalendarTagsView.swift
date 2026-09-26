@@ -35,7 +35,7 @@ struct CalendarTagsView: View {
     
     @ViewBuilder
     private func chipBuilder(isSelected: Bool, tag: TagModel) -> some View {
-        let viewType = TagChipView.ViewType.button(isSelected) {
+        let buttonConfig = TagChipView.ButtonConfig(isSelected: isSelected, routineCount: 0) {
             if selectedTags.contains(tag) {
                 self.selectedTags.remove(tag)
             } else {
@@ -43,6 +43,8 @@ struct CalendarTagsView: View {
             }
             tagSelection(tag)
         }
+        
+        let viewType = TagChipView.ViewType.button(buttonConfig)
         
         TagChipView(model: .init(name: tag.name, color: tag.color, viewType: viewType))
     }

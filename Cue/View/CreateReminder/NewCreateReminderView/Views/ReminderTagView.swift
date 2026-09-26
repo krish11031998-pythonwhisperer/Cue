@@ -57,7 +57,7 @@ struct ReminderTagView: View {
 #Preview {
     ZStack(alignment: .center) {
         Color.cueItBackground
-        ReminderTagView(tags: [.init(id: NSManagedObject().objectID, name: "Fitness", color: Color.aqua), .init(id: NSManagedObject().objectID, name: "Mindfullness", color: Color.perwinkle)]) { }
+        ReminderTagView(tags: [.init(id: NSManagedObject().objectID, name: "Fitness", color: Color.aqua, reminderIDs: []), .init(id: NSManagedObject().objectID, name: "Mindfullness", color: Color.perwinkle, reminderIDs: [])]) { }
             .padding(.horizontal, 20)
     }
 }

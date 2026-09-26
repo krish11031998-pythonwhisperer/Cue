@@ -117,8 +117,6 @@ struct TodayTabView: View {
         PageView<CalendarDayView>(models: viewModel.calendarDay.map { .init(store: store, calendarDay: $0) },
                                   current: current)
         .environment(\.screenPadding, .init(topPadding: topPadding, bottomPadding: 83))
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .indexViewStyle(.page(backgroundDisplayMode: .never))
         .ignoresSafeArea(edges: .vertical)
         .safeAreaBar(edge: .top, alignment: .center, spacing: 0, content: {
             CalendarDateCarousel(dateElements: viewModel.calendarDay, selectedDate: viewModel.todayInCalendar)

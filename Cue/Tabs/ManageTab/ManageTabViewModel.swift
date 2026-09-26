@@ -23,6 +23,23 @@ class ManageViewModel {
     }
     
     var sections: [DiffableCollectionSection] = []
+    var tagChipModel: [TagChipView.Model] = []
+    var tagChipFrame: CGRect = .init()
+    @ObservationIgnored
+    private var routinesWithConfig: [(ReminderModel, RoutineCardConfig)] = []
+    @ObservationIgnored
+    var selectedTags: Set<TagModel> = .init() {
+        didSet {
+            self.setupTagChipViewModel()
+            self.filterBasedOnTags()
+        }
+    }
+    @ObservationIgnored
+    var tags: [TagModel] = [] {
+        didSet {
+            self.setupTagChipViewModel()
+        }
+    }
     @ObservationIgnored
     private var calendarFetchTask: Task<Void, Never>?
     @ObservationIgnored
@@ -53,6 +70,19 @@ class ManageViewModel {
                                footer: nil,
                                decorationItem: nil,
                                sectionLayout: layout)]
+    }
+    
+    private func filterBasedOnTags() {
+        guard !selectedTags.isEmpty else {
+            self.setupSections(routinesWithConfig)
+            return
+        }
+        
+        let filteredRoutines = routinesWithConfig.filter { (routine, __) in
+            routine.tags.reduce(false, { $0 || selectedTags.contains($1) })
+        }
+        
+        self.setupSections(filteredRoutines)
     }
     
     
@@ -95,7 +125,7 @@ class ManageViewModel {
                 guard !Task.isCancelled else { return [] }
                 
                 for await (routine, routineDays) in group {
-                    let attributedTitle = AttributedString(routine.title, attributes: .init([.font: Font.bitcountRegular(style: .body)]))
+                    let attributedTitle = AttributedString(routine.title, attributes: .init([.font: Font.headline, .foregroundColor: LCHColor(color: routine.color).foregroundSecondary]))
                     let icon = Icon(routine.icon)!
                     routineCardModels.append((routine, .init(icon: icon, title: attributedTitle, days: routineDays, color: routine.color)))
                 }
@@ -106,9 +136,26 @@ class ManageViewModel {
             guard !Task.isCancelled else { return }
             
             await MainActor.run { [weak self] in
+                self?.routinesWithConfig = routineTimelineCardModels
                 self?.setupSections(routineTimelineCardModels)
             }
         }
+    }
+    
+    // MARK: - Tag Chip View Model
+    
+    private func setupTagChipViewModel() {
+        let tagChipModels: [TagChipView.Model] = tags.map { tag in
+            let buttonConfig = TagChipView.ButtonConfig(isSelected: selectedTags.contains(tag), routineCount: tag.reminderIDs.count) {
+                if self.selectedTags.contains(tag) {
+                    self.selectedTags.remove(tag)
+                } else {
+                    self.selectedTags.insert(tag)
+                }
+            }
+            return .init(name: tag.name, color: tag.color, viewType: .button(buttonConfig))
+        }
+        self.tagChipModel = tagChipModels
     }
     
     // MARK: - Observations
@@ -120,6 +167,10 @@ class ManageViewModel {
                 let _ = group.addTaskUnlessCancelled {
                     await self?.observeRoutines(store)
                 }
+               
+               let _ = group.addTaskUnlessCancelled {
+                   await self?.observeTags(store)
+               }
             }
         }
     }
@@ -130,6 +181,14 @@ class ManageViewModel {
         
         for await routines in merge(routinesObservations, routineLogStream) {
             self.fetchLogs(routines: routines)
+        }
+    }
+    
+    private func observeTags(_ store: Store) async {
+        let tagsStream = Observations { store.tagModels }
+        
+        for await tags in tagsStream {
+            self.tags = tags
         }
     }
 }

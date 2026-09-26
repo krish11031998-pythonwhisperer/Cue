@@ -87,7 +87,7 @@ import AsyncAlgorithms
                 if let context = self?.viewContext {
                     let tags = CueTag.fetchAll(context: context)
                     self?.tags = tags
-                    let tagModels = tags.map { TagModel(id: $0.objectID, name: $0.name, color: $0.color) }
+                    let tagModels = [TagModel].setup(from: tags)
                     self?.tagModels = tagModels
                 }
             }

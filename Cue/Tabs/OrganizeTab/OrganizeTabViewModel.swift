@@ -102,13 +102,16 @@ class OrganizeTabViewModel {
     }
     
     var tagChipView: [TagChipView.Model] {
-        let allCell = TagChipView.Model(name: "All", color: Color.proOrange.baseColor, viewType: .button(mode == .all, {
+        let allButtonConfig = TagChipView.ButtonConfig(isSelected: mode == .all, routineCount: 0) {
             self.selectedTag.removeAll()
             self.mode = .all
-        }))
+        }
+        
+        let allCell = TagChipView.Model(name: "All", color: Color.proOrange.baseColor, viewType: .button(allButtonConfig))
+        
         let tagCells: [TagChipView.Model] = self.tags.map { tag in
             let selected = self.selectedTag.contains(tag)
-            let viewType = TagChipView.ViewType.button(selected, { [weak self] in
+            let buttonConfig = TagChipView.ButtonConfig(isSelected: selected, routineCount: 0) { [weak self] in
                 guard let self else { return }
                 if self.selectedTag.contains(tag) {
                     self.selectedTag.remove(tag)
@@ -116,7 +119,8 @@ class OrganizeTabViewModel {
                     self.selectedTag.insert(tag)
                 }
                 self.mode = .tag(self.selectedTag.map(\.name))
-            })
+            }
+            let viewType = TagChipView.ViewType.button(buttonConfig)
             return .init(name: tag.name, color: tag.color, viewType: viewType)
         }
         

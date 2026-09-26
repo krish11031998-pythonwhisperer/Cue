@@ -23,16 +23,36 @@ struct ManageView: View {
                             viewModel?.store = self.store
                         }
                 } else {
-                    CollectionView(section: viewModel.sections, completion: nil)
+                    TabCollectionViewController(section: viewModel.sections,
+                                                additionalContentInsets: .init(top: viewModel.tagChipFrame.height, left: 0, bottom: 0, right: 0),
+                                                completion: nil)
+                        .ignoresSafeArea(edges: .all)
                 }
             }
-            .ignoresSafeArea(edges: .all)
             .navigationTitle("Manage")
-            .navigationBarTitleDisplayMode(.large)
+            .toolbarTitleDisplayMode(.inlineLarge)
+            .safeAreaInset(edge: .top, alignment: .center, spacing: 8) {
+                ScrollView(.horizontal) {
+                    LazyHStack(alignment: .center, spacing: 4) {
+                        ForEach(viewModel.tagChipModel) { tagChipModel in
+                            TagChipView(model: tagChipModel)
+                        }
+                    }
+                    .padding(.init(top: 12, leading: 16, bottom: 4, trailing: 16))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .local) }) { newValue in
+                        self.viewModel.tagChipFrame = newValue
+                    }
+                }
+                .scrollIndicators(.hidden)
+                .scrollEdgeEffectStyle(.soft, for: .all)
+            }
         }
     }
 }
 
+
+#warning("Move this to VanorUI")
 
 #Preview {
     let reminder = ReminderModel.exampleFour()
