@@ -13,6 +13,8 @@ import VanorUI
 
 public struct RoutineStepsView: ConfigurableView {
     
+    @Environment(\.theme) var theme
+    
     public struct Step: Hashable, Identifiable {
         let icon: Icon
         let title: String
@@ -24,17 +26,12 @@ public struct RoutineStepsView: ConfigurableView {
     
     public struct Config: Hashable {
         let steps: [Step]
-        let color: Color
     }
     
     let config: Config
     
     public init(model: Config) {
         self.config = model
-    }
-    
-    var theme: LCHColor {
-        .init(color: config.color)
     }
     
     struct DashLine: Shape {

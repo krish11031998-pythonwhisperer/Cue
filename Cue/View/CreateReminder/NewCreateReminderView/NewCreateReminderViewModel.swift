@@ -17,14 +17,14 @@ class NewCreateReminderViewModel: CreateReminderManager {
     
     enum Mode: Equatable {
         case create
-        case edit(ReminderModel)
+        case edit(ReminderModel, ((ReminderModel) -> Void)? = nil)
         case editFromAI(ReminderModel, (ReminderModel) -> Void)
         
         static func ==(lhs: Self, rhs: Self) -> Bool {
             switch (lhs, rhs) {
             case (.create, .create):
                 return true
-            case (.edit(let lhsReminder), .edit(let rhsReminder)):
+            case (.edit(let lhsReminder, _), .edit(let rhsReminder, _)):
                 return lhsReminder == rhsReminder
             case (.editFromAI(let lhsReminder, _), editFromAI(let rhsReminder, _)):
                 return lhsReminder == rhsReminder
@@ -130,7 +130,7 @@ class NewCreateReminderViewModel: CreateReminderManager {
         case .create:
             let colorModel = ColorModel(color: .sky, colorName: "sky")
             self.init(store: store, mode: mode, edittingMode: false, reminderTitle: "", snoozeDuration: 15 * 60, reminderNotification: .notification, date: .now, timeDate: .now, tasks: [], tags: [], scheduleBuilder: .init(.now), icon:  .emoji(Emoji.all.randomElement()!), colorModel: colorModel)
-        case .edit(let reminderModel), .editFromAI(let reminderModel, _):
+        case .edit(let reminderModel, _), .editFromAI(let reminderModel, _):
             let timeDate: Date
             let scheduleBuilder: Reminder.ScheduleBuilder
             if let schedule = reminderModel.schedule {
@@ -211,10 +211,15 @@ class NewCreateReminderViewModel: CreateReminderManager {
         default:
             break
         }
-        if case .editFromAI(_, let action) = mode {
-            action(reminderFromViewModel())
-        } else {
+        
+        switch mode {
+        case .create:
             createReminder()
+        case .edit(_, let action):
+            createReminder()
+            action?(reminderFromViewModel())
+        case .editFromAI(_, let action):
+            action(reminderFromViewModel())
         }
     }
     
@@ -246,9 +251,10 @@ class NewCreateReminderViewModel: CreateReminderManager {
     }
     
     func deleteTask(id: UUID) {
-        guard let index = tasks.firstIndex(where: { $0.id == id }),
-              let objectID = tasks[index].objectID else { return }
-        store.deleteReminderTask(reminderTaskID: objectID, save: false)
+        guard let index = tasks.firstIndex(where: { $0.id == id }) else { return }
+        if let objectID = tasks[index].objectID {
+            store.deleteReminderTask(reminderTaskID: objectID, save: false)            
+        }
         self.tasks.remove(at: index)
         
     }

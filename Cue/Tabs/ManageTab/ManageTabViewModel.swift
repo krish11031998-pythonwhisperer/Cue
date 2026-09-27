@@ -120,7 +120,7 @@ class ManageViewModel {
                         var routineDays: [RoutineCardDayConfig] = []
                         calendarDays.forEach { day in
                             guard !Task.isCancelled else { return }
-                            if day.loggedReminders.contains(where: { $0.reminder == routine }) {
+                            if day.loggedReminders.contains(where: { $0.reminder.objectId == routine.objectId }) {
                                 routineDays.append(.init(date: day.date, isLogged: true))
                             } else {
                                 routineDays.append(.init(date: day.date, isLogged: false))

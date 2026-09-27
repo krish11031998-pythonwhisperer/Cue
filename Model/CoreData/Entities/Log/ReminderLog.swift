@@ -20,8 +20,23 @@ public final class ReminderLog: CueLog, CoreDataEntity {
         context.saveContext()
         return reminderLog
     }
-    
-    
+
+
+    // MARK: - Fetch
+
+    public static func fetchLogs(for reminderID: NSManagedObjectID, context: NSManagedObjectContext) -> [ReminderLog] {
+        let predicate = NSPredicate(format: "reminder == %@", reminderID)
+        let sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        return Self.fetch(context: context, predicate: predicate, sortDescriptors: sortDescriptors) ?? []
+    }
+
+    public static func fetchLogs(for reminderID: NSManagedObjectID, startDate: Date, endDate: Date, context: NSManagedObjectContext) -> [ReminderLog] {
+        let predicate = NSPredicate(format: "reminder == %@ AND date >= %@ AND date < %@", reminderID, startDate as NSDate, endDate as NSDate)
+        let sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        return Self.fetch(context: context, predicate: predicate, sortDescriptors: sortDescriptors) ?? []
+    }
+
+
     // MARK: - Delete
     
     public func delete(context: NSManagedObjectContext) {

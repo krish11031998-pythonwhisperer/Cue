@@ -120,7 +120,7 @@ public struct CalendaryDetailSheetView: View {
     
     var notLoggedReminder: [ReminderModel] {
         return calendarDay.reminders.filter { reminder in
-           !calendarDay.loggedReminders.contains { $0.reminder == reminder }
+           !calendarDay.loggedReminders.contains { $0.reminder.objectId == reminder.objectId }
         }
     }
 

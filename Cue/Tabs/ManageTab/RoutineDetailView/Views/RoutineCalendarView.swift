@@ -18,6 +18,7 @@ public struct RoutineCalendarView: View {
         let date: Date
         let wasScheduled: Bool
         
+        nonisolated
         public init(isLogged: Bool, date: Date, wasScheduled: Bool) {
             self.isLogged = isLogged
             self.date = date
@@ -54,10 +55,14 @@ public struct RoutineCalendarView: View {
     }
     
     private var firstWeekdayOfMonth: Int {
-        let currentYear = Date.now.year
         let firstDayOfMonth = Calendar.current.date(bySetting: .month, value: config.month, of: Date.now)?.startOfMonth ?? Date.now.startOfMonth
         let firstWeekdayOfMonth = firstDayOfMonth.weekDayValue
         return firstWeekdayOfMonth
+    }
+    
+    private var currentMonth: String {
+        let currentMonth = Date.now.month
+        return Calendar.current.monthSymbols[currentMonth - 1]
     }
     
     public var body: some View {
@@ -86,7 +91,7 @@ public struct RoutineCalendarView: View {
             .padding(.top, 4)
             .environment(\.theme, config.color.themedVariants)
         } label: {
-            Text("September".uppercased())
+            Text(currentMonth.uppercased())
                 .font(.bitcountMedium(style: .footnote))
                 .foregroundStyle(.secondary)
         }

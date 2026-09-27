@@ -58,75 +58,9 @@ internal struct RoutineDetailGroupBox: GroupBoxStyle {
 }
 
 
-@Observable
-@MainActor
-class RoutineDetailViewModel {
-    
-    var routine: ReminderModel
-    
-    init(_ routine: ReminderModel) {
-        self.routine = routine
-    }
-    
-    @ObservationIgnored
-    var store: Store?
-    
-    
-    private func deleteRoutine() {
-        self.store?.deleteReminder(reminderID: routine.objectId)
-    }
-    
-    
-    // MARK: - View Computed Helpers
-    
-    var steps: [RoutineStepsView.Step] {
-        return routine.tasks.map { task in
-            return .init(icon: .init(task.icon) ?? .unavailableIcon , title: task.title)
-        }
-    }
-    
-    var daysInCalendar: [RoutineCalendarView.Day] {
-        let startDate = Date.now.startOfMonth
-        let endDate = Date.now.endOfMonth
-        var days: [RoutineCalendarView.Day] = []
-        var currentDate = startDate
-        
-        while currentDate <= endDate {
-            let day = RoutineCalendarView.Day(isLogged: .random(), date: currentDate, wasScheduled: .random())
-            days.append(day)
-            if let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: currentDate) {
-                currentDate = nextDay
-            } else {
-                break
-            }
-        }
-        
-        return days
-    }
-    
-    var headerConfig: RoutineHeaderView.Config {
-        .init(name: routine.title,
-              icon: .init(routine.icon) ?? .unavailableIcon,
-              color: routine.color,
-              time: routine.date,
-              nudge: routine.notificationType,
-              scheduleString: routine.schedule?.timeScheduleString ?? "",
-              tags: routine.tags)
-    }
-    
-    var focusSessionConfig: RoutineDetailFocusSessionCard.Config? {
-        guard let focusSession = routine.focusSession else { return nil }
-        return .init(timeInterval: focusSession.timerDuration,
-                     breakDuration: focusSession.breakDuration,
-                     appBlockSelection: focusSession.blockedApps ?? .init(),
-                     focusSessionType: focusSession.sessionType == .classic ? .classic : .pomodoro(currentIndex: 0, total: focusSession.sessionCount ?? 0),
-                     alarm: focusSession.alarm)
-    }
-}
-
-
 struct RoutineDetailView: View {
 
+    @Environment(Store.self) var store
     @State private var viewModel: RoutineDetailViewModel
     init(routine: ReminderModel) {
         self._viewModel = .init(initialValue: .init(routine))
@@ -136,16 +70,42 @@ struct RoutineDetailView: View {
         ScrollView(.vertical) {
             VStack(alignment: .center, spacing: 24) {
                 RoutineHeaderView(model: viewModel.headerConfig)
-                RoutineStepsView(model: .init(steps: viewModel.steps, color: viewModel.routine.color))
+                if viewModel.steps.isEmpty {
+                    Button {
+                        self.viewModel.presentation = .editRoutine(viewModel.routine)
+                    } label: {
+                        RoutineEmptyStepsView()
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    RoutineStepsView(model: .init(steps: viewModel.steps))
+                }
+                
                 if let focusSessionConfig = viewModel.focusSessionConfig {
                     RoutineDetailFocusSessionCard(config: focusSessionConfig)
                 } else {
-                    RoutineDetailCreateFocusCard()
+                    Button {
+                        self.viewModel.presentation = .createFocusSession(viewModel.routine)
+                    } label: {
+                        RoutineDetailCreateFocusCard()
+                    }
                 }
                 RoutineCalendarView(model: .init(month: Date.now.month, schedule: nil, calendarDay: viewModel.daysInCalendar, color: viewModel.routine.color))
             }
             .padding(.horizontal, 16)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+        .sheet(item: $viewModel.presentation, content: { presentation in
+            switch presentation {
+            case .editRoutine(let routine):
+                presentEditRoutine(routine)
+            case .createFocusSession(let routine):
+                presentCreateFocusSession(routine)
+            }
+        })
+        .task {
+            viewModel.store = store
+            await viewModel.fetchRoutineLogs()
         }
         .environment(\.theme, .init(color: viewModel.routine.color))
         .background(alignment: .center) {
@@ -153,16 +113,38 @@ struct RoutineDetailView: View {
                 .ignoresSafeArea()
         }
     }
+    
+    @ViewBuilder
+    private func presentEditRoutine(_ routine: ReminderModel) -> some View {
+        let mode = NewCreateReminderView.Mode.edit(routine) { @MainActor newRoutine in
+            self.viewModel.routine = newRoutine
+        }
+        
+        NewCreateReminderView(mode: mode, store: store)
+    }
+    
+    @ViewBuilder
+    private func presentCreateFocusSession(_ routine: ReminderModel) -> some View {
+        let mode = CreateFocusSessionSheet.Mode.createFromRoutine(routine.title) { @MainActor focusSessionModel in
+            guard let focusSessionModel else { return }
+            self.viewModel.updateFocusSession(with: focusSessionModel)
+        }
+        
+        CreateFocusSessionSheet(mode: mode)
+    }
 }
 
 #Preview("RoutineDetail (without FocusSession)") {
     RoutineDetailView(routine: .exampleFive())
+        .environment(Store())
 }
 
 #Preview("RoutineDetail (with FocusSession)") {
     RoutineDetailView(routine: .exampleSix())
+        .environment(Store())
 }
 
 #Preview("RoutineDetail (with FocusSession)") {
     RoutineDetailView(routine: .exampleSeven())
+        .environment(Store())
 }

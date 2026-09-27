@@ -67,6 +67,35 @@ public class CalendarManager {
     }
     
     
+    @concurrent
+    public func setupCalendarForCurrentMonth(for reminder: ReminderModel) async -> [CalendarDay] {
+        guard let reminderID = reminder.objectId else { return [] }
+
+        let startDate = Date.now.startOfMonth
+        let endDate = Date.now.endOfMonth.endOfDay
+        let backgroundContext = CoreDataManager.shared.retrieveBackgroundContext()
+
+        let logDates: [Date] = await backgroundContext.perform {
+            let reminderLogs = ReminderLog.fetchLogs(for: reminderID, startDate: startDate, endDate: endDate, context: backgroundContext)
+            return reminderLogs.map { $0.date }
+        }
+
+        guard !Task.isCancelled else { return [] }
+
+        var calendarDays: [CalendarDay] = []
+        var currentDate = startDate
+        while currentDate < endDate {
+            let loggedReminders: [CalendarDay.LoggedReminder] = logDates
+                .filter { Calendar.current.isDate($0, inSameDayAs: currentDate) }
+                .map { .init(date: $0, reminder: reminder) }
+            calendarDays.append(.init(date: currentDate, reminders: [reminder], loggedReminders: loggedReminders, loggedReminderTasks: []))
+            currentDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!.startOfDay
+        }
+
+        return calendarDays
+    }
+    
+    
     // MARK: - Calendary Days One Year From Now
     
     public func setupCalendarForOneYearFromNow() async -> [CalendarDay] {

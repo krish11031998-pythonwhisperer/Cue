@@ -196,7 +196,7 @@ class CalendarDayViewModel {
             icon = .symbol(.circle)
         }
         
-        let isLogged = calendarDay.loggedReminders.contains(where: { $0.reminder == reminder })
+        let isLogged = calendarDay.loggedReminders.contains(where: { $0.reminder.objectId == reminder.objectId })
         
         let model: ReminderView.Model = .init(title: reminder.title,
                                               icon: icon,
