@@ -15,16 +15,22 @@ import AsyncAlgorithms
 @Observable
 class ManageViewModel {
     
-    fileprivate typealias RoutineCardConfig = RoutineTimelineCard.Config
+    typealias RoutineCardConfig = RoutineTimelineCard.Config
     fileprivate typealias RoutineCardDayConfig = RoutineTimelineCard.RoutineDay
     
     fileprivate enum Sections: Int {
         case routineGrid = 0
     }
     
+    enum Navigation: Hashable {
+        case routineDetail(ReminderModel, RoutineCardConfig)
+    }
+    
     var sections: [DiffableCollectionSection] = []
     var tagChipModel: [TagChipView.Model] = []
     var tagChipFrame: CGRect = .init()
+    var namespaceID: Namespace.ID = Namespace.init().wrappedValue
+    var path: [Navigation] = []
     @ObservationIgnored
     private var routinesWithConfig: [(ReminderModel, RoutineCardConfig)] = []
     @ObservationIgnored
@@ -53,13 +59,15 @@ class ManageViewModel {
     }
     
     private func setupSections(_ routineTimelineCards: [(ReminderModel, RoutineCardConfig)]) {
-        let action: (ReminderModel) -> Callback = { reminder in
+        let action: (ReminderModel, RoutineCardConfig) -> Callback = { [weak self] (reminder, config) in
             // Do something
-            return { }
+            return {
+                self?.path.append(.routineDetail(reminder, config))
+            }
         }
         
         let cells: [DiffableCollectionCellProvider] = routineTimelineCards.sorted(by: { $0.0.title < $1.0.title }).map { (reminderModel, routineCardConfig) in
-            return DiffableCollectionItem<RoutineTimelineCard>(.init(config: routineCardConfig, action: action(reminderModel)))
+            return DiffableCollectionItem<RoutineTimelineCard>(.init(config: routineCardConfig, namespaceID: namespaceID, action: action(reminderModel, routineCardConfig)))
         }
         
         let layout = NSCollectionLayoutSection.gridLayout(itemSize: .init(widthDimension: .fractionalWidth(0.5), heightDimension: .estimated(54)), groupSpacing: .fixed(16), interGroupSpacing: 16)

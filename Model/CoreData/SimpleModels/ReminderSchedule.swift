@@ -47,6 +47,24 @@ public struct ReminderSchedule: Hashable, Comparable, Sendable {
     public static func < (lhs: ReminderSchedule, rhs: ReminderSchedule) -> Bool {
         return lhs.timeScheduled < rhs.timeScheduled
     }
+    
+    public var timeScheduleString: String {
+        guard (intervalWeeks == nil && weekdays == nil) || calendarDates == nil else { return "No Repeat"}
+        if let datesInMonths = calendarDates {
+            let dates = datesInMonths.sorted().reduce("", { $0.isEmpty ? "\($1)." : "\($0), \($1)."})
+            return "\(dates) every month"
+        } else if let weekdays = weekdays, !weekdays.isEmpty {
+            // `weekdays` holds Calendar weekday components (1 = Sunday), but older reminders may
+            // have been persisted with out-of-range values, so index defensively.
+            let symbols = Calendar.current.veryShortStandaloneWeekdaySymbols
+            let weekdaysString = weekdays.sorted()
+                .compactMap { symbols.indices.contains($0 - 1) ? symbols[$0 - 1] : nil }
+                .joined(separator: ", ")
+            return "\(weekdaysString) every \(intervalWeeks == 1 ? "week" : "\(intervalWeeks!) weeks")"
+        } else {
+            return "No Repeat"
+        }
+    }
 }
 
 

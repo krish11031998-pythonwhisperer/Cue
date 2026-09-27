@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreData
+import SwiftUI
 @preconcurrency import FamilyControls
 
 public struct ReminderModel: Hashable, Sendable {
@@ -75,8 +76,60 @@ public struct ReminderModel: Hashable, Sendable {
     }
 
     public static func exampleFour() -> ReminderModel {
-        let schedule = ReminderSchedule(hour: 10, minute: 0, intervalWeeks: 1, weekdays: nil, calendarDates: nil)
+        let schedule = ReminderSchedule(hour: 10, minute: 0, intervalWeeks: 1, weekdays: [1, 2, 4, 6], calendarDates: nil)
         return .init(notificationType: .notification, title: "Daily Check-in", icon: .init(symbol: nil, emoji: "✅"), date: .now, snoozeDuration: 0, tasks: [], tags: [], schedule: schedule, colorName: "sky", focusSession: nil)
+    }
+
+    public static func exampleFive() -> ReminderModel {
+        let tasks: [ReminderTaskModel] = [
+            .init(title: "Pack gym bag", icon: .init(symbol: nil, emoji: "🎒")),
+            .init(title: "Fill water bottle", icon: .init(symbol: nil, emoji: "💧")),
+            .init(title: "Warm up", icon: .init(symbol: nil, emoji: "🤸")),
+            .init(title: "Strength training", icon: .init(symbol: nil, emoji: "🏋️")),
+            .init(title: "Stretch & cool down", icon: .init(symbol: nil, emoji: "🧘"))
+        ]
+        let tags: [TagModel] = [
+            .init(id: NSManagedObjectID(), name: "Fitness", color: Color.green, reminderIDs: []),
+            .init(id: NSManagedObjectID(), name: "Health", color: Color.red, reminderIDs: []),
+            .init(id: NSManagedObjectID(), name: "Morning", color: Color.orange, reminderIDs: [])
+        ]
+        let schedule = ReminderSchedule(hour: 7, minute: 0, intervalWeeks: 1, weekdays: [2, 4, 6], calendarDates: nil)
+
+        return .init(notificationType: .notification, title: "Go to Gym", icon: .init(symbol: nil, emoji: "💪"), date: .now, snoozeDuration: 0, tasks: tasks, tags: tags, schedule: schedule, colorName: "sky", focusSession: nil)
+    }
+
+    public static func exampleSix() -> ReminderModel {
+        let tasks: [ReminderTaskModel] = [
+            .init(title: "Review lecture notes", icon: .init(symbol: nil, emoji: "📝")),
+            .init(title: "Practice problems", icon: .init(symbol: nil, emoji: "🧮")),
+            .init(title: "Summarise chapter", icon: .init(symbol: nil, emoji: "📖"))
+        ]
+        let tags: [TagModel] = [
+            .init(id: NSManagedObjectID(), name: "Study", color: Color.blue, reminderIDs: []),
+            .init(id: NSManagedObjectID(), name: "Focus", color: Color.purple, reminderIDs: []),
+            .init(id: NSManagedObjectID(), name: "Productivity", color: Color.teal, reminderIDs: [])
+        ]
+        let schedule = ReminderSchedule(hour: 18, minute: 0, intervalWeeks: 1, weekdays: [2, 3, 4, 5], calendarDates: nil)
+        let focusSession = FocusSession(name: "Study Pomodoro", sessionType: .pomodoro, timerDuration: 25 * 60, breakDuration: 5 * 60, blockedApps: nil, alarm: .betweenSessions, sessionCount: 4)
+
+        return .init(notificationType: .notification, title: "Study Session", icon: .init(symbol: nil, emoji: "📚"), date: .now, snoozeDuration: 0, tasks: tasks, tags: tags, schedule: schedule, colorName: "peach", focusSession: focusSession)
+    }
+
+    public static func exampleSeven() -> ReminderModel {
+        let tasks: [ReminderTaskModel] = [
+            .init(title: "Find a quiet spot", icon: .init(symbol: nil, emoji: "🛋️")),
+            .init(title: "Make a cup of tea", icon: .init(symbol: nil, emoji: "🍵")),
+            .init(title: "Read two chapters", icon: .init(symbol: nil, emoji: "📖"))
+        ]
+        let tags: [TagModel] = [
+            .init(id: NSManagedObjectID(), name: "Reading", color: Color.indigo, reminderIDs: []),
+            .init(id: NSManagedObjectID(), name: "Wind Down", color: Color.mint, reminderIDs: []),
+            .init(id: NSManagedObjectID(), name: "Self Care", color: Color.pink, reminderIDs: [])
+        ]
+        let schedule = ReminderSchedule(hour: 21, minute: 30, intervalWeeks: 1, weekdays: [1, 7], calendarDates: nil)
+        let focusSession = FocusSession(name: "Reading Time", sessionType: .classic, timerDuration: 45 * 60, breakDuration: 0, blockedApps: nil, alarm: .endOfSession, sessionCount: nil)
+
+        return .init(notificationType: .notification, title: "Read a Book", icon: .init(symbol: nil, emoji: "📕"), date: .now, snoozeDuration: 0, tasks: tasks, tags: tags, schedule: schedule, colorName: "lavender", focusSession: focusSession)
     }
 }
 

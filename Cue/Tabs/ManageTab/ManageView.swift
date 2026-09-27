@@ -13,9 +13,10 @@ struct ManageView: View {
     
     @Environment(Store.self) var store
     @State private var viewModel: ManageViewModel = .init()
+    @Namespace private var namespace
     
     var body: some View {
-        NavigationView {
+        NavigationStack(path: $viewModel.path) {
             ZStack(alignment: .center) {
                 Color.cueItBackground
                     .ignoresSafeArea()
@@ -23,6 +24,7 @@ struct ManageView: View {
                 if viewModel.sections.isEmpty {
                     ProgressView()
                         .task { @MainActor [weak viewModel] in
+                            viewModel?.namespaceID = namespace
                             viewModel?.store = self.store
                         }
                 } else {
@@ -34,6 +36,13 @@ struct ManageView: View {
             }
             .navigationTitle("Manage")
             .toolbarTitleDisplayMode(.inlineLarge)
+            .navigationDestination(for: ManageViewModel.Navigation.self, destination: { path in
+                switch path {
+                case .routineDetail(let routine, let config):
+                    RoutineDetailView(routine: routine)
+                        .navigationTransition(.zoom(sourceID: config, in: namespace))
+                }
+            })
             .safeAreaInset(edge: .top, alignment: .center, spacing: 8) {
                 TagChips(viewModel: viewModel)
             }
@@ -62,23 +71,4 @@ struct ManageView: View {
             .scrollEdgeEffectStyle(.soft, for: .all)
         }
     }
-}
-
-#warning("Move this to VanorUI")
-#Preview {
-    let reminder = ReminderModel.exampleFour()
-    let routineDays = Array(repeating: 0, count: 30).enumerated().map { element in
-        let index = element.offset
-        
-        let timeInterval = Double(30 - index) * 24 * 60 * 60
-        let date = Date.now.addingTimeInterval(-timeInterval)
-        return RoutineTimelineCard.RoutineDay(date: date, isLogged: .random())
-    }
-    let attributedTitle = AttributedString(reminder.title, attributes: .init([.font: Font.bitcountRegular(style: .body)]))
-    
-    RoutineTimelineCard(model: .init(config: .init(icon: .init(reminder.icon)!, title: attributedTitle, days: routineDays, color: reminder.color), action: nil))
-        .containerRelativeFrame(.horizontal) { width, _ in
-            width * 0.5
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
 }
