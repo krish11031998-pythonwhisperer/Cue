@@ -61,6 +61,7 @@ internal struct RoutineDetailGroupBox: GroupBoxStyle {
 struct RoutineDetailView: View {
 
     @Environment(Store.self) var store
+    @Environment(\.dismiss) var dismiss
     @State private var viewModel: RoutineDetailViewModel
     init(routine: ReminderModel) {
         self._viewModel = .init(initialValue: .init(routine))
@@ -95,6 +96,34 @@ struct RoutineDetailView: View {
             .padding(.horizontal, 16)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+        .background(alignment: .center) {
+            Color.cueItBackground
+                .ignoresSafeArea()
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button("Edit", systemSymbol: .pencil) {
+                        self.viewModel.presentation = .editRoutine(viewModel.routine)
+                    }
+                    
+                    Button("Delete", systemSymbol: .trash, role: .destructive) {
+                        self.viewModel.showDeleteAlert = true
+                    }
+                } label: {
+                    Image(systemSymbol: .ellipsis)
+                }
+            }
+        }
+        .alert("Delete Routine?", isPresented: $viewModel.showDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                self.viewModel.deleteRoutine()
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to delete \"\(viewModel.routine.title)\"? This can't be undone.")
+        }
         .sheet(item: $viewModel.presentation, content: { presentation in
             switch presentation {
             case .editRoutine(let routine):
@@ -108,10 +137,6 @@ struct RoutineDetailView: View {
             await viewModel.fetchRoutineLogs()
         }
         .environment(\.theme, .init(color: viewModel.routine.color))
-        .background(alignment: .center) {
-            Color.cueItBackground
-                .ignoresSafeArea()
-        }
     }
     
     @ViewBuilder

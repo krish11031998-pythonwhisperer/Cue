@@ -30,7 +30,8 @@ class RoutineDetailViewModel {
     
     var routine: ReminderModel
     var presentation: Presentation? = nil
-    
+    var showDeleteAlert: Bool = false
+
     init(_ routine: ReminderModel) {
         self.routine = routine
     }
@@ -41,7 +42,7 @@ class RoutineDetailViewModel {
     var daysInCalendar: [RoutineCalendarView.Day] = []
 
     
-    private func deleteRoutine() {
+    func deleteRoutine() {
         self.store?.deleteReminder(reminderID: routine.objectId)
     }
     
