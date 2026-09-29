@@ -90,13 +90,15 @@ class MainTabViewModel {
     func onDismiss(_ presenation: Presentation) {
         switch presenation {
         case .createReminder, .createReminderWithAI:
+            break
+        case .onboarding:
+            // The first reminder is now created inside onboarding, so the paywall follows
+            // onboarding directly instead of waiting on a reminder sheet's dismissal.
+            CueUserDefaultsManager.shared[.hasShowOnboarding] = true
             if presentPayWallAfterFirstOnboarding {
                 presentPayWallAfterFirstOnboarding = false
                 presentation = .paywall
             }
-        case .onboarding:
-            CueUserDefaultsManager.shared[.hasShowOnboarding] = true
-            presentation = .createReminder
         case .paywall:
             break
         case .ongoingSession:

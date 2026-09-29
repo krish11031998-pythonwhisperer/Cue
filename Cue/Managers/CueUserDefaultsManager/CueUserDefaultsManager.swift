@@ -11,6 +11,9 @@ class CueUserDefaultsManager {
     
     enum Keys: String {
         case hasShowOnboarding = "has_show_onboarding"
+        case onboardingGoals = "onboarding_goals"
+        case dayStartMinutes = "day_start_minutes"
+        case windDownMinutes = "wind_down_minutes"
     }
     
     private init() {}
