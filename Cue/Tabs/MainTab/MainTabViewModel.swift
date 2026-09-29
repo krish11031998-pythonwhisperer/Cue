@@ -79,7 +79,11 @@ class MainTabViewModel {
         // process and forwards through the router.
         FocusSessionIntentRouter.shared.handler = self.focusTimerCoordinator
         
+        #if DEBUG
+        self.hasShowOnboarding = false
+        #else
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
+        #endif
         presentPayWallAfterFirstOnboarding = !hasShowOnboarding
         if !hasShowOnboarding {
             self.presentation = .onboarding
@@ -90,13 +94,17 @@ class MainTabViewModel {
     func onDismiss(_ presenation: Presentation) {
         switch presenation {
         case .createReminder, .createReminderWithAI:
+            break
+        case .onboarding:
+            // The first reminder is now created inside onboarding, so the paywall follows
+            // onboarding directly instead of waiting on a reminder sheet's dismissal.
+            CueUserDefaultsManager.shared[.hasShowOnboarding] = true
             if presentPayWallAfterFirstOnboarding {
+                #if !DEBUG
                 presentPayWallAfterFirstOnboarding = false
+                #endif
                 presentation = .paywall
             }
-        case .onboarding:
-            CueUserDefaultsManager.shared[.hasShowOnboarding] = true
-            presentation = .createReminder
         case .paywall:
             break
         case .ongoingSession:

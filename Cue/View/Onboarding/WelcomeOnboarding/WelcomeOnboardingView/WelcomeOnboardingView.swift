@@ -9,20 +9,16 @@ import SwiftUI
 import VanorUI
 
 struct WelcomeOnboardingView: View {
-    
-    
-    var themeColor: Color {
-        Color.proSky.baseColor
-    }
-    
+
+    let getStarted: () -> Void
+
     var body: some View {
-        VStack(alignment: .center, spacing: 12) {
-            Text(heroText)
-                .multilineTextAlignment(.center)
-                .padding(.vertical, 32)
-                .containerRelativeFrame(.vertical) { height, _ in
-                    height * 0.2
-                }
+        OnboardingStepLayout(includeScrollView: false) {
+            OnboardingHeader(title: Text("Create impactful reminders").foregroundStyle(OnboardingPalette.skyInk),
+                             subtitle: "and plan out your day effectively",
+                             alignment: .center)
+                .padding(.horizontal, 8)
+        } content: {
             VStack(alignment: .center, spacing: -6) {
                 ForEach(WelcomeItemComponents.cases.enumerated(), id: \.element) { itemContent in
                     WelcomeFeatureItemView(cardCorner: itemContent.offset % 2 == 0 ? .leading : .trailing, component: itemContent.element)
@@ -31,31 +27,21 @@ struct WelcomeOnboardingView: View {
                 }
             }
             .frame(maxHeight: .infinity, alignment: .center)
-            .visualEffect { content, proxy in
-                content
-                    .offset(x: 0, y: -proxy.size.height * 0.1)
-            }
-            
-            Text("cue:ai requires cue:it Pro and a device that supports Apple Intelligence.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
         }
-        .padding(.horizontal, 20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-    }
-    
-    
-    private var heroText: AttributedString {
-        var attributedString = AttributedString("Create impactful reminders", attributes: .init([.font: UIFont.preferredFont(for: .title1, weight: .semibold), .foregroundColor: Color.proSky.baseColor.asUIColor]))
-        let secondAttributedString = AttributedString("and plan out your day effectively", attributes: .init([.font: UIFont.preferredFont(forTextStyle: .headline), .foregroundColor: Color.proRed.foregroundPrimary.asUIColor]))
-        attributedString.append(AttributedString(stringLiteral: "\n"))
-        attributedString.append(secondAttributedString)
-        return attributedString
+//        actions: {
+//            Button("Get started", action: getStarted)
+//                .buttonStyle(.onboardingPrimary)
+//
+//            Text("cue:ai requires cue:it Pro and a device that supports Apple Intelligence.")
+//                .font(.caption2)
+//                .foregroundStyle(.secondary)
+//                .multilineTextAlignment(.center)
+//        }
     }
 }
 
 
 #Preview {
-    WelcomeOnboardingView()
+    WelcomeOnboardingView {}
+        .background(Color.cueItBackground)
 }
