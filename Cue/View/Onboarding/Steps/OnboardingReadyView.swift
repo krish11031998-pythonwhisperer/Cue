@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import SFSafeSymbols
+import VanorUI
 
 /// Summary of everything set during onboarding.
 struct OnboardingReadyView: View {
@@ -15,40 +15,34 @@ struct OnboardingReadyView: View {
     let openCue: () -> Void
 
     var body: some View {
-        OnboardingStepLayout {
+        OnboardingStepLayout(includeScrollView: true) {
             OnboardingHeader("You're set.\n",
                              accent: "Cue knows your day.",
                              subtitle: "You can tweak any of this as you go.")
         } content: {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    summaryRow(symbol: .sparkles,
-                               color: Color("rose"),
-                               title: "First reminder",
-                               detail: firstReminderDetail)
-                    summaryRow(symbol: .clockFill,
-                               color: Color("lavender"),
-                               title: "Day rhythm",
-                               detail: rhythmDetail)
-                    summaryRow(symbol: .bellFill,
-                               color: OnboardingPalette.sky,
-                               title: "Notifications",
-                               detail: notificationsDetail)
-                    summaryRow(symbol: .listBullet,
-                               color: Color("perwinkle"),
-                               title: "Staying on top of",
-                               detail: goalsDetail)
-                }
-                .padding(.top, 26)
-                .padding(.bottom, 12)
+            VStack(alignment: .leading, spacing: 12) {
+                summaryRow(symbol: .sparkles,
+                           color: Color("rose"),
+                           title: "First reminder",
+                           detail: firstReminderDetail)
+                #if !DEBUG && V1_2
+                summaryRow(symbol: .clockFill,
+                           color: Color("lavender"),
+                           title: "Day rhythm",
+                           detail: rhythmDetail)
+                #endif
+                summaryRow(symbol: .bellFill,
+                           color: OnboardingPalette.sky,
+                           title: "Notifications",
+                           detail: notificationsDetail)
+                summaryRow(symbol: .listBullet,
+                           color: Color("perwinkle"),
+                           title: "Staying on top of",
+                           detail: goalsDetail)
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .scrollIndicators(.hidden)
+            .padding(.top, 26)
+            .padding(.bottom, 12)
         }
-//        actions: {
-//            Button("Open Cue", action: openCue)
-//                .buttonStyle(.onboardingPrimary)
-//        }
     }
 
     // MARK: - Details
@@ -88,9 +82,13 @@ struct OnboardingReadyView: View {
 
     // MARK: - Row
 
+    @ViewBuilder
     private func summaryRow(symbol: SFSymbol, color: Color, title: String, detail: String) -> some View {
+        let theme = LCHColor(color: color)
+        
         HStack(alignment: .center, spacing: 14) {
-            OnboardingIconTile(symbol: symbol, color: color)
+            ReminderIconView(icon: .symbol(symbol), foregroundColor: theme.foregroundPrimary, backgroundColor: theme.baseColor, font: .headline)
+                .frame(width: 32, height: 32, alignment: .center)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
@@ -104,11 +102,12 @@ struct OnboardingReadyView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .frame(minHeight: 64)
-        .background(OnboardingPalette.card, in: .rect(cornerRadius: OnboardingPalette.cardRadius))
-        .overlay {
+        .background(alignment: .center, content: {
             RoundedRectangle(cornerRadius: OnboardingPalette.cardRadius)
-                .strokeBorder(OnboardingPalette.line, lineWidth: 1.5)
-        }
+                .fill(theme.backgroundPrimary)
+                .stroke(theme.outlinePrimary, style: .init(lineWidth: 2))
+        })
+        .padding(.horizontal, 2)
         .accessibilityElement(children: .combine)
     }
 }

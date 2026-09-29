@@ -13,7 +13,7 @@ struct WelcomeOnboardingView: View {
     let getStarted: () -> Void
 
     var body: some View {
-        OnboardingStepLayout {
+        OnboardingStepLayout(includeScrollView: false) {
             OnboardingHeader(title: Text("Create impactful reminders").foregroundStyle(OnboardingPalette.skyInk),
                              subtitle: "and plan out your day effectively",
                              alignment: .center)

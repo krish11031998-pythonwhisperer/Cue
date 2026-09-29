@@ -14,7 +14,7 @@ struct OnboardingGoalsView: View {
     @Bindable var viewModel: OnboardingViewModel
 
     var body: some View {
-        OnboardingStepLayout {
+        OnboardingStepLayout(includeScrollView: true) {
             OnboardingHeader("What do you want to stay on top of?",
                              subtitle: "Pick as many as you like — we'll shape your first reminders around them.")
         } content: {

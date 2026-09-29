@@ -22,8 +22,8 @@ enum OnboardingPalette {
     static let mutedFill: Color = .dynamic(light: 0xDCD9CB, dark: 0x3F3E3A)
     static let mutedInk: Color = .dynamic(light: 0x8C8880, dark: 0x9A958E)
     static let aiInk: Color = .dynamic(light: 0x8A2E58, dark: 0xF2A3C7)
-
-    static let cardRadius: CGFloat = 18
+    
+    static let cardRadius: CGFloat = 24
 }
 
 fileprivate extension Color {
@@ -67,13 +67,13 @@ fileprivate struct ProgressBar: Shape {
 
 /// Back chevron, progress dots and Skip — shown on every step.
 struct OnboardingTopBar: View {
-
+    
     @Environment(\.theme) var theme
     
     let step: OnboardingStep
     let onBack: () -> Void
     let onSkip: () -> Void
-
+    
     var body: some View {
         ZStack(alignment: .center) {
             if step.showsBack {
@@ -87,9 +87,9 @@ struct OnboardingTopBar: View {
                 }
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .transition(.popIn())
+                .transition(.blurReplace)
             }
-
+            
             HStack(alignment: .center, spacing: 6) {
                 ForEach(0..<OnboardingStep.progressCount, id: \.self) { index in
                     let isOn = index <= step.progressIndex
@@ -118,17 +118,17 @@ struct OnboardingTopBar: View {
 // MARK: - Header
 
 struct OnboardingHeader: View {
-
+    
     let title: Text
     let subtitle: String?
     var alignment: HorizontalAlignment = .leading
-
+    
     init(title: Text, subtitle: String? = nil, alignment: HorizontalAlignment = .leading) {
         self.title = title
         self.subtitle = subtitle
         self.alignment = alignment
     }
-
+    
     init(_ title: String, accent: String? = nil, subtitle: String? = nil, alignment: HorizontalAlignment = .leading) {
         let text: Text
         if let accent {
@@ -138,13 +138,13 @@ struct OnboardingHeader: View {
         }
         self.init(title: text, subtitle: subtitle, alignment: alignment)
     }
-
+    
     var body: some View {
         VStack(alignment: alignment, spacing: 10) {
             title
                 .font(.title.weight(.semibold))
                 .tracking(-0.5)
-
+            
             if let subtitle {
                 Text(subtitle)
                     .font(.subheadline)
@@ -163,15 +163,15 @@ struct OnboardingHeader: View {
 
 /// Full-width sky capsule. Turns muted while disabled.
 struct OnboardingPrimaryButtonStyle: ButtonStyle {
-
+    
     @Environment(\.isEnabled) private var isEnabled
-
+    
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline)
             .frame(maxWidth: .infinity)
-//            .frame(height: 56)
-            .padding(.init(top: 14, leading: 12, bottom: 14, trailing: 12))
+            .padding(.init(top: 14, leading: 20, bottom: 14, trailing: 20))
+            .frame(minHeight: 56)
             .foregroundStyle(.white)
             .glassEffect(.regular.interactive(true).tint(Color.proSky.baseColor))
             .contentShape(.capsule)
@@ -184,7 +184,7 @@ struct OnboardingPrimaryButtonStyle: ButtonStyle {
 
 /// Text-only escape hatch under the primary button ("Maybe later").
 struct OnboardingSecondaryButtonStyle: ButtonStyle {
-
+    
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.medium))
@@ -204,105 +204,52 @@ extension ButtonStyle where Self == OnboardingSecondaryButtonStyle {
     static var onboardingSecondary: OnboardingSecondaryButtonStyle { .init() }
 }
 
-// MARK: - Icon Tile
-
-/// Rounded colour square with a white glyph, used by the goal and summary rows.
-struct OnboardingIconTile: View {
-
-    let symbol: SFSymbol
-    let color: Color
-    var size: CGFloat = 36
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: size / 3, style: .continuous)
-            .fill(color)
-            .frame(width: size, height: size)
-            .overlay {
-                Image(systemSymbol: symbol)
-                    .font(.system(size: size * 0.5, weight: .semibold))
-                    .foregroundStyle(.white)
-            }
-            .accessibilityHidden(true)
-    }
-}
 
 // MARK: - Step Layout
 
 /// Header on top, scrollable content in the middle, actions pinned to the bottom.
 struct OnboardingStepLayout<Header: View, Content: View>: View {
-
+    
+    let includeScrollView: Bool
     let header: Header
     let content: Content
-
-    init(@ViewBuilder header: () -> Header,
+    
+    init(includeScrollView: Bool,
+         @ViewBuilder header: () -> Header,
          @ViewBuilder content: () -> Content) {
+        self.includeScrollView = includeScrollView
         self.header = header()
         self.content = content()
     }
-
+    
     var body: some View {
-        VStack(alignment: .center, spacing: 0) {
-            header
-                .padding(.top, 28)
-
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        if includeScrollView {
+            ScrollView(.vertical) {
+                VStack(alignment: .center, spacing: 0) {
+                    header
+                        .padding(.top, 28)
+                    
+                    content
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
+            .scrollEdgeEffectStyle(.soft, for: .vertical)
+            
+        } else {
+            VStack(alignment: .center, spacing: 0) {
+                header
+                    .padding(.top, 28)
+                
+                content
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 16)
     }
 }
-
-// MARK: - Flow Layout
-//
-///// Wraps chips onto as many rows as they need.
-//struct OnboardingFlowLayout: Layout {
-//
-//    var spacing: CGFloat = 10
-//
-//    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-//        let rows = rows(for: subviews, maxWidth: proposal.width ?? .infinity)
-//        let width = rows.map(\.width).max() ?? 0
-//        let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
-//        return .init(width: width, height: height)
-//    }
-//
-//    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-//        var y = bounds.minY
-//        for row in rows(for: subviews, maxWidth: bounds.width) {
-//            var x = bounds.minX
-//            for index in row.indices {
-//                let size = subviews[index].sizeThatFits(.unspecified)
-//                subviews[index].place(at: .init(x: x, y: y), proposal: .init(size))
-//                x += size.width + spacing
-//            }
-//            y += row.height + spacing
-//        }
-//    }
-//
-//    private struct Row {
-//        var indices: [Int] = []
-//        var width: CGFloat = 0
-//        var height: CGFloat = 0
-//    }
-//
-//    private func rows(for subviews: Subviews, maxWidth: CGFloat) -> [Row] {
-//        var rows: [Row] = []
-//        var current = Row()
-//        for index in subviews.indices {
-//            let size = subviews[index].sizeThatFits(.unspecified)
-//            let proposedWidth = current.indices.isEmpty ? size.width : current.width + spacing + size.width
-//            if !current.indices.isEmpty && proposedWidth > maxWidth {
-//                rows.append(current)
-//                current = Row()
-//            }
-//            current.width = current.indices.isEmpty ? size.width : current.width + spacing + size.width
-//            current.height = max(current.height, size.height)
-//            current.indices.append(index)
-//        }
-//        if !current.indices.isEmpty {
-//            rows.append(current)
-//        }
-//        return rows
-//    }
-//}

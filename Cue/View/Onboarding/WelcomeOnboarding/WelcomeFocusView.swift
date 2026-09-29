@@ -13,7 +13,7 @@ struct WelcomeFocusView: View {
     @Bindable var viewModel: OnboardingViewModel
 
     var body: some View {
-        OnboardingStepLayout {
+        OnboardingStepLayout(includeScrollView: false) {
             OnboardingHeader("Focus with timers\n",
                              accent: "while you work",
                              subtitle: "Try it — three seconds, right here.")

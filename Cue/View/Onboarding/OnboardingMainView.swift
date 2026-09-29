@@ -35,6 +35,11 @@ struct OnboardingMainView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
         })
+        .task {
+            self.viewModel.dismiss = {
+                dismiss()
+            }
+        }
         .safeAreaInset(edge: .bottom, content: {
             footerView
         })
@@ -131,15 +136,23 @@ struct OnboardingMainView: View {
     @ViewBuilder
     private var footerView: some View {
         VStack(alignment: .center, spacing: 10) {
-            Button(primaryTitle) {
-                viewModel.advance()
+            Button(action: viewModel.primaryButtonAction) {
+                if viewModel.loadingButton {
+                    ProgressView()
+                        .controlSize(.regular)
+                } else {
+                    Text(primaryTitle)
+                        .font(.headline)
+                }
             }
             .buttonStyle(.onboardingPrimary)
             .controlSize(.large)
             .contentTransition(.numericText())
+            .disabled(viewModel.loadingButton)
             
             Button(secondaryTitle) {
-                // Do soemthing
+                // Do something
+                viewModel.advance()
             }
             .buttonStyle(.onboardingSecondary)
             .controlSize(.large)
@@ -148,38 +161,6 @@ struct OnboardingMainView: View {
         }
         .padding(.horizontal, 16)
         .animation(.easeInOut, value: primaryTitle)
-//        switch viewModel.step {
-//        case .welcome:
-//            VStack(alignment: .center, spacing: 10) {
-//                Button("Get started") {
-//                    viewModel.advance()
-//                }
-//                .buttonStyle(.onboardingPrimary)
-//                .controlSize(.large)
-//
-//                Text("cue:ai requires cue:it Pro and a device that supports Apple Intelligence.")
-//                    .font(.caption2)
-//                    .foregroundStyle(.secondary)
-//                    .multilineTextAlignment(.center)
-//            }
-//            .padding(.horizontal, 16)
-//        case .goals:
-//            VStack(alignment: .center, spacing: 10) {
-//                Button("Continue") {
-//                    viewModel.advance()
-//                }
-//                .buttonStyle(.onboardingPrimary)
-//                .controlSize(.large)
-//            }
-//            .padding(.horizontal, 16)
-//            
-//        #if !DEBUG && V1_2
-//        case .rhythm:
-//            EmptyView()
-//        #endif
-//        case .firstReminder, .notifications, .focus, .ready:
-//            EmptyView()
-//        }
     }
 }
 

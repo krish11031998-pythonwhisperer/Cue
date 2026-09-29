@@ -16,42 +16,37 @@ struct OnboardingFirstReminderView: View {
     @FocusState private var fieldFocused: Bool
 
     var body: some View {
-        OnboardingStepLayout {
+        OnboardingStepLayout(includeScrollView: true) {
             OnboardingHeader("What's the first routine you want to build?",
                              subtitle: "One real thing. You can change it any time.")
         } content: {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    reminderField
-                        .padding(.horizontal, 2)
-
-                    if let draft = viewModel.draft {
-                        draftDetails(draft)
-                            .transition(.blurReplace)
-                    } else {
-                        Group {
-                            Text("Or start from one of these:")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.secondary)
-                                .padding(.top, 14)
-                            
-                            OverFlowingHorizontalLayout(horizontalSpacing: 10, verticalSpacing: 10) {
-                                ForEach(viewModel.suggestions) { suggestion in
-                                    suggestionChip(suggestion)
-                                }
+            VStack(alignment: .leading, spacing: 12) {
+                reminderField
+                    .padding(.horizontal, 2)
+                
+                if let draft = viewModel.draft {
+                    draftDetails(draft)
+                        .transition(.blurReplace)
+                } else {
+                    Group {
+                        Text("Or start from one of these:")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 14)
+                        
+                        OverFlowingHorizontalLayout(horizontalSpacing: 10, verticalSpacing: 10) {
+                            ForEach(viewModel.suggestions) { suggestion in
+                                suggestionChip(suggestion)
                             }
                         }
-                        .transition(.blurReplace)
                     }
-
+                    .transition(.blurReplace)
                 }
-                .padding(.top, 24)
-                .padding(.bottom, 12)
-                .animation(.snappy, value: viewModel.draft)
+                
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .scrollIndicators(.hidden)
-            .scrollDismissesKeyboard(.interactively)
+            .padding(.top, 24)
+            .padding(.bottom, 12)
+            .animation(.snappy, value: viewModel.draft)
         }
         .onChange(of: viewModel.reminderText) {
             viewModel.reminderTextChanged()
@@ -125,6 +120,7 @@ struct OnboardingFirstReminderView: View {
                                       deleteReminder: nil))
             .padding(.horizontal, 2)
         }
+        .padding(.top, 24)
     }
 
     private func detailChip(_ title: String, color: Color) -> some View {

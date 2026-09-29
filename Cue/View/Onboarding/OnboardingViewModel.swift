@@ -10,6 +10,7 @@ import UserNotifications
 import FoundationModels
 import SFSafeSymbols
 import Model
+import VanorUI
 
 // MARK: - Step
 
@@ -284,21 +285,14 @@ final class OnboardingViewModel {
         case denied
     }
 
-    /// Sendable copy of what cue:ai read out of the typed sentence.
-    struct InterpretedReminder: Sendable {
-        let title: String
-        let emoji: String
-        let hour: Int
-        let minute: Int
-        let intervalWeek: Int
-        let weekdays: Set<Int>
-    }
-
+    @ObservationIgnored
+    var dismiss: Callback? = nil
     static let dayStartOptions: [Int] = Array(stride(from: 4 * 60, through: 12 * 60, by: 30))
     static let windDownOptions: [Int] = Array(stride(from: 19 * 60, through: 25 * 60, by: 30))
 
     private(set) var step: OnboardingStep = .welcome
-
+    private(set) var loadingButton: Bool = false
+    
     // Goals
     var selectedGoals: Set<OnboardingGoal> = []
 
@@ -315,7 +309,6 @@ final class OnboardingViewModel {
 
     // Notifications
     private(set) var notificationStatus: NotificationStatus = .notDetermined
-    private(set) var isRequestingNotifications: Bool = false
 
     // Focus
     var focusDemoCompleted: Bool = false
@@ -360,6 +353,31 @@ final class OnboardingViewModel {
             defaults[.windDownMinutes] = windDownMinutes
         }
         defaults[.hasShowOnboarding] = true
+        dismiss?()
+    }
+    
+    
+    // MARK: - Actions
+    
+    func primaryButtonAction() {
+        switch step {
+        case .welcome, .goals, .focus:
+            advance()
+        case .firstReminder:
+            Task { @MainActor in
+                loadingButton = true
+                await createFirstReminder()
+                loadingButton = false
+            }
+        case .notifications:
+            Task { @MainActor in
+                loadingButton = true
+                await requestNotifications()
+                loadingButton = false
+            }
+        case .ready:
+            completeOnboarding()
+        }
     }
 
     // MARK: - Goals
@@ -420,19 +438,20 @@ final class OnboardingViewModel {
 
         if reminderGenerator != nil {
             isInterpreting = true
-            let interpreted = await interpret(text)
+            let suggested = await interpret(text)
             isInterpreting = false
             // The field moved on while cue:ai was thinking.
             guard sourceText == reminderText else { return }
 
-            if let interpreted {
+            if let suggested {
+                let weekdays = Set(suggested.date.weekdays?.map(\.weekdayIntValue) ?? [])
                 draft = .init(sourceText: sourceText,
-                              title: interpreted.title,
-                              emoji: interpreted.emoji,
-                              hour: interpreted.hour,
-                              minute: interpreted.minute,
-                              weekdays: interpreted.weekdays.isEmpty ? nil : interpreted.weekdays,
-                              repeats: interpreted.intervalWeek > 0,
+                              title: suggested.title,
+                              emoji: suggested.icon,
+                              hour: suggested.date.hour,
+                              minute: suggested.date.minute,
+                              weekdays: weekdays.isEmpty ? nil : weekdays,
+                              repeats: suggested.date.intervalWeek > 0,
                               goal: goal,
                               readByCueAI: true)
                 return
@@ -451,22 +470,20 @@ final class OnboardingViewModel {
     }
 
     @concurrent
-    nonisolated private func interpret(_ text: String) async -> InterpretedReminder? {
+    nonisolated private func interpret(_ text: String) async -> SuggestedReminder? {
         guard let reminderGenerator,
-              let suggested = await reminderGenerator.suggestReminder(for: text) else {
+              var suggested = await reminderGenerator.suggestReminder(for: text) else {
             return nil
         }
         // The model is only *guided* towards valid ranges, so clamp before persisting.
-        let weekdays = Set(suggested.date.weekdays?.map(\.weekdayIntValue).filter { (1...7).contains($0) } ?? [])
-        return .init(title: suggested.title,
-                     emoji: suggested.icon,
-                     hour: min(max(suggested.date.hour, 0), 23),
-                     minute: min(max(suggested.date.minute, 0), 59),
-                     intervalWeek: max(suggested.date.intervalWeek, 0),
-                     weekdays: weekdays)
+        suggested.date.hour = min(max(suggested.date.hour, 0), 23)
+        suggested.date.minute = min(max(suggested.date.minute, 0), 59)
+        suggested.date.intervalWeek = max(suggested.date.intervalWeek, 0)
+        suggested.date.weekdays = suggested.date.weekdays?.filter { (1...7).contains($0.weekdayIntValue) }
+        return suggested
     }
 
-    func createFirstReminder() {
+    func createFirstReminder() async {
         guard let draft else { return }
         // Going back and pressing create again shouldn't duplicate the reminder.
         guard createdReminder != draft else {
@@ -513,10 +530,8 @@ final class OnboardingViewModel {
     /// Asks for permission and actually reads the answer, so a denial is surfaced instead of
     /// passing silently.
     func requestNotifications() async {
-        isRequestingNotifications = true
         await store.notificationManager.requestForAuthorizationAfterCheckingNotificationSettings()
         await refreshNotificationStatus()
-        isRequestingNotifications = false
 
         guard notificationStatus == .granted else { return }
         // The first reminder was scheduled before permission existed — schedule it again.

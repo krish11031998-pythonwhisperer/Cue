@@ -7,13 +7,15 @@
 
 import SwiftUI
 import SFSafeSymbols
+import VanorUI
 
+#if !DEBUG && V1_2
 struct OnboardingRhythmView: View {
 
     @Bindable var viewModel: OnboardingViewModel
 
     var body: some View {
-        OnboardingStepLayout {
+        OnboardingStepLayout(includeScrollView: false) {
             OnboardingHeader("When does your day start and end?",
                              subtitle: "We'll place reminders and focus blocks inside your real day.")
         } content: {
@@ -55,10 +57,15 @@ struct OnboardingRhythmView: View {
         }
         .background(OnboardingPalette.card, in: .rect(cornerRadius: OnboardingPalette.cardRadius))
     }
+    
+    var theme: LCHColor {
+        .init(color: Color.perwinkle)
+    }
 
     private var windDownRow: some View {
         HStack(alignment: .center, spacing: 14) {
-            OnboardingIconTile(symbol: .moonFill, color: Color("perwinkle"), size: 34)
+            ReminderIconView(icon: .symbol(.moonFill), foregroundColor: theme.foregroundPrimary, backgroundColor: theme.baseColor, font: .headline)
+                .frame(width: 36, height: 36, alignment: .center)
 
             Text("Wind down")
                 .font(.body.weight(.medium))
@@ -86,3 +93,4 @@ struct OnboardingRhythmView: View {
         }
     }
 }
+#endif

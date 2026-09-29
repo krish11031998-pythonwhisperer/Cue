@@ -16,8 +16,8 @@ struct OnboardingNotificationsView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        OnboardingStepLayout {
-            OnboardingHeader("Want Cue to actually get your attention?", subtitle: subtitle)
+        OnboardingStepLayout(includeScrollView: false) {
+            OnboardingHeader("Cue needs permission to send notifications", subtitle: subtitle)
         } content: {
             VStack(alignment: .center, spacing: 22) {
                 notificationPreview
@@ -32,34 +32,6 @@ struct OnboardingNotificationsView: View {
             .frame(maxHeight: .infinity, alignment: .center)
             .animation(.easeInOut, value: viewModel.notificationStatus)
         }
-//        actions: {
-//            switch viewModel.notificationStatus {
-//            case .notDetermined:
-//                Button {
-//                    Task { await viewModel.requestNotifications() }
-//                } label: {
-//                    if viewModel.isRequestingNotifications {
-//                        ProgressView()
-//                    } else {
-//                        Text("Allow notifications")
-//                    }
-//                }
-//                .buttonStyle(.onboardingPrimary)
-//                .disabled(viewModel.isRequestingNotifications)
-//
-//                Button("Maybe later", action: viewModel.advance)
-//                    .buttonStyle(.onboardingSecondary)
-//            case .granted:
-//                Button("Continue", action: viewModel.advance)
-//                    .buttonStyle(.onboardingPrimary)
-//            case .denied:
-//                Button("Open Settings", action: viewModel.openNotificationSettings)
-//                    .buttonStyle(.onboardingPrimary)
-//
-//                Button("Continue without", action: viewModel.advance)
-//                    .buttonStyle(.onboardingSecondary)
-//            }
-//        }
         .task {
             await viewModel.refreshNotificationStatus()
         }
@@ -74,19 +46,19 @@ struct OnboardingNotificationsView: View {
 
     private var subtitle: String {
         guard let reminder = viewModel.createdReminder else {
-            return "Here's how your reminders will reach you."
+            return "Without it, your reminders for your routines can't reach you."
         }
-        return "Your \(reminder.title.lowercased()) reminder is set for \(reminder.date.formatted(.dateTime.weekday(.wide))) at \(reminder.date.formatted(date: .omitted, time: .shortened)). Here's how it will reach you."
+        return "Your \(reminder.title.lowercased()) reminder is set for \(reminder.date.formatted(.dateTime.weekday(.wide))) at \(reminder.date.formatted(date: .omitted, time: .shortened)). Without permission, your reminders for your routines can't reach you."
     }
 
     private var explanation: String {
         switch viewModel.notificationStatus {
         case .notDetermined:
-            return "Alarms cut through Silent and Focus modes.\nEverything else stays a quiet notification."
+            return "Allow notifications so Cue can remind you at the right time.\nYou can change this any time in Settings."
         case .granted:
             return "Notifications are on. Your reminders will reach you on time."
         case .denied:
-            return "Notifications are off for Cue, so reminders can't reach you. Turn them on in Settings."
+            return "Notifications are off for Cue, so your reminders for your routines can't reach you. Turn them on in Settings."
         }
     }
 
