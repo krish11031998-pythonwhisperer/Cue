@@ -8,6 +8,8 @@
 import SwiftUI
 import UserNotifications
 import FoundationModels
+import FamilyControls
+internal import AlarmKit
 import SFSafeSymbols
 import Model
 import VanorUI
@@ -22,7 +24,9 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
     #endif
     case firstReminder
     case notifications
+    case alarms
     case focus
+    case blockApps
     case ready
 
     var id: Int { rawValue }
@@ -279,7 +283,7 @@ struct OnboardingReminderDraft: Hashable {
 @Observable
 final class OnboardingViewModel {
 
-    enum NotificationStatus {
+    enum PermissionStatus {
         case notDetermined
         case granted
         case denied
@@ -308,7 +312,15 @@ final class OnboardingViewModel {
     private(set) var createdReminder: OnboardingReminderDraft?
 
     // Notifications
-    private(set) var notificationStatus: NotificationStatus = .notDetermined
+    private(set) var notificationStatus: UserNotifications.Notifi = .notDetermined
+
+    // Alarms
+    private(set) var alarmStatus: PermissionStatus = .notDetermined
+    private(set) var isRequestingAlarms: Bool = false
+
+    // Block apps
+    private(set) var appBlockingStatus: PermissionStatus = .notDetermined
+    private(set) var isRequestingAppBlocking: Bool = false
 
     // Focus
     var focusDemoCompleted: Bool = false
@@ -341,6 +353,10 @@ final class OnboardingViewModel {
     private func move(to newStep: OnboardingStep) {
         step = newStep
         if newStep == .ready {
+            // Skip can land here without visiting the permission steps.
+            refreshAlarmStatus()
+            refreshAppBlockingStatus()
+            Task { await refreshNotificationStatus() }
             completeOnboarding()
         }
     }
@@ -541,5 +557,65 @@ final class OnboardingViewModel {
 
     func openNotificationSettings() {
         store.notificationManager.openSettings()
+    }
+
+    // MARK: - Alarms
+
+    func refreshAlarmStatus() {
+        switch store.alarmManager.authorizationState {
+        case .authorized:
+            alarmStatus = .granted
+        case .denied:
+            alarmStatus = .denied
+        case .notDetermined:
+            alarmStatus = .notDetermined
+        @unknown default:
+            alarmStatus = .notDetermined
+        }
+    }
+
+    /// AlarmKit permission. `Store` mirrors the result into `user.alarmEnabled` through its
+    /// alarm delegate.
+    func requestAlarms() async {
+        isRequestingAlarms = true
+        await store.alarmManager.requestForAuthortization()
+        refreshAlarmStatus()
+        isRequestingAlarms = false
+
+        guard alarmStatus == .granted else { return }
+        store.alarmManager.enableAlarms()
+        advance()
+    }
+
+    // MARK: - Block Apps
+
+    func refreshAppBlockingStatus() {
+        switch AuthorizationCenter.shared.authorizationStatus {
+        case .approved, .approvedWithDataAccess:
+            appBlockingStatus = .granted
+        case .denied:
+            appBlockingStatus = .denied
+        case .notDetermined:
+            appBlockingStatus = .notDetermined
+        @unknown default:
+            appBlockingStatus = .notDetermined
+        }
+    }
+
+    /// Screen Time (FamilyControls) permission, used to shield apps during focus sessions.
+    func requestAppBlocking() async {
+        isRequestingAppBlocking = true
+        await CueAppBlockManager.requestAuthorization()
+        refreshAppBlockingStatus()
+        isRequestingAppBlocking = false
+
+        guard appBlockingStatus == .granted else { return }
+        advance()
+    }
+
+    /// Alarm and Screen Time access both live in the app's page in Settings.
+    func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 }

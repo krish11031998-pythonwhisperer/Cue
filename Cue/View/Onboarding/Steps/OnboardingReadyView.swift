@@ -35,6 +35,14 @@ struct OnboardingReadyView: View {
                            color: OnboardingPalette.sky,
                            title: "Notifications",
                            detail: notificationsDetail)
+                summaryRow(symbol: .alarmFill,
+                           color: Color("peach"),
+                           title: "Alarms",
+                           detail: permissionDetail(viewModel.alarmStatus))
+                summaryRow(symbol: .lockFill,
+                           color: Color("mint"),
+                           title: "App blocking",
+                           detail: permissionDetail(viewModel.appBlockingStatus))
                 summaryRow(symbol: .listBullet,
                            color: Color("perwinkle"),
                            title: "Staying on top of",
@@ -62,7 +70,11 @@ struct OnboardingReadyView: View {
     }
 
     private var notificationsDetail: String {
-        switch viewModel.notificationStatus {
+        permissionDetail(viewModel.notificationStatus)
+    }
+
+    private func permissionDetail(_ status: OnboardingViewModel.PermissionStatus) -> String {
+        switch status {
         case .granted:
             return "On"
         case .denied:

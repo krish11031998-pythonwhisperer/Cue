@@ -253,3 +253,45 @@ struct OnboardingStepLayout<Header: View, Content: View>: View {
         }
     }
 }
+
+// MARK: - Permission Actions
+
+/// Allow / Maybe later, then Continue once granted, or Open Settings once denied.
+struct OnboardingPermissionActions: View {
+
+    let status: OnboardingViewModel.PermissionStatus
+    let isRequesting: Bool
+    let allowTitle: String
+    let onAllow: @MainActor () async -> Void
+    let onContinue: @MainActor () -> Void
+    let onOpenSettings: @MainActor () -> Void
+
+    var body: some View {
+        switch status {
+        case .notDetermined:
+            Button {
+                Task { await onAllow() }
+            } label: {
+                if isRequesting {
+                    ProgressView()
+                } else {
+                    Text(allowTitle)
+                }
+            }
+            .buttonStyle(.onboardingPrimary)
+            .disabled(isRequesting)
+
+            Button("Maybe later", action: onContinue)
+                .buttonStyle(.onboardingSecondary)
+        case .granted:
+            Button("Continue", action: onContinue)
+                .buttonStyle(.onboardingPrimary)
+        case .denied:
+            Button("Open Settings", action: onOpenSettings)
+                .buttonStyle(.onboardingPrimary)
+
+            Button("Continue without", action: onContinue)
+                .buttonStyle(.onboardingSecondary)
+        }
+    }
+}
