@@ -209,12 +209,26 @@ class CueAIViewModel: Sendable {
         try Task.checkCancellation()
         
         guard let generatedReminder else { return }
-        // The model is only *guided* towards 1...7 (Calendar weekday component), so drop
-        // anything out of range rather than persisting a weekday the rest of the app can't read.
-        let weekdays = Set(generatedReminder.date.weekdays?.map(\.weekdayIntValue).filter { (1...7).contains($0) } ?? [])
-        let timeSchedule: ReminderSchedule? = .init(hour: generatedReminder.date.hour, minute: generatedReminder.date.minute, intervalWeeks: generatedReminder.date.intervalWeek, weekdays: weekdays.isEmpty ? nil : weekdays, calendarDates: nil)
-        
-        let date = timeSchedule?.scheduleForToday ?? .now
+        let generatedSchedule = generatedReminder.date
+        let intervalWeek = min(max(generatedSchedule.intervalWeek, 0), 4)
+
+        // The day the reminder happens (one-time) or starts (repeating), e.g. "tomorrow" → 1.
+        let daysFromToday = min(max(generatedSchedule.daysFromToday, 0), 90)
+        var dateComponents = Calendar.current.dateComponents([.day, .month, .year], from: Calendar.current.date(byAdding: .day, value: daysFromToday, to: .now) ?? .now)
+        dateComponents.hour = generatedSchedule.hour
+        dateComponents.minute = generatedSchedule.minute
+        let date = Calendar.current.date(from: dateComponents) ?? .now
+
+        var weekdays = Set(generatedSchedule.weekdays?.map(\.weekdayIntValue) ?? [])
+        if intervalWeek == 0 {
+            // One-time reminders never repeat on weekdays.
+            weekdays = []
+        } else if weekdays.isEmpty {
+            // "every week" with no day named: repeat on the weekday it starts, otherwise
+            // `NotificationScheduler` would treat it as a one-time reminder.
+            weekdays = [Calendar.current.component(.weekday, from: date)]
+        }
+        let timeSchedule: ReminderSchedule? = .init(hour: generatedSchedule.hour, minute: generatedSchedule.minute, intervalWeeks: intervalWeek, weekdays: weekdays.isEmpty ? nil : weekdays, calendarDates: nil)
         
         let reminder = ReminderModel(notificationType: .notification, title: generatedReminder.title, icon: .init(symbol: nil , emoji: generatedReminder.icon), date: date, snoozeDuration: 15 * 60, tasks: [], tags: [], schedule: timeSchedule, colorName: "sky", focusSession: nil)
         
