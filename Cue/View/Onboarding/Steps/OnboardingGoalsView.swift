@@ -28,10 +28,11 @@ struct OnboardingGoalsView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
             .scrollIndicators(.hidden)
-        } actions: {
-            Button("Continue", action: viewModel.advance)
-                .buttonStyle(.onboardingPrimary)
         }
+//        actions: {
+//            Button("Continue", action: viewModel.advance)
+//                .buttonStyle(.onboardingPrimary)
+//        }
         .sensoryFeedback(.selection, trigger: viewModel.selectedGoals)
     }
 

@@ -16,7 +16,9 @@ import Model
 enum OnboardingStep: Int, CaseIterable, Identifiable {
     case welcome
     case goals
+    #if !DEBUG && V1_2
     case rhythm
+    #endif
     case firstReminder
     case notifications
     case focus

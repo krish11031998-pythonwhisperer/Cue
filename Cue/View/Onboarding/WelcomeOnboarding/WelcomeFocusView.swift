@@ -25,11 +25,12 @@ struct WelcomeFocusView: View {
             .aspectRatio(1, contentMode: .fit)
             .padding(.horizontal, 44)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        } actions: {
-            Button("Next", action: viewModel.advance)
-                .buttonStyle(.onboardingPrimary)
-                .disabled(!viewModel.focusDemoCompleted)
         }
+//        actions: {
+//            Button("Next", action: viewModel.advance)
+//                .buttonStyle(.onboardingPrimary)
+//                .disabled(!viewModel.focusDemoCompleted)
+//        }
         .sensoryFeedback(.success, trigger: viewModel.focusDemoCompleted) { _, completed in completed }
     }
 }

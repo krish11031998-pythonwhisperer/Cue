@@ -44,10 +44,11 @@ struct OnboardingReadyView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
             .scrollIndicators(.hidden)
-        } actions: {
-            Button("Open Cue", action: openCue)
-                .buttonStyle(.onboardingPrimary)
         }
+//        actions: {
+//            Button("Open Cue", action: openCue)
+//                .buttonStyle(.onboardingPrimary)
+//        }
     }
 
     // MARK: - Details

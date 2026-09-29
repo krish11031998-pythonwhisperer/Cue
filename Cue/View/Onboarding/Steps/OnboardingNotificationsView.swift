@@ -31,34 +31,35 @@ struct OnboardingNotificationsView: View {
             }
             .frame(maxHeight: .infinity, alignment: .center)
             .animation(.easeInOut, value: viewModel.notificationStatus)
-        } actions: {
-            switch viewModel.notificationStatus {
-            case .notDetermined:
-                Button {
-                    Task { await viewModel.requestNotifications() }
-                } label: {
-                    if viewModel.isRequestingNotifications {
-                        ProgressView()
-                    } else {
-                        Text("Allow notifications")
-                    }
-                }
-                .buttonStyle(.onboardingPrimary)
-                .disabled(viewModel.isRequestingNotifications)
-
-                Button("Maybe later", action: viewModel.advance)
-                    .buttonStyle(.onboardingSecondary)
-            case .granted:
-                Button("Continue", action: viewModel.advance)
-                    .buttonStyle(.onboardingPrimary)
-            case .denied:
-                Button("Open Settings", action: viewModel.openNotificationSettings)
-                    .buttonStyle(.onboardingPrimary)
-
-                Button("Continue without", action: viewModel.advance)
-                    .buttonStyle(.onboardingSecondary)
-            }
         }
+//        actions: {
+//            switch viewModel.notificationStatus {
+//            case .notDetermined:
+//                Button {
+//                    Task { await viewModel.requestNotifications() }
+//                } label: {
+//                    if viewModel.isRequestingNotifications {
+//                        ProgressView()
+//                    } else {
+//                        Text("Allow notifications")
+//                    }
+//                }
+//                .buttonStyle(.onboardingPrimary)
+//                .disabled(viewModel.isRequestingNotifications)
+//
+//                Button("Maybe later", action: viewModel.advance)
+//                    .buttonStyle(.onboardingSecondary)
+//            case .granted:
+//                Button("Continue", action: viewModel.advance)
+//                    .buttonStyle(.onboardingPrimary)
+//            case .denied:
+//                Button("Open Settings", action: viewModel.openNotificationSettings)
+//                    .buttonStyle(.onboardingPrimary)
+//
+//                Button("Continue without", action: viewModel.advance)
+//                    .buttonStyle(.onboardingSecondary)
+//            }
+//        }
         .task {
             await viewModel.refreshNotificationStatus()
         }

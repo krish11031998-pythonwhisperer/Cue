@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SFSafeSymbols
+import VanorUI
 
 // MARK: - Palette
 
@@ -146,9 +147,10 @@ struct OnboardingPrimaryButtonStyle: ButtonStyle {
         configuration.label
             .font(.headline)
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .foregroundStyle(isEnabled ? OnboardingPalette.skyInk : OnboardingPalette.mutedInk)
-            .background(isEnabled ? OnboardingPalette.sky : OnboardingPalette.mutedFill, in: .capsule)
+//            .frame(height: 56)
+            .padding(.init(top: 14, leading: 12, bottom: 14, trailing: 12))
+            .foregroundStyle(.white)
+            .glassEffect(.regular.interactive(true).tint(Color.proSky.baseColor))
             .contentShape(.capsule)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .opacity(configuration.isPressed ? 0.85 : 1)
@@ -204,18 +206,15 @@ struct OnboardingIconTile: View {
 // MARK: - Step Layout
 
 /// Header on top, scrollable content in the middle, actions pinned to the bottom.
-struct OnboardingStepLayout<Header: View, Content: View, Actions: View>: View {
+struct OnboardingStepLayout<Header: View, Content: View>: View {
 
     let header: Header
     let content: Content
-    let actions: Actions
 
     init(@ViewBuilder header: () -> Header,
-         @ViewBuilder content: () -> Content,
-         @ViewBuilder actions: () -> Actions) {
+         @ViewBuilder content: () -> Content) {
         self.header = header()
         self.content = content()
-        self.actions = actions()
     }
 
     var body: some View {
@@ -225,67 +224,62 @@ struct OnboardingStepLayout<Header: View, Content: View, Actions: View>: View {
 
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            VStack(alignment: .center, spacing: 10) {
-                actions
-            }
-            .padding(.top, 12)
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 16)
         .padding(.bottom, 16)
     }
 }
 
 // MARK: - Flow Layout
-
-/// Wraps chips onto as many rows as they need.
-struct OnboardingFlowLayout: Layout {
-
-    var spacing: CGFloat = 10
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let rows = rows(for: subviews, maxWidth: proposal.width ?? .infinity)
-        let width = rows.map(\.width).max() ?? 0
-        let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
-        return .init(width: width, height: height)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var y = bounds.minY
-        for row in rows(for: subviews, maxWidth: bounds.width) {
-            var x = bounds.minX
-            for index in row.indices {
-                let size = subviews[index].sizeThatFits(.unspecified)
-                subviews[index].place(at: .init(x: x, y: y), proposal: .init(size))
-                x += size.width + spacing
-            }
-            y += row.height + spacing
-        }
-    }
-
-    private struct Row {
-        var indices: [Int] = []
-        var width: CGFloat = 0
-        var height: CGFloat = 0
-    }
-
-    private func rows(for subviews: Subviews, maxWidth: CGFloat) -> [Row] {
-        var rows: [Row] = []
-        var current = Row()
-        for index in subviews.indices {
-            let size = subviews[index].sizeThatFits(.unspecified)
-            let proposedWidth = current.indices.isEmpty ? size.width : current.width + spacing + size.width
-            if !current.indices.isEmpty && proposedWidth > maxWidth {
-                rows.append(current)
-                current = Row()
-            }
-            current.width = current.indices.isEmpty ? size.width : current.width + spacing + size.width
-            current.height = max(current.height, size.height)
-            current.indices.append(index)
-        }
-        if !current.indices.isEmpty {
-            rows.append(current)
-        }
-        return rows
-    }
-}
+//
+///// Wraps chips onto as many rows as they need.
+//struct OnboardingFlowLayout: Layout {
+//
+//    var spacing: CGFloat = 10
+//
+//    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+//        let rows = rows(for: subviews, maxWidth: proposal.width ?? .infinity)
+//        let width = rows.map(\.width).max() ?? 0
+//        let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
+//        return .init(width: width, height: height)
+//    }
+//
+//    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+//        var y = bounds.minY
+//        for row in rows(for: subviews, maxWidth: bounds.width) {
+//            var x = bounds.minX
+//            for index in row.indices {
+//                let size = subviews[index].sizeThatFits(.unspecified)
+//                subviews[index].place(at: .init(x: x, y: y), proposal: .init(size))
+//                x += size.width + spacing
+//            }
+//            y += row.height + spacing
+//        }
+//    }
+//
+//    private struct Row {
+//        var indices: [Int] = []
+//        var width: CGFloat = 0
+//        var height: CGFloat = 0
+//    }
+//
+//    private func rows(for subviews: Subviews, maxWidth: CGFloat) -> [Row] {
+//        var rows: [Row] = []
+//        var current = Row()
+//        for index in subviews.indices {
+//            let size = subviews[index].sizeThatFits(.unspecified)
+//            let proposedWidth = current.indices.isEmpty ? size.width : current.width + spacing + size.width
+//            if !current.indices.isEmpty && proposedWidth > maxWidth {
+//                rows.append(current)
+//                current = Row()
+//            }
+//            current.width = current.indices.isEmpty ? size.width : current.width + spacing + size.width
+//            current.height = max(current.height, size.height)
+//            current.indices.append(index)
+//        }
+//        if !current.indices.isEmpty {
+//            rows.append(current)
+//        }
+//        return rows
+//    }
+//}

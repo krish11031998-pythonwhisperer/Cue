@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SFSafeSymbols
+import VanorUI
 
 struct OnboardingFirstReminderView: View {
 
@@ -32,7 +33,7 @@ struct OnboardingFirstReminderView: View {
                         .foregroundStyle(.secondary)
                         .padding(.top, 14)
 
-                    OnboardingFlowLayout(spacing: 10) {
+                    OverFlowingHorizontalLayout(horizontalSpacing: 10, verticalSpacing: 10) {
                         ForEach(viewModel.suggestions) { suggestion in
                             suggestionChip(suggestion)
                         }
@@ -45,14 +46,15 @@ struct OnboardingFirstReminderView: View {
             .scrollBounceBehavior(.basedOnSize)
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
-        } actions: {
-            Button("Create my first reminder") {
-                fieldFocused = false
-                viewModel.createFirstReminder()
-            }
-            .buttonStyle(.onboardingPrimary)
-            .disabled(viewModel.draft == nil || viewModel.isInterpreting)
         }
+//        actions: {
+//            Button("Create my first reminder") {
+//                fieldFocused = false
+//                viewModel.createFirstReminder()
+//            }
+//            .buttonStyle(.onboardingPrimary)
+//            .disabled(viewModel.draft == nil || viewModel.isInterpreting)
+//        }
         .onChange(of: viewModel.reminderText) {
             viewModel.reminderTextChanged()
         }
@@ -108,7 +110,7 @@ struct OnboardingFirstReminderView: View {
                 .font(.caption.weight(.medium))
                 .foregroundStyle(OnboardingPalette.aiInk)
 
-            OnboardingFlowLayout(spacing: 8) {
+            OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 8) {
                 detailChip(draft.scheduleDescription, color: OnboardingPalette.sky)
                 detailChip(draft.repeatDescription, color: Color("perwinkle"))
                 if let goal = draft.goal {

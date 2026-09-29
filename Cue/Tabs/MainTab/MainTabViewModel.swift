@@ -79,7 +79,11 @@ class MainTabViewModel {
         // process and forwards through the router.
         FocusSessionIntentRouter.shared.handler = self.focusTimerCoordinator
         
+        #if DEBUG
+        self.hasShowOnboarding = false
+        #else
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
+        #endif
         presentPayWallAfterFirstOnboarding = !hasShowOnboarding
         if !hasShowOnboarding {
             self.presentation = .onboarding
@@ -96,7 +100,9 @@ class MainTabViewModel {
             // onboarding directly instead of waiting on a reminder sheet's dismissal.
             CueUserDefaultsManager.shared[.hasShowOnboarding] = true
             if presentPayWallAfterFirstOnboarding {
+                #if !DEBUG
                 presentPayWallAfterFirstOnboarding = false
+                #endif
                 presentation = .paywall
             }
         case .paywall:

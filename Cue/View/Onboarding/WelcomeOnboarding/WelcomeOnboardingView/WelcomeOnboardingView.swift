@@ -27,15 +27,16 @@ struct WelcomeOnboardingView: View {
                 }
             }
             .frame(maxHeight: .infinity, alignment: .center)
-        } actions: {
-            Button("Get started", action: getStarted)
-                .buttonStyle(.onboardingPrimary)
-
-            Text("cue:ai requires cue:it Pro and a device that supports Apple Intelligence.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
         }
+//        actions: {
+//            Button("Get started", action: getStarted)
+//                .buttonStyle(.onboardingPrimary)
+//
+//            Text("cue:ai requires cue:it Pro and a device that supports Apple Intelligence.")
+//                .font(.caption2)
+//                .foregroundStyle(.secondary)
+//                .multilineTextAlignment(.center)
+//        }
     }
 }
 
