@@ -32,7 +32,7 @@ struct OnboardingMainView: View {
             OnboardingTopBar(step: viewModel.step,
                              onBack: viewModel.goBack,
                              onSkip: viewModel.skip)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 16)
                 .padding(.top, 12)
         })
         .safeAreaInset(edge: .bottom, content: {
@@ -77,7 +77,7 @@ struct OnboardingMainView: View {
             return ""
         #endif
         case .firstReminder:
-            return "Create My First Routine"
+            return "Create"
         case .notifications:
             switch viewModel.notificationStatus {
             case .notDetermined:
@@ -136,6 +136,7 @@ struct OnboardingMainView: View {
             }
             .buttonStyle(.onboardingPrimary)
             .controlSize(.large)
+            .contentTransition(.numericText())
             
             Button(secondaryTitle) {
                 // Do soemthing

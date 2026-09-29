@@ -43,49 +43,72 @@ fileprivate extension UIColor {
     }
 }
 
+
+fileprivate struct ProgressBar: Shape {
+    
+    @Environment(\.theme) var theme
+    var pct: CGFloat
+    
+    var animatableData: CGFloat {
+        get { pct }
+        set { pct = newValue }
+    }
+    
+    nonisolated func path(in rect: CGRect) -> Path {
+        Path { path in
+            let cornerRadius = rect.size.smallDim
+            path.addRoundedRect(in: .init(origin: rect.origin, size: .init(width:  max(cornerRadius, rect.width * pct), height: rect.height)), cornerRadii: .init(topLeading: cornerRadius.half, bottomLeading: cornerRadius.half, bottomTrailing: cornerRadius.half, topTrailing: cornerRadius.half))
+        }
+    }
+    
+}
+
 // MARK: - Top Bar
 
 /// Back chevron, progress dots and Skip — shown on every step.
 struct OnboardingTopBar: View {
 
+    @Environment(\.theme) var theme
+    
     let step: OnboardingStep
     let onBack: () -> Void
     let onSkip: () -> Void
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        ZStack(alignment: .center) {
             if step.showsBack {
                 Button(action: onBack) {
-                    Image(systemSymbol: .chevronLeft)
-                        .font(.body.weight(.semibold))
-                        .frame(width: 24, height: 24)
-                        .contentShape(.rect)
+                    Image(systemSymbol: .chevronBackward)
+                        .font(.headline)
+                        .frame(width: 36, height: 36, alignment: .center)
+                        .padding(.all, 6)
+                        .glassEffect(.regular.interactive(), in: .circle)
+                        .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("Back")
-                .transition(.opacity)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .transition(.popIn())
             }
 
             HStack(alignment: .center, spacing: 6) {
                 ForEach(0..<OnboardingStep.progressCount, id: \.self) { index in
                     let isOn = index <= step.progressIndex
-                    Capsule()
-                        .fill(isOn ? OnboardingPalette.sky : OnboardingPalette.dot)
-                        .frame(width: isOn ? 26 : 18, height: 5)
+                    ZStack(alignment: .center) {
+                        ProgressViewShape(pct: 1)
+                            .fill(theme.backgroundPrimary)
+                        ProgressViewShape(pct: isOn ? 1 : 0)
+                            .fill(theme.baseColor)
+                            .mask(alignment: .center) {
+                                ProgressViewShape(pct: 1)
+                                    .fill(Color.black)
+                            }
+                    }
+                    .frame(width: 32, height: 8)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Step \(step.progressIndex + 1) of \(OnboardingStep.progressCount)")
-
-            if step.showsSkip {
-                Button("Skip", action: onSkip)
-                    .buttonStyle(.plain)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .transition(.opacity)
-            }
         }
         .frame(height: 24)
         .animation(.snappy, value: step)

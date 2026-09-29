@@ -175,12 +175,23 @@ struct CueAIView: View {
         let remove: () -> Void
         let edit: () -> Void
         
+        var reminderConfigWithOptions: ReminderView.ConfigWithOptions {
+            ReminderView.ConfigWithOptions(time: (reminder.schedule?.timeScheduled ?? Date.now).timeBuilder(),
+                                           date: reminder.date.dateStringFormatter(),
+                                           schedule: reminder.schedule?.timeScheduleString,
+                                           delete: remove,
+                                           edit: edit)
+        }
+        
         var body: some View {
             ReminderView(model: .init(title: reminder.title, icon: .init(reminder.icon)!,
                                       lightColor: reminder.color.resolved(for: .light),
                                       darkColor: reminder.color.resolved(for: .dark),
                                       time: reminder.schedule?.timeScheduled ?? reminder.date,
-                                      state: .showDisplayOptions(delete: remove, edit: edit), tags: [], logReminder: nil, deleteReminder: nil))
+                                      state: .showDisplayOptions(reminderConfigWithOptions),
+                                      tags: [],
+                                      logReminder: nil,
+                                      deleteReminder: nil))
             .padding(.horizontal, 20)
             .id(reminder)
             .popInContainer(angle: .random(in: -0.5..<0.5),

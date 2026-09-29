@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SFSafeSymbols
+import VanorUI
 
 struct OnboardingGoalsView: View {
 
@@ -23,17 +24,18 @@ struct OnboardingGoalsView: View {
                         goalRow(goal)
                     }
                 }
+                .padding(.horizontal, 4)
                 .padding(.top, 26)
                 .padding(.bottom, 12)
             }
             .scrollBounceBehavior(.basedOnSize)
             .scrollIndicators(.hidden)
         }
-//        actions: {
-//            Button("Continue", action: viewModel.advance)
-//                .buttonStyle(.onboardingPrimary)
-//        }
         .sensoryFeedback(.selection, trigger: viewModel.selectedGoals)
+    }
+    
+    private func themeForGoal(_ goal: OnboardingGoal) -> LCHColor {
+        .init(color: goal.color)
     }
 
     private func goalRow(_ goal: OnboardingGoal) -> some View {
@@ -43,39 +45,35 @@ struct OnboardingGoalsView: View {
                 viewModel.toggle(goal)
             }
         } label: {
-            HStack(alignment: .center, spacing: 14) {
-                OnboardingIconTile(symbol: goal.symbol, color: goal.color, size: 34)
-
-                Text(goal.title)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(.primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                ZStack {
-                    if isSelected {
-                        Circle()
-                            .fill(goal.color)
-                        Image(systemSymbol: .checkmark)
-                            .font(.caption.weight(.heavy))
-                            .foregroundStyle(.white)
-                    } else {
-                        Circle()
-                            .strokeBorder(OnboardingPalette.checkOutline, lineWidth: 1.5)
-                    }
-                }
-                .frame(width: 26, height: 26)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .frame(minHeight: 64)
-            .background(OnboardingPalette.card, in: .rect(cornerRadius: OnboardingPalette.cardRadius))
-            .overlay {
-                RoundedRectangle(cornerRadius: OnboardingPalette.cardRadius)
-                    .strokeBorder(isSelected ? goal.color : OnboardingPalette.line, lineWidth: 2)
-            }
-            .contentShape(.rect(cornerRadius: OnboardingPalette.cardRadius))
+            goalButtonLabel(goal)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+    
+    
+    @ViewBuilder
+    private func goalButtonLabel(_ goal: OnboardingGoal) -> some View {
+        let theme = themeForGoal(goal)
+        let isSelected = viewModel.selectedGoals.contains(goal)
+        
+        HStack(alignment: .center, spacing: 14) {
+            ReminderIconView(icon: .symbol(goal.symbol), foregroundColor: theme.foregroundPrimary, backgroundColor: goal.color, font: .headline)
+                .frame(width: 36, height: 36, alignment: .center)
+            
+            Text(goal.title)
+                .font(.body.weight(.medium))
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(alignment: .center, content: {
+            Capsule()
+                .fill(theme.surfacePrimary)
+                .stroke(isSelected ? theme.outlinePrimary : Color.clear, style: .init(lineWidth: 2))
+        })
+        .contentShape(Capsule())
     }
 }

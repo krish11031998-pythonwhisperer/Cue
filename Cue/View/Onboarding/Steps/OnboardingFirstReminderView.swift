@@ -11,33 +11,39 @@ import VanorUI
 
 struct OnboardingFirstReminderView: View {
 
+    @Environment(\.theme) var theme
     @Bindable var viewModel: OnboardingViewModel
     @FocusState private var fieldFocused: Bool
 
     var body: some View {
         OnboardingStepLayout {
-            OnboardingHeader("What should Cue remind you about first?",
+            OnboardingHeader("What's the first routine you want to build?",
                              subtitle: "One real thing. You can change it any time.")
         } content: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     reminderField
+                        .padding(.horizontal, 2)
 
                     if let draft = viewModel.draft {
                         draftDetails(draft)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                    }
-
-                    Text("Or start from one of these:")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 14)
-
-                    OverFlowingHorizontalLayout(horizontalSpacing: 10, verticalSpacing: 10) {
-                        ForEach(viewModel.suggestions) { suggestion in
-                            suggestionChip(suggestion)
+                            .transition(.blurReplace)
+                    } else {
+                        Group {
+                            Text("Or start from one of these:")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 14)
+                            
+                            OverFlowingHorizontalLayout(horizontalSpacing: 10, verticalSpacing: 10) {
+                                ForEach(viewModel.suggestions) { suggestion in
+                                    suggestionChip(suggestion)
+                                }
+                            }
                         }
+                        .transition(.blurReplace)
                     }
+
                 }
                 .padding(.top, 24)
                 .padding(.bottom, 12)
@@ -47,14 +53,6 @@ struct OnboardingFirstReminderView: View {
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
         }
-//        actions: {
-//            Button("Create my first reminder") {
-//                fieldFocused = false
-//                viewModel.createFirstReminder()
-//            }
-//            .buttonStyle(.onboardingPrimary)
-//            .disabled(viewModel.draft == nil || viewModel.isInterpreting)
-//        }
         .onChange(of: viewModel.reminderText) {
             viewModel.reminderTextChanged()
         }
@@ -70,8 +68,8 @@ struct OnboardingFirstReminderView: View {
 
     private var reminderField: some View {
         HStack(alignment: .center, spacing: 13) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color("rose"))
+            Circle()
+                .fill(theme.baseColor)
                 .frame(width: 36, height: 36)
                 .overlay {
                     if viewModel.isInterpreting {
@@ -94,29 +92,38 @@ struct OnboardingFirstReminderView: View {
                 }
         }
         .padding(16)
-        .background(OnboardingPalette.card, in: .rect(cornerRadius: 20))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .strokeBorder(fieldFocused || viewModel.draft != nil ? OnboardingPalette.sky : OnboardingPalette.line, lineWidth: 2)
-        }
+        .background(alignment: .center, content: {
+            Capsule()
+                .fill(theme.backgroundPrimary)
+                .stroke(fieldFocused ? theme.outlinePrimary : theme.outlineTertiary, style: .init(lineWidth: 2))
+        })
         .animation(.easeInOut(duration: 0.2), value: fieldFocused)
     }
 
     // MARK: - Draft
 
     private func draftDetails(_ draft: OnboardingReminderDraft) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(draft.readByCueAI ? "cue:ai read the date, time and repeat out of your sentence" : "\(draft.emoji) \(draft.title)")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(OnboardingPalette.aiInk)
-
-            OverFlowingHorizontalLayout(horizontalSpacing: 8, verticalSpacing: 8) {
-                detailChip(draft.scheduleDescription, color: OnboardingPalette.sky)
-                detailChip(draft.repeatDescription, color: Color("perwinkle"))
-                if let goal = draft.goal {
-                    detailChip(goal.tagName, color: goal.color)
-                }
-            }
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Your first routine:")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(theme.foregroundTertiary)
+            
+            ReminderView(model: .init(title: draft.title,
+                                      icon: .emoji(.init(draft.emoji)),
+                                      lightColor: Color.sky,
+                                      darkColor: Color.sky,
+                                      time: draft.date,
+                                      state: .showDisplayOptions(
+                                        .init(time: draft.date.formatted(date: .omitted, time: .shortened),
+                                              date: draft.repeatDescription,
+                                              schedule: draft.scheduleDescription,
+                                              delete: nil,
+                                              edit: nil)
+                                      ),
+                                      tags: [],
+                                      logReminder: nil,
+                                      deleteReminder: nil))
+            .padding(.horizontal, 2)
         }
     }
 
