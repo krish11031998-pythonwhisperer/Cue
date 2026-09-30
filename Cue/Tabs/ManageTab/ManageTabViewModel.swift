@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreData
 import SwiftUI
 import VanorUI
 import Model
@@ -34,7 +35,13 @@ class ManageViewModel {
     @ObservationIgnored
     private var routinesWithConfig: [(ReminderModel, RoutineCardConfig)] = []
     @ObservationIgnored
-    var selectedTags: Set<TagModel> = .init() {
+    private var scheduledRoutines: [ReminderModel] = [] {
+        didSet {
+            self.setupTagChipViewModel()
+        }
+    }
+    @ObservationIgnored
+    var selectedTags: Set<NSManagedObjectID> = .init() {
         didSet {
             self.setupTagChipViewModel()
             self.filterBasedOnTags()
@@ -87,7 +94,7 @@ class ManageViewModel {
         }
         
         let filteredRoutines = routinesWithConfig.filter { (routine, __) in
-            routine.tags.reduce(false, { $0 || selectedTags.contains($1) })
+            routine.tags.contains { selectedTags.contains($0.objectId) }
         }
         
         self.setupSections(filteredRoutines)
@@ -107,6 +114,7 @@ class ManageViewModel {
             }
             return false
         }
+        scheduledRoutines = recurringRoutines
         calendarFetchTask?.cancel()
         calendarFetchTask = Task(priority: .userInitiated) { [weak self] in
             let calendarDays = await CalendarManager.shared.setupCalendarForExactOneMonthFromToday()
@@ -145,20 +153,39 @@ class ManageViewModel {
             
             await MainActor.run { [weak self] in
                 self?.routinesWithConfig = routineTimelineCardModels
-                self?.setupSections(routineTimelineCardModels)
+                self?.filterBasedOnTags()
             }
         }
     }
     
     // MARK: - Tag Chip View Model
     
+    /// Only tags attached to at least one existing, scheduled routine are shown,
+    /// and each chip's count reflects the number of those scheduled routines.
     private func setupTagChipViewModel() {
-        let tagChipModels: [TagChipView.Model] = tags.map { tag in
-            let buttonConfig = TagChipView.ButtonConfig(isSelected: selectedTags.contains(tag), routineCount: tag.reminderIDs.count) {
-                if self.selectedTags.contains(tag) {
-                    self.selectedTags.remove(tag)
+        var scheduledRoutineCountByTag: [NSManagedObjectID: Int] = [:]
+        scheduledRoutines.forEach { routine in
+            Set(routine.tags.map(\.objectId)).forEach { scheduledRoutineCountByTag[$0, default: 0] += 1 }
+        }
+        
+        let visibleTags = tags.filter { (scheduledRoutineCountByTag[$0.objectId] ?? 0) > 0 }
+        
+        // Drop selections for tags that are no longer shown, otherwise the grid
+        // could stay filtered by a chip the user can no longer deselect.
+        let visibleSelectedTags = selectedTags.intersection(visibleTags.map(\.objectId))
+        guard visibleSelectedTags == selectedTags else {
+            self.selectedTags = visibleSelectedTags
+            return
+        }
+        
+        let tagChipModels: [TagChipView.Model] = visibleTags.map { tag in
+            let tagID = tag.objectId
+            let buttonConfig = TagChipView.ButtonConfig(isSelected: selectedTags.contains(tagID), routineCount: scheduledRoutineCountByTag[tagID] ?? 0) { [weak self] in
+                guard let self else { return }
+                if self.selectedTags.contains(tagID) {
+                    self.selectedTags.remove(tagID)
                 } else {
-                    self.selectedTags.insert(tag)
+                    self.selectedTags.insert(tagID)
                 }
             }
             return .init(name: tag.name, color: tag.color, viewType: .button(buttonConfig))
