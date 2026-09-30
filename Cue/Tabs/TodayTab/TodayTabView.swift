@@ -11,6 +11,7 @@ import Model
 import VanorUI
 internal import EmojiKit
 import Combine
+import AsyncAlgorithms
 
 extension CalendarDay: @retroactive CalendarDateCarouselDataElement, @retroactive Identifiable {
     public var id: Int {
@@ -84,8 +85,10 @@ struct TodayTabView: View {
             viewModel.setupCalendarForOneMonth(reminders: store.reminderModels)
         }
         .task {
-            for await _ in store.hasLoggedReminder {
-                viewModel.setupCalendarForOneMonth(reminders: store.reminderModels)
+            // Patch the loaded days in place instead of rebuilding `calendarDay`: rebuilding re-renders
+            // this view, and `PageView` then swaps the visible page for a new one (scroll + state reset).
+            for await _ in merge(store.hasLoggedReminder, store.hasLoggedTasks) {
+                viewModel.refreshLogs()
             }
         }
         .fullScreenCover(item: $viewModel.fullPresentation, content: fullScreenPresentationContent(_:))
@@ -108,13 +111,13 @@ struct TodayTabView: View {
     private func tabView() -> some View {
         let current: Binding<CalendarDayView.Model?> = .init {
             guard let todayCalendar = viewModel.todayInCalendar else { return nil }
-            return .init(store: store, calendarDay: todayCalendar)
+            return .init(store: store, calendarDay: todayCalendar, logsRevision: viewModel.logsRevision)
         } set: { model in
             guard let calendarDate = model?.calendarDay.date else { return }
             viewModel.today = calendarDate
         }
     
-        PageView<CalendarDayView>(models: viewModel.calendarDay.map { .init(store: store, calendarDay: $0) },
+        PageView<CalendarDayView>(models: viewModel.calendarDay.map { .init(store: store, calendarDay: $0, logsRevision: viewModel.logsRevision) },
                                   current: current)
         .environment(\.screenPadding, .init(topPadding: topPadding, bottomPadding: 83))
         .ignoresSafeArea(edges: .vertical)

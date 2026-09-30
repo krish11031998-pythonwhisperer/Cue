@@ -10,6 +10,14 @@ import VanorUI
 import SwiftUI
 import CoreData
 
+/// Bumped whenever `TodayViewModel.refreshLogs()` patches the logs of the loaded days in place.
+/// Only `CalendarDayView` reads it, so logging never invalidates `TodayTabView` — a re-render there
+/// makes `PageView` replace the visible page with a freshly built one.
+@Observable
+final class CalendarDayLogsRevision {
+    fileprivate(set) var value: Int = 0
+}
+
 @Observable
 class TodayViewModel {
     
@@ -33,7 +41,11 @@ class TodayViewModel {
     var today: Date = Date.now.startOfDay
     var fullPresentation: FullScreenPresentation? = nil
     @ObservationIgnored
+    let logsRevision: CalendarDayLogsRevision = .init()
+    @ObservationIgnored
     private var calendarParsingTask: Task<Void, Never>?
+    @ObservationIgnored
+    private var logsRefreshTask: Task<Void, Never>?
     
     
     var todayInCalendar: CalendarDay? {
@@ -64,6 +76,29 @@ class TodayViewModel {
                 self?.calendarDay = calendarValues
             }
             
+        }
+    }
+    
+    /// Logging only changes a day's logs, never which reminders it has, so rather than replacing
+    /// `calendarDay` the fresh logs are written into the existing `CalendarDay` instances. `PageView`
+    /// holds those same instances, so pages built later (swiping) read the fresh logs too.
+    func refreshLogs() {
+        logsRefreshTask?.cancel()
+        logsRefreshTask = Task { [weak self] in
+            let freshDays = await CalendarManager.shared.setupCalendarForOneMonthFromToday()
+            
+            guard !Task.isCancelled, !freshDays.isEmpty else { return }
+            
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                let freshDaysByDate = Dictionary(freshDays.map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
+                for day in self.calendarDay {
+                    guard let freshDay = freshDaysByDate[day.date] else { continue }
+                    day.loggedReminders = freshDay.loggedReminders
+                    day.loggedReminderTasks = freshDay.loggedReminderTasks
+                }
+                self.logsRevision.value += 1
+            }
         }
     }
     

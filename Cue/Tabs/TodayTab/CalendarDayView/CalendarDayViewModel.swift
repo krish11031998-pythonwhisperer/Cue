@@ -103,14 +103,10 @@ class CalendarDayViewModel {
         let timeOfDay: TimeOfDay
         let reminders: [RowModel]
         
-        var id: Int {
-            var hasher: Hasher = .init()
-            reminders.forEach {
-                hasher.combine($0)
-            }
-            hasher.combine(timeOfDay.color)
-            hasher.combine(timeOfDay.title)
-            return hasher.finalize()
+        /// Stable per time of day, so a log only replaces the affected row (rows keep content-based ids,
+        /// since `ReminderView` seeds its state from the model) instead of the whole section.
+        var id: TimeOfDay {
+            timeOfDay
         }
     }
     

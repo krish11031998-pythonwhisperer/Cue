@@ -77,7 +77,11 @@ import AsyncAlgorithms
 //                    self?.reminders = self?.deleteRemindersWithWrongDate(reminders) ?? reminders
                     self?.reminders = reminders
                     let reminderModels = reminders.map { ReminderModel(from: $0) }
-                    self?.reminderModels = reminderModels
+                    // `changesStream` fires on every save of the context (logging a reminder included),
+                    // so only publish real changes to avoid invalidating every view that reads `reminderModels`.
+                    if self?.reminderModels != reminderModels {
+                        self?.reminderModels = reminderModels
+                    }
                 }
             }
         }
