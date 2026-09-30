@@ -48,15 +48,17 @@ public struct CalendarDayView: View {
     
     private let store: Store
     private let calendarDay: CalendarDay
+    private let logsRevision: CalendarDayLogsRevision
     @State private var presentation: Presentation? = nil
     @State private var addReminder: Bool = false
     @State private var viewModel: CalendarDayViewModel
     @Environment(\.screenPadding) var screenPadding
     
-    init (store: Store, calendarDay: CalendarDay) {
+    init (store: Store, calendarDay: CalendarDay, logsRevision: CalendarDayLogsRevision) {
         self._viewModel = .init(initialValue: .init(calendarDate: calendarDay.date, store: store))
         self.store = store
         self.calendarDay = calendarDay
+        self.logsRevision = logsRevision
     }
     
     var date: Date {
@@ -105,8 +107,11 @@ public struct CalendarDayView: View {
             .scrollEdgeEffectStyle(.soft, for: .all)
         }
         .task(id: calendarDay) {
-            self.viewModel.sections(calendarDay: calendarDay)
-            self.viewModel.loggedReminders(calendarDay.loggedReminders)
+            refreshSections()
+        }
+        .onChange(of: logsRevision.value) { _, _ in
+            // `calendarDay`'s logs were patched in place, so rebuild the rows without rebuilding the page.
+            refreshSections()
         }
         .sheet(item: $presentation, content: { presentation in
             switch presentation {
@@ -135,6 +140,12 @@ public struct CalendarDayView: View {
         }
         .scrollEdgeEffectStyle(.soft, for: .all)
         .ignoresSafeArea(.container, edges: .all)
+    }
+    
+    
+    private func refreshSections() {
+        viewModel.sections(calendarDay: calendarDay)
+        viewModel.loggedReminders(calendarDay.loggedReminders)
     }
     
     
@@ -169,6 +180,7 @@ extension CalendarDayView: PageContentView {
     public struct Model: Hashable {
         let store: Store
         let calendarDay: CalendarDay
+        let logsRevision: CalendarDayLogsRevision
         
         public func hash(into hasher: inout Hasher) {
             hasher.combine(calendarDay)
@@ -180,7 +192,7 @@ extension CalendarDayView: PageContentView {
     }
     
     public init(model: Model) {
-        self.init(store: model.store, calendarDay: model.calendarDay)
+        self.init(store: model.store, calendarDay: model.calendarDay, logsRevision: model.logsRevision)
     }
     
 }
