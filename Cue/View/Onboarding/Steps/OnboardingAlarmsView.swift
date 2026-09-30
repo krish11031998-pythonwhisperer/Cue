@@ -18,7 +18,7 @@ struct OnboardingAlarmsView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        OnboardingStepLayout {
+        OnboardingStepLayout(includeScrollView: false){
             OnboardingHeader("Some reminders can't be missed.\n",
                              accent: "Make them alarms.",
                              subtitle: "Alarms ring through Silent mode and Focus, right on your Lock Screen — even when Cue is closed.")

@@ -12,7 +12,6 @@ import VanorUI
 struct OnboardingReadyView: View {
 
     let viewModel: OnboardingViewModel
-    let openCue: () -> Void
 
     var body: some View {
         OnboardingStepLayout(includeScrollView: true) {

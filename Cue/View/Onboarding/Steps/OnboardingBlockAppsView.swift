@@ -15,7 +15,7 @@ struct OnboardingBlockAppsView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        OnboardingStepLayout {
+        OnboardingStepLayout(includeScrollView: false) {
             OnboardingHeader("Block distracting apps\n",
                              accent: "while you focus",
                              subtitle: "Pick the apps that pull you away. Cue locks them until your session ends.")

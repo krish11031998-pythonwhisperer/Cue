@@ -69,9 +69,7 @@ struct OnboardingMainView: View {
         case .blockApps:
             OnboardingBlockAppsView(viewModel: viewModel)
         case .ready:
-            OnboardingReadyView(viewModel: viewModel) {
-                dismiss()
-            }
+            OnboardingReadyView(viewModel: viewModel)
         }
     }
     

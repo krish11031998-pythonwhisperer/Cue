@@ -312,15 +312,13 @@ final class OnboardingViewModel {
     private(set) var createdReminder: OnboardingReminderDraft?
 
     // Notifications
-    private(set) var notificationStatus: UserNotifications.Notifi = .notDetermined
+    private(set) var notificationStatus: PermissionStatus = .notDetermined
 
     // Alarms
     private(set) var alarmStatus: PermissionStatus = .notDetermined
-    private(set) var isRequestingAlarms: Bool = false
 
     // Block apps
     private(set) var appBlockingStatus: PermissionStatus = .notDetermined
-    private(set) var isRequestingAppBlocking: Bool = false
 
     // Focus
     var focusDemoCompleted: Bool = false
@@ -369,7 +367,6 @@ final class OnboardingViewModel {
             defaults[.windDownMinutes] = windDownMinutes
         }
         defaults[.hasShowOnboarding] = true
-        dismiss?()
     }
     
     
@@ -391,8 +388,30 @@ final class OnboardingViewModel {
                 await requestNotifications()
                 loadingButton = false
             }
+        case .alarms:
+            switch alarmStatus {
+            case .notDetermined:
+                Task { @MainActor in
+                    await requestAlarms()
+                }
+            case .granted:
+                advance()
+            case .denied:
+                openAppSettings()
+            }
+        case .blockApps:
+            switch appBlockingStatus {
+            case .notDetermined:
+                Task { @MainActor in
+                    await requestAppBlocking()
+                }
+            case .granted:
+                advance()
+            case .denied:
+                openAppSettings()
+            }
         case .ready:
-            completeOnboarding()
+            dismiss?()
         }
     }
 
@@ -577,10 +596,10 @@ final class OnboardingViewModel {
     /// AlarmKit permission. `Store` mirrors the result into `user.alarmEnabled` through its
     /// alarm delegate.
     func requestAlarms() async {
-        isRequestingAlarms = true
+        loadingButton = true
         await store.alarmManager.requestForAuthortization()
         refreshAlarmStatus()
-        isRequestingAlarms = false
+        loadingButton = false
 
         guard alarmStatus == .granted else { return }
         store.alarmManager.enableAlarms()
@@ -604,10 +623,10 @@ final class OnboardingViewModel {
 
     /// Screen Time (FamilyControls) permission, used to shield apps during focus sessions.
     func requestAppBlocking() async {
-        isRequestingAppBlocking = true
+        loadingButton = true
         await CueAppBlockManager.requestAuthorization()
         refreshAppBlockingStatus()
-        isRequestingAppBlocking = false
+        loadingButton = false
 
         guard appBlockingStatus == .granted else { return }
         advance()
