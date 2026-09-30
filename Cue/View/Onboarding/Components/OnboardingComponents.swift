@@ -90,22 +90,33 @@ struct OnboardingTopBar: View {
                 .transition(.blurReplace)
             }
             
-            HStack(alignment: .center, spacing: 6) {
-                ForEach(0..<OnboardingStep.progressCount, id: \.self) { index in
-                    let isOn = index <= step.progressIndex
-                    ZStack(alignment: .center) {
-                        ProgressViewShape(pct: 1)
-                            .fill(theme.backgroundPrimary)
-                        ProgressViewShape(pct: isOn ? 1 : 0)
-                            .fill(theme.baseColor)
-                            .mask(alignment: .center) {
-                                ProgressViewShape(pct: 1)
-                                    .fill(Color.black)
-                            }
+            GeometryReader { proxy in
+                let size = proxy.size
+                let count = CGFloat(OnboardingStep.progressCount)
+                let space = (count - 1) * 6
+                let barWidth = (proxy.size.width - space)/count
+                
+                HStack(alignment: .center, spacing: 6) {
+                    ForEach(0..<OnboardingStep.progressCount, id: \.self) { index in
+                        let isOn = index <= step.progressIndex
+                        ZStack(alignment: .center) {
+                            ProgressViewShape(pct: 1)
+                                .fill(theme.backgroundPrimary)
+                            ProgressViewShape(pct: isOn ? 1 : 0)
+                                .fill(theme.baseColor)
+                                .mask(alignment: .center) {
+                                    ProgressViewShape(pct: 1)
+                                        .fill(Color.black)
+                                }
+                        }
+                        .frame(width: barWidth, height: 8)
                     }
-                    .frame(width: 32, height: 8)
                 }
+                .position(x: proxy.frame(in: .local).midX, y: size.height.half)
             }
+            .containerRelativeFrame(.horizontal, { width, _ in
+                width * 0.5
+            })
             .frame(maxWidth: .infinity, alignment: .center)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Step \(step.progressIndex + 1) of \(OnboardingStep.progressCount)")
@@ -250,6 +261,48 @@ struct OnboardingStepLayout<Header: View, Content: View>: View {
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
+        }
+    }
+}
+
+// MARK: - Permission Actions
+
+/// Allow / Maybe later, then Continue once granted, or Open Settings once denied.
+struct OnboardingPermissionActions: View {
+
+    let status: OnboardingViewModel.PermissionStatus
+    let isRequesting: Bool
+    let allowTitle: String
+    let onAllow: @MainActor () async -> Void
+    let onContinue: @MainActor () -> Void
+    let onOpenSettings: @MainActor () -> Void
+
+    var body: some View {
+        switch status {
+        case .notDetermined:
+            Button {
+                Task { await onAllow() }
+            } label: {
+                if isRequesting {
+                    ProgressView()
+                } else {
+                    Text(allowTitle)
+                }
+            }
+            .buttonStyle(.onboardingPrimary)
+            .disabled(isRequesting)
+
+            Button("Maybe later", action: onContinue)
+                .buttonStyle(.onboardingSecondary)
+        case .granted:
+            Button("Continue", action: onContinue)
+                .buttonStyle(.onboardingPrimary)
+        case .denied:
+            Button("Open Settings", action: onOpenSettings)
+                .buttonStyle(.onboardingPrimary)
+
+            Button("Continue without", action: onContinue)
+                .buttonStyle(.onboardingSecondary)
         }
     }
 }

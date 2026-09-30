@@ -9,7 +9,7 @@ import SwiftUI
 import VanorUI
 import Model
 
-/// Welcome → Goals → Day rhythm → First reminder → Notifications → Focus → Ready.
+/// Welcome → Goals → Day rhythm → First reminder → Notifications → Alarms → Focus → Block apps → Ready.
 ///
 /// Personalise first, create one real reminder, and only then ask for notifications.
 struct OnboardingMainView: View {
@@ -62,12 +62,14 @@ struct OnboardingMainView: View {
             OnboardingFirstReminderView(viewModel: viewModel)
         case .notifications:
             OnboardingNotificationsView(viewModel: viewModel)
+        case .alarms:
+            OnboardingAlarmsView(viewModel: viewModel)
         case .focus:
             WelcomeFocusView(viewModel: viewModel)
+        case .blockApps:
+            OnboardingBlockAppsView(viewModel: viewModel)
         case .ready:
-            OnboardingReadyView(viewModel: viewModel) {
-                dismiss()
-            }
+            OnboardingReadyView(viewModel: viewModel)
         }
     }
     
@@ -92,6 +94,10 @@ struct OnboardingMainView: View {
             case .denied:
                 return "Open Settings"
             }
+        case .alarms:
+            return "Allow Alarms"
+        case .blockApps:
+            return "Allow App Blocking"
         case .focus:
             return "Next"
         case .ready:
@@ -101,7 +107,7 @@ struct OnboardingMainView: View {
     
     private var secondaryTitle: String {
         switch viewModel.step {
-        case .welcome, .goals, .firstReminder, .focus:
+        case .welcome, .goals, .firstReminder, .focus, .alarms, .blockApps:
             return "Not now"
         #if !DEBUG && V1_2
         case .rhythm:
@@ -130,6 +136,8 @@ struct OnboardingMainView: View {
             case .granted:
                 return false
             }
+        case .alarms, .blockApps:
+            return true
         }
     }
     

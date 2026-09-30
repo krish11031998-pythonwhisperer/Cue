@@ -31,6 +31,16 @@ struct OnboardingNotificationsView: View {
             }
             .frame(maxHeight: .infinity, alignment: .center)
             .animation(.easeInOut, value: viewModel.notificationStatus)
+//<<<<<<< HEAD
+//=======
+//        } actions: {
+//            OnboardingPermissionActions(status: viewModel.notificationStatus,
+//                                        isRequesting: viewModel.isRequestingNotifications,
+//                                        allowTitle: "Allow notifications",
+//                                        onAllow: viewModel.requestNotifications,
+//                                        onContinue: viewModel.advance,
+//                                        onOpenSettings: viewModel.openNotificationSettings)
+//>>>>>>> d27d4db (Add alarm and app-blocking permission steps to onboarding)
         }
         .task {
             await viewModel.refreshNotificationStatus()
