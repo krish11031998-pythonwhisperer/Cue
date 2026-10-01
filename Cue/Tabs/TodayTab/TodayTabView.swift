@@ -42,7 +42,7 @@ struct TodayTabView: View {
             Color.cueItBackground
                 .ignoresSafeArea(.all)
             if store.reminderModels.isEmpty {
-                ContentUnavailableView("No Reminders", systemImage: "bell.fill", description: descriptionText)
+                ContentUnavailableView("Nothing planned yet", systemSymbol: .calendarBadge, description: descriptionText)
                     .font(.headline)
             } else {
                 tabView()
@@ -80,13 +80,9 @@ struct TodayTabView: View {
                 SensoryFeedbackManager.shared.playSelection()                
             }
         })
-        .task(id: store.reminderModels) {
-            viewModel.setupCalendarForOneMonth(reminders: store.reminderModels)
-        }
         .task {
-            for await _ in store.hasLoggedReminder {
-                viewModel.setupCalendarForOneMonth(reminders: store.reminderModels)
-            }
+            guard viewModel.store == nil else { return }
+            viewModel.store = store
         }
         .fullScreenCover(item: $viewModel.fullPresentation, content: fullScreenPresentationContent(_:))
     }

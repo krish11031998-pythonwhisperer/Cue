@@ -8,7 +8,7 @@
 import Foundation
 
 
-public class CalendarDay: Hashable, @unchecked Sendable {
+open class CalendarDay: Hashable, @unchecked Sendable {
     
     public struct LoggedReminder: Hashable, Sendable {
         public let date: Date

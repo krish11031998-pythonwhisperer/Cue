@@ -80,7 +80,8 @@ class MainTabViewModel {
         FocusSessionIntentRouter.shared.handler = self.focusTimerCoordinator
         
         #if DEBUG
-        self.hasShowOnboarding = false
+//        self.hasShowOnboarding = false
+        self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
         #else
         self.hasShowOnboarding = CueUserDefaultsManager.shared[.hasShowOnboarding] ?? false
         #endif

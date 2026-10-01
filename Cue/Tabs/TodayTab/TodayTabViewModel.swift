@@ -27,6 +27,13 @@ class TodayViewModel {
         }
     }
     
+    @ObservationIgnored
+    var store: Store? {
+        didSet {
+            guard let store, oldValue == nil else { return }
+            observeReminderModels(store)
+        }
+    }
     var calendarDay: [CalendarDay] = []
     var calendarDayModels: [CalendarDayView.Model] = []
     var loggedReminders: [Reminder] = []
@@ -49,7 +56,7 @@ class TodayViewModel {
             })
     }
     
-    func setupCalendarForOneMonth(reminders: [ReminderModel]) {
+    private func setupCalendarForOneMonth(reminders: [ReminderModel]) {
         print(#function)
         guard !reminders.isEmpty else { return }
         calendarParsingTask?.cancel()
@@ -63,7 +70,6 @@ class TodayViewModel {
 
                 self?.calendarDay = calendarValues
             }
-            
         }
     }
     
@@ -72,4 +78,14 @@ class TodayViewModel {
         let loggedTasks = todayInCalendar.loggedReminderTasks
         return Set(reminder.tasks).intersection(Set(loggedTasks))
     }
+    
+    private func observeReminderModels(_ store: Store) {
+        let reminderObservation = Observations { store.reminderModels }
+        Task { @MainActor in
+            for await reminders in reminderObservation {
+                self.setupCalendarForOneMonth(reminders: reminders)
+            }
+        }
+    }
+    
 }
