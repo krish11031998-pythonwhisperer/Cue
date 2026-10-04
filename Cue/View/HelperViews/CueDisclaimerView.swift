@@ -66,33 +66,37 @@ struct CueDisclaimerViewModifier: ViewModifier {
 
     let disclaimer: CueDisclaimer
     let disclaimerType: CueDisclaimerType
-    let startDate: Date
+    @State private var startDate: Date? = nil
     
     init(disclaimer: CueDisclaimer, disclaimerType: CueDisclaimerType) {
         self.disclaimer = disclaimer
         self.disclaimerType = disclaimerType
-        self.startDate = .now
     }
     
     func body(content: Content) -> some View {
-        content
-            .safeAreaInset(edge: .top , alignment: .center, spacing: 0) {
-                switch disclaimerType {
-                case .persistent:
-                    CueDisclaimerView(disclaimer: disclaimer)
-                case .temporary(let duration):
-                    TimelineView(.animation) { context in
-                        let timeElapsed = context.date.timeIntervalSince(startDate)
-                        
-                        if timeElapsed <= duration {
-                            CueDisclaimerView(disclaimer: disclaimer)
-                                .transition(.popIn().animation(.easeInOut))
-                        } else {
-                            EmptyView()
+        if let startDate {
+            content
+                .safeAreaInset(edge: .top , alignment: .center, spacing: 0) {
+                    switch disclaimerType {
+                    case .persistent:
+                        CueDisclaimerView(disclaimer: disclaimer)
+                    case .temporary(let duration):
+                        TimelineView(.animation) { context in
+                            let timeElapsed = context.date.timeIntervalSince(startDate)
+                            
+                            if timeElapsed <= duration {
+                                CueDisclaimerView(disclaimer: disclaimer)
+                                    .transition(.popIn().animation(.easeInOut))
+                            } else {
+                                EmptyView()
+                            }
                         }
                     }
                 }
-            }
+        } else {
+            content
+                .task { startDate = .now }
+        }
     }
 }
 

@@ -85,7 +85,7 @@ struct CueAIView: View {
                 CueAINotAvailable()
             }
         }
-        .disclaimer(.cueAIRunsOnDevice, type: .persistent)
+        .disclaimer(.cueAIRunsOnDevice, type: .temporary(10))
         .cueAlert(alert: $viewModel.alert)
         .onPreferenceChange(CueTextFieldFocusPreferenceKey.self, perform: {
             textFieldIsInFocus = $0
@@ -153,7 +153,7 @@ struct CueAIView: View {
             ScrollView(.vertical) {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(viewModel.reminders, id: \.id) { reminderModel in
-                        ReminderCard(id: reminderModel.id, reminder: reminderModel.reminder) {
+                        ReminderCard(reminder: reminderModel.reminder) {
                             viewModel.remove(reminderModel)
                         } edit: {
                             viewModel.edit(reminderModel)
@@ -170,7 +170,6 @@ struct CueAIView: View {
     
     struct ReminderCard: View, Equatable {
         
-        let id: UUID
         let reminder: ReminderModel
         let remove: () -> Void
         let edit: () -> Void
@@ -193,7 +192,7 @@ struct CueAIView: View {
                                       logReminder: nil,
                                       deleteReminder: nil))
             .padding(.horizontal, 20)
-            .id(reminder)
+            .id(reminder.id)
             .popInContainer(angle: .random(in: -0.5..<0.5),
                             animation: .snappy)
         }
