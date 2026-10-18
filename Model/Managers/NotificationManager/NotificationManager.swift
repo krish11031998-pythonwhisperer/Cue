@@ -31,7 +31,13 @@ public class NotificationManager: NSObject, NotificationSchedulerDelegate {
     }
     
     var authorizationStatus: UNAuthorizationStatus {
-        get { notificationSetting.authorizationStatus }
+        get {
+            #if targetEnvironment(Simulator)
+            return .authorized
+            #else
+            notificationSetting.authorizationStatus
+            #endif
+        }
     }
     
     init(context: NSManagedObjectContext) {

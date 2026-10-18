@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreData
 
 
 open class CalendarDay: Hashable, @unchecked Sendable {
@@ -50,10 +51,18 @@ open class CalendarDay: Hashable, @unchecked Sendable {
             }
             
             return false
-        }.sorted(by: {
-            guard let lhsSchedule = $0.schedule, let rhsSchedule = $1.schedule else { return false }
-            return lhsSchedule < rhsSchedule
+        }.sorted(by: { lhs, rhs in
+            if let lhsSchedule = lhs.schedule, let rhsSchedule = rhs.schedule {
+                if lhsSchedule < rhsSchedule { return true }
+                if rhsSchedule < lhsSchedule { return false }
+            }
+            // Tie-break on a stable key so the order doesn't depend on Core Data fetch order.
+            return Self.stableSortKey(lhs) < Self.stableSortKey(rhs)
         })
+    }
+
+    private static func stableSortKey(_ reminder: ReminderModel) -> String {
+        reminder.objectId?.uriRepresentation().absoluteString ?? reminder.notificationID.uuidString
     }
     
     private func checkIfDateIsInWeekInterval(startDate: Date, intervalWeeks: Int) -> Bool {

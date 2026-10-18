@@ -38,7 +38,7 @@ import Foundation
     }
     
     var userIsPro: Bool {
-        #if targetEnvironment(simulator)
+        #if targetEnvironment(simulator) || DEBUG
         return true
         #else
         guard let customerInfo else { return false }

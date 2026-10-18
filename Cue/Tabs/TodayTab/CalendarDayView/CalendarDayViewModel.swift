@@ -15,6 +15,7 @@ import CoreData
 @Observable
 class CalendarDayViewModel {
     
+    typealias FocusSessionState = FocusSessonCardState.State.SessionState
     typealias TimelineElement = TimeCompactSwiftUIView.Element
     
     enum TimeOfDay: String, CaseIterable {
@@ -89,7 +90,22 @@ class CalendarDayViewModel {
     struct Section: Hashable, Identifiable {
         
         struct RowModel: Hashable, Identifiable {
-            let viewConfig: ReminderView.Model
+            
+            enum Config: Identifiable, Hashable {
+                case reminder(ReminderView.Model)
+                case focusSession(FocusSessionCardView.Config)
+                
+                var id: String {
+                    switch self {
+                    case .reminder(let model):
+                        "reminder_\(model.id)"
+                    case .focusSession(let config):
+                        "focusSession_\(config)"
+                    }
+                }
+            }
+            
+            var viewConfig: Config
             let reminder: ReminderModel
             
             var id: Int {
@@ -118,6 +134,7 @@ class CalendarDayViewModel {
     var calendarDate: Date
     @ObservationIgnored
     var store: Store
+    var focusSessionCoordinator: FocusSessionCoordinator?
     
     var sections: [Section] = []
     var timelineElements: [TimeCompactSwiftUIView.ElementType] = []
@@ -125,6 +142,24 @@ class CalendarDayViewModel {
     init(calendarDate: Date, store: Store) {
         self.store = store
         self.calendarDate = calendarDate
+    }
+    
+    var ongoingFocusSessionCardState: FocusSessonCardState.State {
+        guard let focusSessionCoordinator,
+              focusSessionCoordinator.session != nil,
+              calendarDate.startOfDay == Date.now.startOfDay else { return .idle }
+        
+        let state: FocusSessonCardState.State.SessionState
+        switch focusSessionCoordinator.state {
+        case .idle, .reset:
+            state = .idle
+        case .pause:
+            state = .paused
+        case .resume, .start:
+            state = .running
+        }
+        
+        return .init(progress: focusSessionCoordinator.progress, sessionState: state)
     }
     
     func sections(calendarDay: CalendarDay) {
@@ -137,8 +172,9 @@ class CalendarDayViewModel {
                                               day: calendarDay.date.day,
                                               hour: schedule.hour,
                                               minute: schedule.minute).date {
-                let reminderViewModel = reminderModels(reminder, calendarDay: calendarDay)
-                let rowModel: Section.RowModel = .init(viewConfig: reminderViewModel, reminder: reminder)
+
+                let rowModel = rowModel(reminder, calendarDay: calendarDay)
+                
                 switch startTime {
                 case TimeOfDay.morning.timeRange(date: calendarDay.date):
                     remindersInDay[.morning, default: []].append(rowModel)
@@ -171,6 +207,14 @@ class CalendarDayViewModel {
             } else {
                 return .single(values.first!, key)
             }
+        }
+    }
+    
+    func rowModel(_ reminder: ReminderModel, calendarDay: CalendarDay) -> Section.RowModel {
+        if reminder.focusSession != nil, let config = focusSessionModel(reminder, calendarDay: calendarDay) {
+            return .init(viewConfig: .focusSession(config), reminder: reminder)
+        } else {
+            return .init(viewConfig: .reminder(reminderModels(reminder, calendarDay: calendarDay)), reminder: reminder)
         }
     }
     
@@ -216,7 +260,64 @@ class CalendarDayViewModel {
         return model
     }
     
-    func logReminder(isLoggedBefore: Bool, date: Date, reminder: ReminderModel) {
+    func focusSessionModel(_ reminder: ReminderModel, calendarDay: CalendarDay) -> FocusSessionCardView.Config? {
+        guard let focusSession = reminder.focusSession else { return nil }
+        
+        let tasks: FocusSessionCardView.Tasks? = {
+            guard !reminder.tasks.isEmpty else { return nil }
+            let count = reminder.tasks.reduce(0, { (count, task) in
+                let hasLogged = calendarDay.loggedReminderTasks.contains(where: { $0.objectId == task.objectId }) ? 1 : 0
+                return count + hasLogged
+            })
+            return .init(tasksCompleted: count, taskCount: reminder.tasks.count)
+        }()
+        
+        var icon: VanorUI.Icon = .unavailableIcon
+        if let symbol = reminder.icon.symbol {
+            icon = .symbol(.init(rawValue: symbol))
+        } else if let emoji = reminder.icon.emoji {
+            icon = .emoji(.init(emoji))
+        }
+        
+        var sessionType: FocusSessionType
+        switch focusSession.sessionType {
+        case .classic:
+            sessionType = .classic
+        case .pomodoro:
+            sessionType = .pomodoro(currentIndex: 0, total: focusSession.sessionCount ?? 0)
+        default:
+            sessionType = .classic
+        }
+        
+        let actions: FocusSessionCardView.Actions = .init { [weak self] state in
+            self?.toggleFocusSessionStates(reminderModel: reminder,
+                                           for: .init(reminderFocusSession: focusSession,
+                                                      with: reminder),
+                                     state: state)
+        } logAsCompleted: { [weak self] in
+            let isLoggedAsCompleted =  calendarDay.loggedReminders.contains(where: { $0.reminder.objectId == reminder.objectId })
+            self?.logReminder(isLoggedBefore: isLoggedAsCompleted, date: calendarDay.date, reminder: reminder)
+        }
+        
+        let sessionAttributes: FocusSessionCardView.SessionAttributes = .init(sessionType: sessionType,
+                                                                              alarmSet: focusSession.alarm != .off,
+                                                                              blockAppsSet: !(focusSession.blockedApps?.isEmpty ?? true),
+                                                                              timeDuration: focusSession.timerDuration,
+                                                                              breakDuration: focusSession.breakDuration)
+        
+        return .init(title: reminder.title,
+                     color: reminder.color,
+                     icon: icon,
+                     date: reminder.schedule?.timeScheduled ?? .now,
+                     sessionAttributes: sessionAttributes,
+                     tasks: tasks,
+                     actions: actions)
+    }
+    
+    
+    // MARK: - Private Methods
+    
+    private func logReminder(isLoggedBefore: Bool, date: Date, reminder: ReminderModel) {
         let dateOfLog: Date
         if date.startOfDay < Date.now.startOfDay {
             dateOfLog = Calendar.current.date(byAdding: .init(hour: reminder.schedule?.hour ?? 0, minute: reminder.schedule?.minute ?? 0), to: date.startOfDay) ?? date.startOfDay
@@ -229,6 +330,20 @@ class CalendarDayViewModel {
             store.logReminder(at: dateOfLog, for: reminderID)
         } else {
             store.deleteLogsFor(at: date, for: reminderID)
+        }
+    }
+    
+    private func toggleFocusSessionStates(reminderModel: ReminderModel, for focusSession: Model.FocusSessionModel, state: FocusSessionState) {
+        switch state {
+        case .idle:
+            focusSessionCoordinator?.reminderModel = reminderModel
+            focusSessionCoordinator?.startWithFocusSessionModel(focusSession)
+        case .paused:
+            focusSessionCoordinator?.resumeTimer()
+        case .running:
+            focusSessionCoordinator?.pauseTimer()
+        case .stop:
+            break
         }
     }
 }

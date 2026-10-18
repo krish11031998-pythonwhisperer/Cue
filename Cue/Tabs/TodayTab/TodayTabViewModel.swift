@@ -9,6 +9,7 @@ import Model
 import VanorUI
 import SwiftUI
 import CoreData
+import AsyncAlgorithms
 
 @Observable
 class TodayViewModel {
@@ -34,17 +35,19 @@ class TodayViewModel {
             observeReminderModels(store)
         }
     }
-    var calendarDay: [CalendarDay] = []
+    var calendarDays: [CalendarDay] = []
     var calendarDayModels: [CalendarDayView.Model] = []
     var loggedReminders: [Reminder] = []
     var today: Date = Date.now.startOfDay
     var fullPresentation: FullScreenPresentation? = nil
     @ObservationIgnored
     private var calendarParsingTask: Task<Void, Never>?
+    @ObservationIgnored
+    private var updateCurrentCalendarDayTask: Task<Void, Never>?
     
     
     var todayInCalendar: CalendarDay? {
-        calendarDay.first(where: { $0.date == today })
+        calendarDays.first(where: { $0.date == today })
     }
     
     var reminderWithTimer: [ReminderModel] {
@@ -68,7 +71,23 @@ class TodayViewModel {
             await MainActor.run { [weak self] in
                 guard calendarValues.isEmpty == false else { return }
 
-                self?.calendarDay = calendarValues
+                self?.calendarDays = calendarValues
+            }
+        }
+    }
+    
+    private func updateCurrentCalendarDay() {
+        let date = today
+        updateCurrentCalendarDayTask?.cancel()
+        updateCurrentCalendarDayTask = Task { [weak self] in
+            do {
+                let currentCalendarDay = try await CalendarManager.shared.setupCalendarDay(for: date)
+                
+                guard let index = self?.calendarDays.firstIndex(where: { $0.date == date }), !Task.isCancelled else { return }
+                
+                self?.calendarDays[index] = currentCalendarDay
+            } catch {
+                print("(ERROR) there was an error while running the `updateCurrentCalendarDayTask`: ", error.localizedDescription)
             }
         }
     }
@@ -84,6 +103,12 @@ class TodayViewModel {
         Task { @MainActor in
             for await reminders in reminderObservation {
                 self.setupCalendarForOneMonth(reminders: reminders)
+            }
+        }
+
+        Task { @MainActor [weak self] in
+            for await _ in store.hasLoggedReminder {
+                self?.updateCurrentCalendarDay()
             }
         }
     }

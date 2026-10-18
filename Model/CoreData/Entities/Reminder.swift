@@ -36,7 +36,8 @@ public final class Reminder: NSManagedObject, CoreDataEntity, Identifiable {
     }
     
     public var tagsArray: [CueTag] {
-        tags.allObjects as! [CueTag]
+        // `tags` is an unordered NSSet; sort so repeated fetches produce equal `ReminderModel`s.
+        (tags.allObjects as! [CueTag]).sorted(by: { ($0.name ?? "") < ($1.name ?? "") })
     }
     
     internal var mutableTagSet: NSMutableOrderedSet {

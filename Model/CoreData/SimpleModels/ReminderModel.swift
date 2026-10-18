@@ -195,7 +195,6 @@ extension ReminderModel {
             hashValue
         }
     }
-    
 }
 
 

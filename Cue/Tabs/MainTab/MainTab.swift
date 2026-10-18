@@ -43,7 +43,7 @@ struct MainTab: View {
     var body: some View {
         TabView(selection: $viewModel.selectedTab) {
             Tab(value: Tabs.home) {
-                TodayCalendarView()
+                TodayCalendarView(coordinator: viewModel.focusTimerCoordinator)
             } label: {
                 Image(systemSymbol: .checkmarkCircleFill)
                     .font(.body)
@@ -65,16 +65,6 @@ struct MainTab: View {
                     .font(.body)
                     .tint(Color.proSky.baseColor)
             }
-            
-//            if subscriptionManager.userIsPro {
-//                Tab(value: .organize) {
-//                    OrangizeTabView()
-//                } label: {
-//                    Image(systemSymbol: .folder)
-//                        .font(.body)
-//                        .tint(Color.proSky.baseColor)
-//                }
-//            }
             
             Tab(value: .create, role: createTabRole) {
                 Color.clear

@@ -15,42 +15,31 @@ struct TodayCalendarView: View {
     @Environment(Store.self) var store
     @Namespace var namespace
     @Environment(\.colorScheme) var colorScheme
+    @Bindable private var coordinator: FocusSessionCoordinator
     @State private var viewModel: TodayCalendarViewModel = .init()
     @State private var calendarGridFrame: CGRect = .zero
     
     typealias Path = TodayCalendarViewModel.Path
     
+    init(coordinator: FocusSessionCoordinator) {
+        self.coordinator = coordinator
+    }
+    
     var body: some View {
         NavigationStack(path: $viewModel.path) {
             Group {
                 if !viewModel.calendarMonths.isEmpty {
-                    TabView(selection: $viewModel.currentMonth) {
-                        ForEach(viewModel.calendarMonths) { calendarMonth in
-                            Tab(value: calendarMonth.id) {
-                                CalendarMonthView(month: calendarMonth) { day in
-                                    let id = Path.day(day.date).id
-                                    return (id, namespace)
-                                } navigationAction: { day in
-                                    self.viewModel.presentDay(day: day)
+                    CalendarMonthTabView(viewModel: viewModel, namespace: namespace)
+                        .safeAreaInset(edge: .bottom) {
+                            CalendarTagsView(tags: viewModel.tags) { tag in
+                                if viewModel.selectedTags.contains(tag) {
+                                    viewModel.selectedTags.remove(tag)
+                                } else {
+                                    viewModel.selectedTags.insert(tag)
                                 }
                             }
+                            .padding(.bottom, 8)
                         }
-                    }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    .background {
-                        Color.cueItBackground                                  
-                            .ignoresSafeArea(.all)
-                    }
-                    .safeAreaInset(edge: .bottom) {
-                        CalendarTagsView(tags: viewModel.tags) { tag in
-                            if viewModel.selectedTags.contains(tag) {
-                                viewModel.selectedTags.remove(tag)
-                            } else {
-                                viewModel.selectedTags.insert(tag)
-                            }
-                        }
-                        .padding(.bottom, 8)
-                    }
                 } else {
                     ContentUnavailableView("Loading..", systemSymbol: .calendar, description: nil)
                 }
@@ -58,7 +47,7 @@ struct TodayCalendarView: View {
             .navigationDestination(for: Path.self) { path in
                 switch path {
                 case .day(let date):
-                    TodayTabView(startDate: date)
+                    TodayRootView(startDate: date, coordinator: coordinator)
                         .navigationTransition(.zoom(sourceID: path.id, in: namespace))
                         .navigationBarBackButtonHidden()
                 }
@@ -98,8 +87,55 @@ struct TodayCalendarView: View {
             self.viewModel.store = store
         }
     }
+    
+    
+    // MARK: - Child Views
+    
+    private struct CalendarMonthTabView: View {
+        
+        @Bindable var viewModel: TodayCalendarViewModel
+        var namespace: Namespace.ID
+        
+        var body: some View {
+            TabView(selection: $viewModel.currentMonth) {
+                ForEach(viewModel.calendarMonths) { calendarMonth in
+                    Tab(value: calendarMonth.id) {
+                        CalendarMonthView(month: calendarMonth) { day in
+                            let id = Path.day(day.date).id
+                            return (id, namespace)
+                        } navigationAction: { day in
+                            self.viewModel.presentDay(day: day)
+                        }
+                    }
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .background {
+                Color.cueItBackground
+                    .ignoresSafeArea(.all)
+            }
+        }
+    }
+    
+//    private struct TagViews: View {
+//        
+//        
+//        let tags: [TagModel]
+//        let action: (TagModel) -> Void
+//        
+//        var body: some View {
+//            CalendarTagsView(tags: viewModel.tags) { tag in
+//                if viewModel.selectedTags.contains(tag) {
+//                    viewModel.selectedTags.remove(tag)
+//                } else {
+//                    viewModel.selectedTags.insert(tag)
+//                }
+//            }
+//            .padding(.bottom, 8)
+//        }
+//    }
 }
 
 #Preview {
-    TodayCalendarView()
+    TodayCalendarView(coordinator: .previawableSessionCoordinator)
 }

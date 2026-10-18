@@ -51,16 +51,27 @@ public struct CalendarDayView: View {
     @State private var presentation: Presentation? = nil
     @State private var addReminder: Bool = false
     @State private var viewModel: CalendarDayViewModel
+    @Bindable private var focusSessionCoordinator: FocusSessionCoordinator
     @Environment(\.screenPadding) var screenPadding
     
-    init (store: Store, calendarDay: CalendarDay) {
+    init (store: Store, focusSessionCoordinator: FocusSessionCoordinator, calendarDay: CalendarDay) {
         self._viewModel = .init(initialValue: .init(calendarDate: calendarDay.date, store: store))
+        self.focusSessionCoordinator = focusSessionCoordinator
         self.store = store
         self.calendarDay = calendarDay
     }
     
     var date: Date {
         calendarDay.date
+    }
+
+    /// `CalendarDay ==` ignores logs, so include them to re-run the section setup when a reminder/task is logged.
+    private var calendarDayContentID: Int {
+        var hasher = Hasher()
+        hasher.combine(calendarDay)
+        hasher.combine(calendarDay.loggedReminders)
+        hasher.combine(calendarDay.loggedReminderTasks)
+        return hasher.finalize()
     }
     
     public var body: some View {
@@ -83,11 +94,12 @@ public struct CalendarDayView: View {
                                 Button {
                                     self.presentation = .editReminder(model.reminder)
                                 } label: {
-                                    ReminderView(model: model.viewConfig)
-                                        .id(model)
+                                    Row(focusSessionCoorinator: focusSessionCoordinator,
+                                        row: model,
+                                        focusSessionCardState: model.reminder == focusSessionCoordinator.reminderModel ? viewModel.ongoingFocusSessionCardState : nil)
                                         .padding(.bottom, 10)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.hapticDefaultCueButton)
                             }
                         } header: {
                             SectionHeader(section: section.timeOfDay, hasTasks: !section.reminders.isEmpty)
@@ -104,7 +116,10 @@ public struct CalendarDayView: View {
             .padding(.bottom, screenPadding.bottomPadding)
             .scrollEdgeEffectStyle(.soft, for: .all)
         }
-        .task(id: calendarDay) {
+        .task(id: viewModel.focusSessionCoordinator == nil) { @MainActor in
+            self.viewModel.focusSessionCoordinator = focusSessionCoordinator
+        }
+        .task(id: calendarDayContentID) {
             self.viewModel.sections(calendarDay: calendarDay)
             self.viewModel.loggedReminders(calendarDay.loggedReminders)
         }
@@ -145,6 +160,36 @@ public struct CalendarDayView: View {
     }
     
     
+    private struct Row: View {
+        var focusSessionCoorinator: FocusSessionCoordinator
+        let row: CalendarDayViewModel.Section.RowModel
+        let focusSessionCardState: FocusSessonCardState.State?
+        
+        var focusSessionID: Int {
+            var hasher = Hasher()
+            hasher.combine(row)
+            hasher.combine(focusSessionCardState)
+            return hasher.finalize()
+        }
+        
+        var body: some View {
+            switch row.viewConfig {
+            case .reminder(let model):
+                ReminderView(model: model)
+                    .id(model)
+            case .focusSession(let model):
+                if let focusSessionCardState {
+                    FocusSessionCardView(config: model)
+                        .environment(\.focusSessionCardState, focusSessionCardState)
+                        .id(focusSessionID)
+                } else {
+                    FocusSessionCardView(config: model)
+                        .id(model)
+                }
+            }
+        }
+    }
+    
     // MARK: - SectionHeader
     
     #warning("Move this to VanorUI")
@@ -166,10 +211,15 @@ public struct CalendarDayView: View {
 
 extension CalendarDayView: PageContentView {
     
-    public struct Model: Hashable {
+    public struct Model: Hashable, Identifiable {
         let store: Store
+        let focusSessionCoordinator: FocusSessionCoordinator
         let calendarDay: CalendarDay
-        
+
+        public var id: Date {
+            calendarDay.date
+        }
+
         public func hash(into hasher: inout Hasher) {
             hasher.combine(calendarDay)
         }
@@ -180,7 +230,7 @@ extension CalendarDayView: PageContentView {
     }
     
     public init(model: Model) {
-        self.init(store: model.store, calendarDay: model.calendarDay)
+        self.init(store: model.store, focusSessionCoordinator: model.focusSessionCoordinator, calendarDay: model.calendarDay)
     }
     
 }
