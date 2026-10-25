@@ -111,6 +111,22 @@ class FocusRootViewModel {
         self.initialSetup = true
     }
     
+    func reloadOnTraitChange(_ horizontalSizeClass: UserInterfaceSizeClass) {
+        let sections: [DiffableCollectionSection]
+        let focusedRoutineSection = setupFocusedSessionSection(focusSessions)
+        let customFocusSection = setupCustomFocusSessionSection(focusSessions)
+        
+        switch horizontalSizeClass {
+        case .compact:
+            let quickStartSection = quickStart(reminders: reminders)
+            sections = [quickStartSection, focusedRoutineSection, customFocusSection].compactMap { $0 }
+        case .regular:
+            sections = [focusedRoutineSection, customFocusSection].compactMap{ $0 }
+        }
+        
+        self.sections = sections
+    }
+    
     // MARK: - Initial Fetch
     
     private func initialFetch() {
@@ -128,13 +144,13 @@ class FocusRootViewModel {
         }
     }
     
-    func fetchFocusSession() -> [FocusSessionModel] {
+    private func fetchFocusSession() -> [FocusSessionModel] {
         guard let store else { return  [] }
         return store.fetchAllFocusSessions().map { FocusSessionModel(from: $0) }
     }
     
     @concurrent
-    func fetchRemindersForToday() async -> [ReminderModel] {
+    private func fetchRemindersForToday() async -> [ReminderModel] {
         do {
             let calendarDay = try await CalendarManager.shared.setupCalendarDay(for: .now)
             return calendarDay.reminders
@@ -162,6 +178,17 @@ class FocusRootViewModel {
     // MARK: - QuickStart
     
     private func quickStart(reminders: [ReminderModel]) -> DiffableCollectionSection {
+        let cells: [DiffableCollectionItem] = [DiffableCollectionItem<FocusQuickStartView>(quickStartConfig)]
+        
+        let layout = NSCollectionLayoutSection.singleColumnLayout(width: .fractionalWidth(1), height: .fractionalWidth(1/0.8), insets: .section(.init(top: 16, leading: 16, bottom: 32, trailing: 16)))
+        
+        
+        let section = DiffableCollectionSection(Section.quickStart.id, cells: cells, sectionLayout: layout)
+        
+        return section
+    }
+    
+    var quickStartConfig: FocusQuickStartView.Model {
         let presentQuickStart: Callback = { [weak self] in
             self?.fullScreenPresentation = .quickStart
         }
@@ -177,14 +204,8 @@ class FocusRootViewModel {
         }
         
         let model = FocusQuickStartView.Model(reminders: reminders, startTimer: startFocusSession, presentQuickStartView: presentQuickStart)
-        let cells: [DiffableCollectionItem] = [DiffableCollectionItem<FocusQuickStartView>(model)]
         
-        let layout = NSCollectionLayoutSection.singleColumnLayout(width: .fractionalWidth(1), height: .fractionalWidth(1/0.8), insets: .section(.init(top: 16, leading: 16, bottom: 32, trailing: 16)))
-        
-        
-        let section = DiffableCollectionSection(Section.quickStart.id, cells: cells, sectionLayout: layout)
-        
-        return section
+        return model
     }
     
     private func refetchAndUpdateQuickStartSection() async {

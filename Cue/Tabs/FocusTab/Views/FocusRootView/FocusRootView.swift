@@ -10,8 +10,23 @@ import Model
 import SwiftUI
 import Combine
 
+struct OptionalIgnoreSafeArea: ViewModifier {
+    let condition: Bool
+    let edges: Edge.Set
+    
+    func body(content: Content) -> some View {
+        if condition {
+            content
+                .ignoresSafeArea(edges: edges)
+        } else {
+            content
+        }
+    }
+}
+
 struct FocusRootView: View {
     
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(SubscriptionManager.self) var subscriptionManager
     @Bindable var coordinator: FocusSessionCoordinator
     @Environment(Store.self) var store
@@ -26,7 +41,7 @@ struct FocusRootView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack(alignment: .center) {
                 Color.cueItBackground
                     .ignoresSafeArea(edges: .all)
@@ -34,11 +49,12 @@ struct FocusRootView: View {
                     ProgressView()
                         .transition(.opacity.animation(.easeOut))
                 } else {
-                    CollectionView(section: viewModel.sections, completion: nil)
+                    MainContent(viewModel: viewModel)
                         .transition(.scale(scale: 0.985).combined(with: .opacity).animation(.easeIn))
                 }
             }
-            .ignoresSafeArea(edges: .vertical)
+            .modifier(OptionalIgnoreSafeArea(condition: horizontalSizeClass == .compact, edges: .vertical))
+            .frame(maxWidth: .infinity, alignment: .center)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("", systemSymbol: .plus) {
@@ -72,6 +88,39 @@ struct FocusRootView: View {
         .task {
             self.viewModel.setup(store: store, subscriptionManager: subscriptionManager, coordinator: coordinator)
         }
+    }
+    
+    
+    // MARK: MainContent
+    
+    struct MainContent: View {
+        
+        @Environment(\.horizontalSizeClass) var horizontalSizeClass
+        var viewModel: FocusRootViewModel
+        
+        var body: some View {
+            ZStack(alignment: .center) {
+                switch horizontalSizeClass {
+                case .compact ,.none:
+                    CollectionView(section: viewModel.sections, completion: nil)
+                case .regular:
+                    HStack(alignment: .center, spacing: 0) {
+                        FocusQuickStartView(model: viewModel.quickStartConfig)
+                            .padding(.init(top: 0, leading: 16, bottom: 0, trailing: 16))
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                        CollectionView(section: viewModel.sections, completion: nil)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .ignoresSafeArea(edges: .vertical)
+                    }
+                @unknown default:
+                    CollectionView(section: viewModel.sections, completion: nil)
+                }
+            }
+            .onChange(of: (horizontalSizeClass ?? .compact), initial: true) { _, newValue in
+                viewModel.reloadOnTraitChange(newValue)
+            }
+        }
+        
     }
 }
 
