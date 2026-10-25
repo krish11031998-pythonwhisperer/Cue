@@ -12,6 +12,8 @@ import VanorUI
 struct CalendarMonthView: View {
     typealias CalendarDay = CalendarMonth.Day
     
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @Environment(\.verticalSizeClass) var verticalSizeClass
     @State private var frame: CGRect = .zero
     let month: CalendarMonth
     var transitionIDProvider: (CalendarDay) -> (String, Namespace.ID)
@@ -30,7 +32,14 @@ struct CalendarMonthView: View {
     }
     
     var width: CGFloat {
-        max(44, (size.width / 7).rounded(.down))
+        switch horizontalSizeClass {
+        case .compact:
+            return max(44, (size.width / 7).rounded(.down))
+        case .regular:
+            return max(44, (size.width / 14).rounded(.down))
+        default:
+            return max(44, (size.width / 7).rounded(.down))
+        }
     }
     
     var body: some View {

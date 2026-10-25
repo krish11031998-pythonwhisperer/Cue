@@ -11,6 +11,32 @@ import VanorUI
 import Model
 import AsyncAlgorithms
 
+nonisolated
+class RoutineGridSection: DiffableCollectionSection {
+    
+    init(_ id: Int, cells: [DiffableCollectionCellProvider], sectionLayout: NSCollectionLayoutSection) {
+        // Placeholder only; the real layout is built per environment in sectionLayout(_:)
+        super.init(id, cells: cells, sectionLayout: sectionLayout)
+    }
+    
+    nonisolated override func sectionLayout(_ env: any NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
+        let horizontalSizeClas = env.traitCollection.horizontalSizeClass
+        switch horizontalSizeClas {
+        case .compact, .unspecified:
+            return .gridLayout(itemSize: .init(widthDimension: .fractionalWidth(0.5),
+                                               heightDimension: .estimated(54)),
+                               groupSpacing: .fixed(16),
+                               interGroupSpacing: 16)
+        case .regular:
+            return .gridLayout(itemSize: .init(widthDimension: .fractionalWidth(0.3),
+                                               heightDimension: .estimated(54)),
+                               groupSpacing: .fixed(16),
+                               interGroupSpacing: 16)
+        }
+    }
+    
+}
+
 @MainActor
 @Observable
 class ManageViewModel {
@@ -31,6 +57,11 @@ class ManageViewModel {
     var tagChipFrame: CGRect = .init()
     var namespaceID: Namespace.ID = Namespace.init().wrappedValue
     var path: [Navigation] = []
+    
+    @ObservationIgnored
+    var horizontalSizeClass: UserInterfaceSizeClass = .compact
+    @ObservationIgnored
+    var verticalSizeClass: UserInterfaceSizeClass = .compact
     @ObservationIgnored
     private var routinesWithConfig: [(ReminderModel, RoutineCardConfig)] = []
     @ObservationIgnored
@@ -58,7 +89,31 @@ class ManageViewModel {
         }
     }
     
+    func updateLayout() {
+        setupSections(routinesWithConfig)
+    }
+    
     private func setupSections(_ routineTimelineCards: [(ReminderModel, RoutineCardConfig)]) {
+        let cells = buildCells(routineTimelineCards)
+        let layout = layout()
+        
+        self.sections = [RoutineGridSection(Sections.routineGrid.rawValue,
+                                            cells: cells,
+                                            sectionLayout: layout)]
+    }
+    
+    // MARK: - Layout
+    
+    private func layout() -> NSCollectionLayoutSection {
+        return .gridLayout(itemSize: .init(widthDimension: .fractionalWidth(0.5),
+                                           heightDimension: .estimated(54)),
+                           groupSpacing: .fixed(16),
+                           interGroupSpacing: 16)
+    }
+    
+    // MARK: - Cells
+    
+    private func buildCells(_ routineTimelineCards: [(ReminderModel, RoutineCardConfig)]) -> [DiffableCollectionCellProvider] {
         let action: (ReminderModel, RoutineCardConfig) -> Callback = { [weak self] (reminder, config) in
             // Do something
             return {
@@ -70,14 +125,7 @@ class ManageViewModel {
             return DiffableCollectionItem<RoutineTimelineCard>(.init(config: routineCardConfig, namespaceID: namespaceID, action: action(reminderModel, routineCardConfig)))
         }
         
-        let layout = NSCollectionLayoutSection.gridLayout(itemSize: .init(widthDimension: .fractionalWidth(0.5), heightDimension: .estimated(54)), groupSpacing: .fixed(16), interGroupSpacing: 16)
-        
-        self.sections = [.init(Sections.routineGrid.rawValue,
-                               cells: cells,
-                               header: nil,
-                               footer: nil,
-                               decorationItem: nil,
-                               sectionLayout: layout)]
+        return cells
     }
     
     private func filterBasedOnTags() {

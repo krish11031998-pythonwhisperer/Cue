@@ -68,6 +68,10 @@ class CollectionViewController: UIViewController {
         collectionView.backgroundColor = .clear
         collectionView.topEdgeEffect.style = .soft
         setupNavigationController()
+        registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (self: Self, prev: UITraitCollection) in
+            guard !self.sections.isEmpty, self.traitCollection.horizontalSizeClass != prev.horizontalSizeClass else { return }
+            self.collectionView.collectionViewLayout.invalidateLayout()
+        }
     }
     
     private func setupNavigationController() {

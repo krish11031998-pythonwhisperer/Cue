@@ -10,7 +10,6 @@ import VanorUI
 import Model
 
 struct ManageView: View {
-    
     @Environment(Store.self) var store
     @State private var viewModel: ManageViewModel = .init()
     @Namespace private var namespace
