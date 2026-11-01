@@ -162,14 +162,21 @@ extension NSManagedObjectContext {
         let mergeNotification = NSManagedObjectContext.didMergeChangesObjectIDsNotification
         // The merged changes come from a different context. Therefore we need to fetch them through their object ID.
         let mergePublisher: AsyncPublisher<AnyPublisher<(), Never>> = NotificationCenter.default.publisher(for: mergeNotification, object: self)
-            // `filter` (not `compactMap`): a Bool is never nil, so `compactMap` let every notification through.
-            .filter({ notification in
-                return changeTypes.contains(where: { changeType in
+            .compactMap({ notification in
+                return changeTypes.reduce(true, { partialResult, changeType in
                     guard let changes = notification.userInfo?[changeType.userInfoIDsKey] as? Set<NSManagedObjectID> else {
-                        return false
+                        return partialResult || false
                     }
-
-                    return changes.contains(where: { objectID in objectID.entity == T.entity() })
+                    
+                    let objects = changes
+                        .filter({ objectID in objectID.entity == T.entity() })
+                        .compactMap({ objectID in self.object(with: objectID) as? T })
+                    
+                    if objects.isEmpty {
+                        return partialResult || false
+                    } else {
+                        return partialResult || true
+                    }
                 })
             })
             .map({ _ in () })
@@ -179,14 +186,21 @@ extension NSManagedObjectContext {
         let didSaveNotification = Event.didSave.notificationName
         // Since the saves are on this context we can use the objects as is.
         let savePublisher = NotificationCenter.default.publisher(for: didSaveNotification, object: self)
-            // `filter` (not `compactMap`): a Bool is never nil, so `compactMap` let every notification through.
-            .filter({ notification in
-                return changeTypes.contains(where: { changeType in
+            .compactMap({ notification in
+                return changeTypes.reduce(true, { partialResult, changeType in
                     guard let changes = notification.userInfo?[changeType.userInfoIDsKey] as? Set<NSManagedObjectID> else {
-                        return false
+                        return partialResult || false
                     }
-
-                    return changes.contains(where: { objectID in objectID.entity == T.entity() })
+                    
+                    let objects = changes
+                        .filter({ objectID in objectID.entity == T.entity() })
+                        .compactMap({ objectID in self.object(with: objectID) as? T })
+                    
+                    if objects.isEmpty {
+                        return partialResult || false
+                    } else {
+                        return partialResult || true
+                    }
                 })
             })
             .map({ _ in () })

@@ -167,48 +167,6 @@ struct TodayRootView: View {
         
     }
     
-//    @ViewBuilder
-//    private func tabView() -> some View {
-//        let current: Binding<CalendarDayView.Model?> = .init {
-//            guard let todayCalendar = viewModel.todayInCalendar else { return nil }
-//            return .init(store: store, focusSessionCoordinator: coordinator, calendarDay: todayCalendar)
-//        } set: { model in
-//            guard let calendarDate = model?.calendarDay.date else { return }
-//            viewModel.today = calendarDate
-//        }
-//    
-//        PageView<CalendarDayView>(models: viewModel.calendarDays.map { .init(store: store, focusSessionCoordinator: coordinator, calendarDay: $0) },
-//                                  current: current)
-//        .environment(\.screenPadding, .init(topPadding: topPadding, bottomPadding: 83))
-//        .ignoresSafeArea(edges: .vertical)
-//        .safeAreaBar(edge: .top, alignment: .center, spacing: 0, content: {
-//            CalendarDateCarousel(dateElements: viewModel.calendarDays, selectedDate: viewModel.todayInCalendar)
-//                .scrollIndicators(.hidden)
-//                .fixedSize(horizontal: false, vertical: true)
-//                .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newValue in
-//                    self.topPadding = newValue.maxY
-//                }
-//                .disabled(true)
-//        })
-//        .safeAreaInset(edge: .bottom, content: {
-//            if viewModel.todayInCalendar?.date.startOfDay != viewModel.today.startOfDay {
-//                Button {
-//                    withAnimation(.easeInOut) {
-//                        self.viewModel.today = Date.now.startOfDay
-//                    }
-//                } label: {
-//                    Text("today")
-//                        .font(.bitcountRegular(style: .body))
-//                        .padding(.init(top: 8, leading: 10, bottom: 8, trailing: 10))
-//                }
-//                .buttonStyle(.glass)
-//                .padding(.bottom, 12)
-//            }
-//        })
-//        .environment(\.theme, .init(color: Color.cueItBackground))
-//    }
-
-    
     // MARK: - DescriptionText
     
     private var descriptionText: Text {

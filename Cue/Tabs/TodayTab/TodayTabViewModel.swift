@@ -9,7 +9,6 @@ import Model
 import VanorUI
 import SwiftUI
 import CoreData
-import AsyncAlgorithms
 
 @Observable
 class TodayViewModel {

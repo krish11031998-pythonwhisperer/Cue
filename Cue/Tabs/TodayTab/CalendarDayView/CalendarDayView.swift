@@ -64,15 +64,6 @@ public struct CalendarDayView: View {
     var date: Date {
         calendarDay.date
     }
-
-    /// `CalendarDay ==` ignores logs, so include them to re-run the section setup when a reminder/task is logged.
-    private var calendarDayContentID: Int {
-        var hasher = Hasher()
-        hasher.combine(calendarDay)
-        hasher.combine(calendarDay.loggedReminders)
-        hasher.combine(calendarDay.loggedReminderTasks)
-        return hasher.finalize()
-    }
     
     public var body: some View {
         ScrollView {
@@ -119,7 +110,7 @@ public struct CalendarDayView: View {
         .task(id: viewModel.focusSessionCoordinator == nil) { @MainActor in
             self.viewModel.focusSessionCoordinator = focusSessionCoordinator
         }
-        .task(id: calendarDayContentID) {
+        .task(id: calendarDay) {
             self.viewModel.sections(calendarDay: calendarDay)
             self.viewModel.loggedReminders(calendarDay.loggedReminders)
         }
