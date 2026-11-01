@@ -14,8 +14,9 @@ internal import AlarmKit
 
 struct FTSessionView<Content: View>: View {
     
-    enum ViewType {
-        case quickStart
+    enum ViewType: Equatable {
+        /// delay here is assumed to be in milliseconds.
+        case quickStart(delay: TimeInterval)
         case activeSession
     }
     
@@ -42,7 +43,7 @@ struct FTSessionView<Content: View>: View {
     @ViewBuilder var content: () -> Content
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             content()
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
@@ -55,17 +56,17 @@ struct FTSessionView<Content: View>: View {
                         .buttonStyle(.plain)
                     }
                 }
-        }
-        .safeAreaBar(edge: .bottom, alignment: .center, spacing: 8) {
-            FloatingFocusTimerFooterView(coordinator: coordinator, viewType: viewType) { completion in
-                subscriptionManager.proUserAction {
-                    presentAppBlock(completion)
+                .safeAreaBar(edge: .bottom, alignment: .center, spacing: 8) {
+                    FloatingFocusTimerFooterView(coordinator: coordinator, viewType: viewType) { completion in
+                        subscriptionManager.proUserAction {
+                            presentAppBlock(completion)
+                        }
+                    } presentAction: { sessionType in
+                        presentAction(sessionType: sessionType)
+                    } presentAlarm: { completion in
+                        presentAlarm(completion)
+                    }
                 }
-            } presentAction: { sessionType in
-                presentAction(sessionType: sessionType)
-            } presentAlarm: { completion in
-                presentAlarm(completion)
-            }
         }
         .sheet(isPresented: $coordinator.showTasksSheet) {
             OngoingSessionOverviewSheet()
@@ -177,6 +178,15 @@ struct FTSessionView<Content: View>: View {
                 )
             }
 
+            #if targetEnvironment(simulator)
+            let tips = FTLaunchControl.Model.Tips()
+            #else
+            let tips = FTLaunchControl.Model.Tips(duration: launchControlTips.currentTip as? SessionDurationTip,
+                         appShield: launchControlTips.currentTip as? BlockAppsTip,
+                         timerType: launchControlTips.currentTip as? FocusTimerTypeTip,
+                         alarm: launchControlTips.currentTip as? SessionAlarmTip)
+            #endif
+            
             // NOTE: computed, for the same observation reason as `ongoingModel` above.
             private var launchControlModel: FTLaunchControl.Model {
                 .init(
@@ -230,10 +240,7 @@ struct FTSessionView<Content: View>: View {
                     },
                     checkIfCanSetAlarm: { await coordinator.checkIfCanSetAlarm() },
                     // `currentTip` is one of these at a time; the other three casts give nil.
-                    tips: .init(duration: launchControlTips.currentTip as? SessionDurationTip,
-                                appShield: launchControlTips.currentTip as? BlockAppsTip,
-                                timerType: launchControlTips.currentTip as? FocusTimerTypeTip,
-                                alarm: launchControlTips.currentTip as? SessionAlarmTip)
+                    tips: tips
                 )
             }
             
@@ -293,12 +300,17 @@ struct FTSessionView<Content: View>: View {
             
             var body: some View {
                 switch viewType {
-                case .quickStart:
+                case .quickStart(let delay):
                     ZStack(alignment: .center) {
                         switch coordinator.state {
                         case .idle, .reset:
-                            FTStartTimerButton(model: .init(viewMode: .bottomFloatingView, action: coordinator.startTimer))
-                                .transition(.opacity)
+                            FTStartTimerButton(model: .init(viewMode: .bottomFloatingView, action: {
+                                Task { @MainActor in
+                                    try? await Task.sleep(for: .milliseconds(delay * 1000))
+                                    coordinator.startTimer()
+                                }
+                            }))
+                            .transition(.opacity)
                         case .pause, .resume, .start:
                             FTOngoingSessionControl(model: ongoingSessionControlModel)
                                 .padding(.init(top: 8, leading: 0, bottom: 8, trailing: 0))

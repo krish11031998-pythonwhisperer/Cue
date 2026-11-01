@@ -50,16 +50,36 @@ struct FocusReminderCarouselSelectorView: View {
 }
 
 
-#Preview {
-    @Previewable @State var selectedItem: FTQuickStartViewModel.TimerType?
-
-    FocusReminderCarouselSelectorView(selectedItem: selectedItem, items: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()].map { .reminder($0) })
-        .border(Color.red, width: 2)
-        .task { @MainActor in
-            selectedItem = .reminder(.exampleFour())
-            try? await Task.sleep(for: .seconds(3))
-            withAnimation(.easeInOut) {
-                selectedItem = .focus
+fileprivate struct TestView: View {
+    @State var selectedItem: FTQuickStartViewModel.TimerType?
+    @State var show: Bool = true
+    
+    
+    var body: some View {
+        ZStack {
+            if show {
+                FocusReminderCarouselSelectorView(selectedItem: selectedItem, items: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()].map { .reminder($0) })
+                    .border(Color.red, width: 2)
+                    .task { @MainActor in
+                        selectedItem = .reminder(.exampleFour())
+                        try? await Task.sleep(for: .seconds(3))
+                        selectedItem = .reminder(.exampleOne())
+                        try? await Task.sleep(for: .seconds(1))
+                        show = false
+                    }
+            } else {
+                Color.clear
+                    .task {
+                        try? await Task.sleep(for: .seconds(1))
+                        show = true
+                    }
             }
         }
+        .animation(.easeInOut, value: selectedItem)
+        .animation(.snappy, value: show)
+    }
+}
+
+#Preview {
+    TestView()
 }

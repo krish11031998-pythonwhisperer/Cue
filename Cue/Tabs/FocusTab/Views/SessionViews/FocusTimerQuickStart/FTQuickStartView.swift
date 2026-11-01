@@ -28,9 +28,12 @@ struct FocusCountdownTopGradient: Shape {
 
 struct FTQuickStartView: View {
 
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @Environment(\.verticalSizeClass) var verticalSizeClass
     @Environment(\.dismiss) var dismiss
     @Bindable private var coordinator: FocusSessionCoordinator
     @State private var viewModel: FTQuickStartViewModel = .init()
+    @State private var isLandscape: Bool = false
     let reminders: [ReminderModel]
     @Environment(\.colorScheme) var colorScheme
     
@@ -87,30 +90,61 @@ struct FTQuickStartView: View {
                        endPoint: .bottom)
     }
     
+    var `dualLayout`: Bool {
+        switch horizontalSizeClass {
+        case .compact:
+            return false
+        case .regular:
+            switch verticalSizeClass {
+            case .compact:
+                return true
+            case .regular:
+                return isPhone ? isLandscape : false
+            @unknown default:
+                return true
+            }
+        @unknown default:
+            return false
+        }
+    }
+
+    private var isPhone: Bool {
+        UIDevice.current.userInterfaceIdiom == .phone
+    }
+
     var body: some View {
-        FTSessionView(coordinator: coordinator, viewType: .quickStart) {
-            GeometryReader { proxy in
-                let size = proxy.size
-                
-                ZStack(alignment: .center) {
-                    Color.cueItBackground
-                        .ignoresSafeArea(edges: .vertical)
+        Group {
+            if !dualLayout {
+                FTSessionView(coordinator: coordinator, viewType: .quickStart(delay: 0.4)) {
+                    MainContentView(showsCarousel: true)
+                }
+                .sensoryFeedback(.selection, trigger: viewModel.selectedTimerItem)
+                .gesture(DragPopGesture(isEnabled: gestureRecognizerEnabled, translation: dragGestureHandler, hasEnded: hasEnded))
+            } else {
+                HStack(alignment: .center, spacing: 0) {
+                    FTSessionView(coordinator: coordinator, viewType: .quickStart(delay: 0.4)) {
+                        ZStack(alignment: .center) {
+                            Color.cueItBackground
+                                .ignoresSafeArea()
+                            if coordinator.session == nil {
+                                VerticalSessionSelector(viewModel: viewModel)
+                            } else {
+                                OngoingSessionOverviewSheet()
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
                     
-                    FocusCountdownTimerView()
-                        .environment(viewModel)
-                        .environment(coordinator)
-                        .padding(.horizontal, 8)
-                        .position(x: size.width.half, y: size.width * 0.7)
+                    MainContentView(showsCarousel: false)
+                        .frame(maxWidth: .infinity)
                 }
             }
         }
-        .sensoryFeedback(.selection, trigger: viewModel.selectedTimerItem)
-        .gesture(DragPopGesture(isEnabled: gestureRecognizerEnabled, translation: dragGestureHandler, hasEnded: hasEnded))
-        .safeAreaBar(edge: .top, alignment: .center, spacing: 8) {
-            FocusReminderCarouselSelectorView(selectedItem: viewModel.selectedTimerItem, items: viewModel.timerItems)
-                .fixedSize(horizontal: false, vertical: true)
-                .disabled(true)
+        .onGeometryChange(for: Bool.self, of: { $0.size.width > $0.size.height }) { newValue in
+            isLandscape = newValue
         }
+        .environment(viewModel)
+        .environment(coordinator)
         .onChange(of: viewModel.selectedTimerItem, initial: true) { _, newValue in
             coordinator.reminderModel = viewModel.selectedReminder()
             coordinator.sessionAttributes = viewModel.focusSessionAttributes()
@@ -120,19 +154,6 @@ struct FTQuickStartView: View {
             viewModel.updateWithReminders(newValue)
         }
         .environment(\.theme, viewModel.selectedTimerItem.theme)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemSymbol: .chevronDown)
-                        .font(.headline)
-                        .frame(width: 50, height: 50, alignment: .center)
-                        .glassEffect(.regular.interactive(true), in: .circle)
-                }
-                .buttonStyle(.plain)
-            }
-        }
     }
     
     private func dragGestureHandler(_ point: CGPoint) {
@@ -157,6 +178,107 @@ struct FTQuickStartView: View {
         }
         viewModel.updateSelectedReminder(forwards: x < 0, backwards: x > 0)
     }
+    
+    // MARK: Main Content
+    
+    struct MainContentView: View {
+        @Environment(FocusSessionCoordinator.self) var coordinator
+        @Environment(FTQuickStartViewModel.self) var viewModel
+        let showsCarousel: Bool
+
+        var body: some View {
+            ZStack(alignment: .center) {
+                Color.cueItBackground
+                    .ignoresSafeArea(edges: .all)
+                
+                FocusCountdownTimerView()
+                    .padding(.horizontal, 8)
+            }
+            .safeAreaBar(edge: .top, alignment: .center, spacing: 8) {
+                TopCarouselView(isVisible: showsCarousel,
+                                session: coordinator.session,
+                                selectedTimerItem: viewModel.selectedTimerItem,
+                                timerItems: viewModel.timerItems)
+            }
+            .animation(.snappy(duration: 0.3), value: coordinator.session == nil)
+        }
+        
+    }
+    
+    // MARK: - Top Carousel View
+    
+    struct TopCarouselView: View {
+        let isVisible: Bool
+        let session: FocusSession?
+        let selectedTimerItem: FTQuickStartViewModel.TimerType
+        let timerItems: [FTQuickStartViewModel.TimerType]
+
+        var body: some View {
+            if session == nil && isVisible {
+                FocusReminderCarouselSelectorView(selectedItem: selectedTimerItem, items: timerItems)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .disabled(true)
+                    .transition(.popIn.combined(with: .opacity))
+            } else {
+                EmptyView()
+            }
+        }
+    }
+    
+    // MARK: - Vertical Session Selector
+    
+    struct VerticalSessionSelector: View {
+        @Bindable private var viewModel: FTQuickStartViewModel
+        
+        init(viewModel: FTQuickStartViewModel) {
+            self.viewModel = viewModel
+        }
+        
+        var body: some View {
+            ScrollView {
+                LazyVStack(alignment: .center, spacing: 8) {
+                    ForEach(viewModel.timerItems) { timerItem in
+                        Button {
+                            viewModel.selectedTimerItem = timerItem
+                        } label: {
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack(alignment: .center, spacing: 6) {
+                                    ReminderIconView(icon: timerItem.icon, foregroundColor: .primary, backgroundColor: timerItem.theme.surfacePrimary, font: .subheadline)
+                                        .frame(width: 44, height: 44, alignment: .center)
+                                    Text(timerItem.title)
+                                        .font(.headline)
+                                        .foregroundStyle(timerItem.theme.foregroundSecondary)
+                                }
+                                
+                                if case .reminder(let reminderModel) = timerItem, !reminderModel.tasks.isEmpty {
+                                    Label {
+                                        Text("\(reminderModel.tasks.count) Tasks")
+                                    } icon: {
+                                        Image(systemSymbol: .checkmark)
+                                    }
+                                    .labelStyle(SmallChipStyle(color: timerItem.theme.baseColor))
+                                    .font(.caption.weight(.semibold))
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(alignment: .center, content: {
+                                RoundedRectangle(cornerRadius: 22)
+                                    .fill(viewModel.selectedTimerItem == timerItem ? timerItem.theme.backgroundTertiary : timerItem.theme.backgroundSecondary)
+                                    .stroke(timerItem.theme.outlinePrimary, lineWidth: viewModel.selectedTimerItem == timerItem ? 0 : 1)
+                                    .animation(.easeInOut, value: viewModel.selectedTimerItem == timerItem)
+                            })
+                        }
+                        .buttonStyle(.defaultCueButton)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+            }
+            .scrollEdgeEffectStyle(.soft, for: .vertical)
+        }
+    }
 }
 
 #Preview {
@@ -166,4 +288,6 @@ struct FTQuickStartView: View {
     // here was a duplicate and has been removed.
     FTQuickStartView(coordinator: coordinator, reminders: [.exampleOne(), .exampleTwo(), .exampleThree(), .exampleFour()])
         .environment(SubscriptionManager())
+        .environment(Store())
+        .frame(maxWidth: .infinity, alignment: .center)
 }

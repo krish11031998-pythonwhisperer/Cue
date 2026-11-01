@@ -19,6 +19,7 @@ struct FTActiveSessionView: View {
     
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
     @State private var frame: CGRect = .zero
     @Bindable private var coordinator: FocusSessionCoordinator
@@ -41,31 +42,20 @@ struct FTActiveSessionView: View {
     
     var body: some View {
         FTSessionView(coordinator: coordinator, viewType: .activeSession) {
-            GeometryReader { proxy in
-                let safeInsets = proxy.safeAreaInsets
-                let globalFrame = proxy.frame(in: .global)
-                let circleSize: CGSize = .init(width: globalFrame.width - 16, height: globalFrame.width - 16)
-                let center: CGPoint = .init(x: globalFrame.midX, y: globalFrame.midY - circleSize.height.half)
-                
                 ZStack(alignment: .center) {
                     Color.cueItBackground
-                        .ignoresSafeArea(edges: .vertical)
+                        .ignoresSafeArea(edges: .all)
                     
                     FocusCountdownView(countdownViewType: .circle,
                                        targetDuration: coordinator.timerDuration,
                                        theme: theme) {
                         InnerContent(icon: icon)
                     }
+                    .padding(.horizontal, 8)
                     .environment(coordinator)
                     .environment(\.focusTimerStateFromCoordinator, coordinator.state.uiState)
                     .environment(\.focusTimerProgressFromCoordinator, coordinator.progress)
-                    .padding(.horizontal, 8)
-                    .position(center)
                 }
-                .onAppear {
-                    print("(DEBUG) safeAreaInsets: \(safeInsets) - globalFrame: \(globalFrame) - circleSize: \(circleSize) - center: \(center)")
-                }
-            }
         }
         .task(id: mode, {
             guard case .startSession(let focusSessionModel) = mode else {
